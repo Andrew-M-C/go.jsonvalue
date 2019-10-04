@@ -7,7 +7,11 @@ import (
 func TestSet(t *testing.T) {
 	o := NewObject()
 	child := NewString("Hello, world!")
-	o.Set("data", "message", -1, "hello", child)
+	_, err := o.Set(child).At("data", "message", -1, "hello")
+	if err != nil {
+		t.Errorf("test Set failed: %v", err)
+		return
+	}
 
 	b, _ := o.Marshal()
 	t.Logf("after setting: %v", string(b))

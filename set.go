@@ -3,91 +3,96 @@ package jsonvalue
 import (
 	"container/list"
 	"fmt"
+	"reflect"
 
 	"github.com/buger/jsonparser"
 )
 
-// Set set recursively set child into a jsonvalue object
-func (v *V) Set(firstParam interface{}, secondParam interface{}, otherParams ...interface{}) (value *V, err error) {
+type set struct {
+	v *V
+	c *V // child
+}
+
+// Set starts setting a child JSON value
+func (v *V) Set(child *V) *set {
+	if nil == child {
+		child = NewNull()
+	}
+	return &set{
+		v: v,
+		c: child,
+	}
+}
+
+// At
+func (s *set) At(firstParam interface{}, otherParams ...interface{}) (*V, error) {
+	v := s.v
+	c := s.c
+	if v.valueType == jsonparser.NotExist {
+		return nil, ErrValueUninitialized
+	}
+
+	// this is the last iteration
 	if 0 == len(otherParams) {
-		// This is the last value, now we should set
 		switch v.valueType {
 		default:
-			err = fmt.Errorf("%v type does not supports Set()", v.valueType)
-			return
+			return nil, fmt.Errorf("%v type does not supports Set()", v.valueType)
 
 		case jsonparser.Object:
 			var k string
-			var child *V
-			k, err = intfToString(firstParam)
-			if err != nil {
-				return
-			}
-			child, err = intfToJsonvalue(secondParam)
-			if err != nil {
-				return
-			}
-			v.objectChildren[k] = child
-			return child, nil
-
-		case jsonparser.Array:
-			var pos int
-			var child *V
-			pos, err = intfToInt(firstParam)
+			k, err := intfToString(firstParam)
 			if err != nil {
 				return nil, err
 			}
-			child, err = intfToJsonvalue(secondParam)
-			if err != nil {
-				return
-			}
+			v.objectChildren[k] = c
+			return c, nil
 
-			err = v.insertAtIndex(child, pos)
+		case jsonparser.Array:
+			pos, err := intfToInt(firstParam)
 			if err != nil {
-				return
+				return nil, err
 			}
-			return child, nil
+			err = v.insertAtIndex(c, pos)
+			if err != nil {
+				return nil, err
+			}
+			return c, nil
 		}
 	}
 
-	// Not last params? continue
-	// object value
+	// this is not the last iterarion
 	if v.valueType == jsonparser.Object {
-		// string key is expected
-		var k string
-		k, err = intfToString(firstParam)
+		k, err := intfToString(firstParam)
 		if err != nil {
 			return nil, err
 		}
 		child, exist := v.objectChildren[k]
 		if false == exist {
-			// if next parameter is a string, create an object
-			if _, strErr := intfToString(secondParam); strErr == nil {
+			if _, err := intfToString(otherParams[0]); err == nil {
 				child = NewObject()
-			} else if _, arrErr := intfToInt(secondParam); arrErr == nil {
+			} else if _, err := intfToInt(otherParams[0]); err == nil {
 				child = NewArray()
 			} else {
-				err = fmt.Errorf("unexpected type %v for Set()", v.valueType)
-				return nil, err
+				return nil, fmt.Errorf("unexpected type %v for Set()", reflect.TypeOf(otherParams[0]))
 			}
 		}
-		var grandChild *V
-		grandChild, err = child.Set(secondParam, otherParams[0], otherParams[1:]...)
+		next := set{
+			v: child,
+			c: c,
+		}
+		_, err = next.At(otherParams[0], otherParams[1:]...)
 		if err != nil {
 			return nil, err
 		}
-		// OK to add this object
 		if false == exist {
 			v.objectChildren[k] = child
 		}
-		return grandChild, nil
+		return c, nil
 	}
 
-	// array value
+	// array type
 	if v.valueType == jsonparser.Array {
-		// interger is expected
-		var pos int
-		pos, err = intfToInt(firstParam)
+		pos, err := intfToInt(firstParam)
 		if err != nil {
 			return nil, err
 		}
@@ -95,17 +100,19 @@ func (v *V) Set(firstParam interface{}, secondParam interface{}, otherParams ...
 		isNewChild := false
 		if nil == child {
 			isNewChild = true
-			if _, strErr := intfToString(secondParam); strErr == nil {
+			if _, err := intfToString(otherParams[0]); err == nil {
 				child = NewObject()
-			} else if _, arrErr := intfToInt(secondParam); arrErr == nil {
+			} else if _, err := intfToInt(otherParams[0]); err == nil {
 				child = NewArray()
 			} else {
-				err = fmt.Errorf("unexpected type %v for Set()", v.valueType)
-				return nil, err
+				return nil, fmt.Errorf("unexpected type %v for Set()", reflect.TypeOf(otherParams[0]))
 			}
 		}
-		var grandChild *V
-		grandChild, err = child.Set(secondParam, otherParams[0], otherParams[1:]...)
+		next := set{
+			v: child,
+			c: c,
+		}
+		_, err = next.At(otherParams[0], otherParams[1:]...)
 		if err != nil {
 			return nil, err
 		}
@@ -113,10 +120,11 @@ func (v *V) Set(firstParam interface{}, secondParam interface{}, otherParams ...
 		if isNewChild {
 			v.arrayChildren.PushBack(child)
 		}
-		return grandChild, nil
+		return c, nil
 	}
 
-	return nil, fmt.Errorf("%s does not supports Set()", v.valueType)
+	// illegal type
+	return nil, fmt.Errorf("%v type does not supports Set()", v.valueType)
 }
 
 func (v *V) childAtIndex(pos int) (*V, bool) { // if nil returned, means that just push
@@ -171,62 +179,3 @@ func (v *V) insertAtIndex(child *V, pos int) (err error) {
 }
 
 // ==== short cuts ====
-
-// MustSet is same as Set(), but it panics if error occurred
-func (v *V) MustSet(firstParam interface{}, secondParam interface{}, otherParams ...interface{}) *V {
-	ret, err := v.Set(firstParam, secondParam, otherParams...)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-// SetString is short for Set(..., v). While the last parameter must be a string object
-func (v *V) SetString(firstParam interface{}, secondParam interface{}, otherParams ...interface{}) (*V, error) {
-	otherParamCount := len(otherParams)
-
-	if 0 == otherParamCount {
-		s, ok := secondParam.(string)
-		if false == ok {
-			return nil, fmt.Errorf("string value is not set in SetString()")
-		}
-		return v.Set(firstParam, NewString(s))
-	}
-
-	lastParam := otherParams[otherParamCount-1]
-	s, ok := lastParam.(string)
-	if false == ok {
-		return nil, fmt.Errorf("string value is not set in SetString()")
-	}
-	otherParams[otherParamCount-1] = NewString(s)
-	return v.Set(firstParam, secondParam, otherParams...)
-}
-
-// MustSetString is same as SetString(), but it panics if error occurred
-func (v *V) MustSetString(firstParam interface{}, secondParam interface{}, otherParams ...interface{}) *V {
-	ret, err := v.SetString(firstParam, secondParam, otherParams...)
-	if err != nil {
-		panic(err)
-	}
-	return ret
-}
-
-// func (v *V) SetInt(firstParam interface{}, secondParam interface{}, otherParams ...interface{}) (*V, error) {
-// 	otherParamCount := len(otherParams)
-
-// 	if 0 == otherParamCount {
-// 		s, ok := secondParam.(string)
-// 		if false == ok {
-// 			return nil, fmt.Errorf("string value is not set in SetString()")
-// 		}
-// 		return v.Set(firstParam, NewString(s))
-// 	}
-
-// 	lastParam := otherParams[otherParamCount-1]
-// 	s, ok := lastParam.(string)
-// 	if false == ok {
-// 		return nil, fmt.Errorf("string value is not set in SetString()")
-// 	}
-// 	otherParams[otherParamCount-1] = NewString(s)
-// 	return v.Set(firstParam, secondParam, otherParams...)
-// }
