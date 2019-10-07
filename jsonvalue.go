@@ -31,6 +31,11 @@ func new() *V {
 	return &v
 }
 
+// UnmarshalString is equavilent to Unmarshal(string(b))
+func UnmarshalString(s string) (*V, error) {
+	return Unmarshal([]byte(s))
+}
+
 // Unmarshal parse raw bytes and return JSON value object
 func Unmarshal(b []byte) (ret *V, err error) {
 	if nil == b || 0 == len(b) {
