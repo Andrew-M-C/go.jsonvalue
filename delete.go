@@ -8,11 +8,12 @@ import (
 
 // Delete deletes specified JSON value
 func (v *V) Delete(firstParam interface{}, otherParams ...interface{}) error {
-	if 0 == len(otherParams) {
+	paramCount := len(otherParams)
+	if 0 == paramCount {
 		return v.deleteInCurrValue(firstParam)
 	}
 
-	child, err := v.Get(firstParam)
+	child, err := v.Get(firstParam, otherParams[:paramCount-1]...)
 	if err != nil {
 		return err
 	}
@@ -20,7 +21,7 @@ func (v *V) Delete(firstParam interface{}, otherParams ...interface{}) error {
 		return ErrNotFound
 	}
 
-	return child.Delete(otherParams[0], otherParams[1:])
+	return child.Delete(otherParams[paramCount-1])
 }
 
 func (v *V) deleteInCurrValue(param interface{}) error {

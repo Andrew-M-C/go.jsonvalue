@@ -118,23 +118,3 @@ func TestSetInteger(t *testing.T) {
 		return
 	}
 }
-
-func TestSetStringNullBool(t *testing.T) {
-	a := NewArray()
-	expected := `[123456,"hello","world",1234.123456789,true,["12345"],null]`
-	a.AppendString("world").InTheBeginning()
-	a.AppendFloat64(1234.123456789, 9).InTheEnd()
-	a.InsertBool(true).After(-1)
-	a.AppendNull().InTheEnd()
-	a.InsertInt(123456).Before(0)
-	a.InsertString("hello").After(0)
-	a.InsertArray().After(-2)
-	a.AppendString("12345").InTheEnd(-2)
-
-	s, _ := a.MarshalString()
-	t.Logf("after SetXxx(): %v", s)
-	if s != expected {
-		t.Errorf("series SetXxx failed")
-		return
-	}
-}
