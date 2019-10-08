@@ -118,3 +118,30 @@ func TestSetInteger(t *testing.T) {
 		return
 	}
 }
+
+func TestSetError(t *testing.T) {
+	var checkCount int
+	shouldError := func(err error) {
+		defer func() {
+			checkCount++
+		}()
+		if err == nil {
+			t.Errorf("%02d - error expected but not caught", checkCount)
+			return
+		}
+		t.Logf("expected error string: %v", err)
+		return
+	}
+
+	{
+		raw := `"`
+		_, err := UnmarshalString(raw)
+		shouldError(err)
+	}
+
+	{
+		v := NewObject()
+		_, err := v.SetString("hello").At(true)
+		shouldError(err)
+	}
+}

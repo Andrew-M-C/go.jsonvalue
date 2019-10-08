@@ -105,21 +105,12 @@ func (apd *append) InTheBeginning(params ...interface{}) (*V, error) {
 	}
 
 	// this is not the last iterarion
-	shouldSet := false
 	child, err := v.GetArray(params[0], params[1:paramCount]...)
 	if err != nil {
-		if err == ErrNotFound {
-			shouldSet = true
-			child = NewArray()
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	child.arrayChildren.PushFront(c)
-	if shouldSet {
-		v.Set(child).At(params[0], params[1:paramCount]...)
-	}
 	return c, nil
 }
 
@@ -143,20 +134,11 @@ func (apd *append) InTheEnd(params ...interface{}) (*V, error) {
 	}
 
 	// this is not the last iterarion
-	shouldSet := false
 	child, err := v.GetArray(params[0], params[1:paramCount]...)
 	if err != nil {
-		if err == ErrNotFound {
-			shouldSet = true
-			child = NewArray()
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
 	child.arrayChildren.PushBack(c)
-	if shouldSet {
-		v.Set(child).At(params[0], params[1:paramCount]...)
-	}
 	return c, nil
 }

@@ -79,6 +79,122 @@ func TestGet(t *testing.T) {
 		s, err := o.GetString("data", "message", -3)
 		check(t, err, "GetString", s == "world")
 	}
+	{
+		l := o.Len()
+		check(t, nil, "Len", l == 1)
+
+		v, _ := o.Get("data", "message")
+		l = v.Len()
+		check(t, nil, "Len", l == 4)
+
+		v, _ = o.Get("data", "author")
+		l = v.Len()
+		check(t, nil, "Len", l == 0)
+	}
+	{
+		v, err := o.GetObject("data")
+		check(t, err, "GetObject", v.IsObject())
+	}
 
 	return
+}
+
+func TestMiscError(t *testing.T) {
+	var checkCount int
+	shouldError := func(err error) {
+		defer func() {
+			checkCount++
+		}()
+		if err == nil {
+			t.Errorf("%02d - error expected but not caught", checkCount)
+			return
+		}
+		t.Logf("expected error string: %v", err)
+		return
+	}
+
+	{
+		var err error
+		raw := `{"array":[0,1,2,3],"string":"hello, world","number":1234.12345}`
+		v, _ := UnmarshalString(raw)
+
+		// param error
+		_, err = v.GetInt("array", true)
+		shouldError(err)
+		_, err = v.GetString(true)
+		shouldError(err)
+
+		// out of range
+		_, err = v.Get("array", 100)
+		shouldError(err)
+
+		// not support
+		_, err = v.Get("string", "hello")
+		shouldError(err)
+
+		// GetString
+		_, err = v.GetString("number")
+		shouldError(err)
+		_, err = v.GetString("not exist")
+		shouldError(err)
+
+		// GetInt... and GetUint..
+		_, err = v.GetInt("string")
+		shouldError(err)
+		_, err = v.GetUint("string")
+		shouldError(err)
+		_, err = v.GetInt64("string")
+		shouldError(err)
+		_, err = v.GetUint64("string")
+		shouldError(err)
+		_, err = v.GetInt32("string")
+		shouldError(err)
+		_, err = v.GetUint32("string")
+		shouldError(err)
+		_, err = v.GetFloat64("string")
+		shouldError(err)
+		_, err = v.GetFloat32("string")
+		shouldError(err)
+
+		// number not exist
+		_, err = v.GetString("not exist")
+		shouldError(err)
+		_, err = v.GetInt("not exist")
+		shouldError(err)
+		_, err = v.GetUint("not exist")
+		shouldError(err)
+		_, err = v.GetInt64("not exist")
+		shouldError(err)
+		_, err = v.GetUint64("not exist")
+		shouldError(err)
+		_, err = v.GetInt32("not exist")
+		shouldError(err)
+		_, err = v.GetUint32("not exist")
+		shouldError(err)
+		_, err = v.GetFloat64("not exist")
+		shouldError(err)
+		_, err = v.GetFloat32("not exist")
+		shouldError(err)
+
+		// GetObject and GetArray
+		_, err = v.GetObject("string")
+		shouldError(err)
+		_, err = v.GetArray("string")
+		shouldError(err)
+		_, err = v.GetObject("not exist")
+		shouldError(err)
+		_, err = v.GetArray("not exist")
+		shouldError(err)
+
+		// GetBool and GetNull
+		_, err = v.GetBool("string")
+		shouldError(err)
+		err = v.GetNull("string")
+		shouldError(err)
+		_, err = v.GetBool("not exist")
+		shouldError(err)
+		err = v.GetNull("not exist")
+		shouldError(err)
+	}
+
 }

@@ -17,9 +17,9 @@ func (v *V) Delete(firstParam interface{}, otherParams ...interface{}) error {
 	if err != nil {
 		return err
 	}
-	if nil == child {
-		return ErrNotFound
-	}
+	// if nil == child {
+	// 	return ErrNotFound
+	// }
 
 	return child.Delete(otherParams[paramCount-1])
 }

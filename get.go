@@ -50,7 +50,10 @@ func (v *V) getInCurrValue(param interface{}) (*V, error) {
 		if err != nil {
 			return nil, err
 		}
-		child, _ := v.objectChildren[key]
+		child, exist := v.objectChildren[key]
+		if false == exist {
+			return nil, ErrNotFound
+		}
 		return child, nil
 
 	} else {

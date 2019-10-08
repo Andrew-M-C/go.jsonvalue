@@ -111,34 +111,34 @@ func intfToInt(v interface{}) (u int, err error) {
 	return
 }
 
-func intfToInt64(v interface{}) (i int64, err error) {
-	switch v.(type) {
-	case int:
-		i = int64(v.(int))
-	case uint:
-		i = int64(v.(uint))
-	case int64:
-		i = int64(v.(int64))
-	case uint64:
-		i = int64(v.(uint64))
-	case int32:
-		i = int64(v.(int32))
-	case uint32:
-		i = int64(v.(uint32))
-	case int16:
-		i = int64(v.(int16))
-	case uint16:
-		i = int64(v.(uint16))
-	case int8:
-		i = int64(v.(int8))
-	case uint8:
-		i = int64(v.(uint8))
-	default:
-		err = fmt.Errorf("%s is not a number", reflect.TypeOf(v).String())
-	}
+// func intfToInt64(v interface{}) (i int64, err error) {
+// 	switch v.(type) {
+// 	case int:
+// 		i = int64(v.(int))
+// 	case uint:
+// 		i = int64(v.(uint))
+// 	case int64:
+// 		i = int64(v.(int64))
+// 	case uint64:
+// 		i = int64(v.(uint64))
+// 	case int32:
+// 		i = int64(v.(int32))
+// 	case uint32:
+// 		i = int64(v.(uint32))
+// 	case int16:
+// 		i = int64(v.(int16))
+// 	case uint16:
+// 		i = int64(v.(uint16))
+// 	case int8:
+// 		i = int64(v.(int8))
+// 	case uint8:
+// 		i = int64(v.(uint8))
+// 	default:
+// 		err = fmt.Errorf("%s is not a number", reflect.TypeOf(v).String())
+// 	}
 
-	return
-}
+// 	return
+// }
 
 func intfToString(v interface{}) (s string, err error) {
 	switch v.(type) {
@@ -151,13 +151,13 @@ func intfToString(v interface{}) (s string, err error) {
 	return
 }
 
-func intfToJsonvalue(v interface{}) (j *V, err error) {
-	switch v.(type) {
-	case *V:
-		j = v.(*V)
-	default:
-		err = fmt.Errorf("%s is not a *jsonvalue.V type", reflect.TypeOf(v).String())
-	}
+// func intfToJsonvalue(v interface{}) (j *V, err error) {
+// 	switch v.(type) {
+// 	case *V:
+// 		j = v.(*V)
+// 	default:
+// 		err = fmt.Errorf("%s is not a *jsonvalue.V type", reflect.TypeOf(v).String())
+// 	}
 
-	return
-}
+// 	return
+// }

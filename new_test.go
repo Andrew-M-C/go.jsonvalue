@@ -1,6 +1,8 @@
 package jsonvalue
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestNewString(t *testing.T) {
 	s := "你好，世界"
@@ -118,4 +120,206 @@ func TestEmptyArray(t *testing.T) {
 		t.Errorf("TestNewObject failed")
 		return
 	}
+}
+
+func TestMiscValue(t *testing.T) {
+	var err error
+	var v *V
+	var c *V
+	checkErrMark := 0
+	raw := ""
+	topic := ""
+	checkErr := func() {
+		checkErrMark++
+		if err != nil {
+			t.Errorf("%02d - %s - error: %v", checkErrMark, topic, err)
+			return
+		}
+	}
+	checkCond := func(b bool) {
+		if false == b {
+			t.Errorf("%02d - %s - failed, object: %v", checkErrMark, topic, v)
+			return
+		}
+	}
+
+	topic = "parse array"
+	raw = "\r\n[1, 2, 3 ]\t\b"
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsArray())
+
+	topic = "parse object"
+	raw = `{ }`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsObject())
+
+	topic = "parse string"
+	raw = ` "hello, world"  `
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsString())
+
+	topic = "parse null"
+	raw = `null`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsNull())
+
+	topic = "parse bool (true)"
+	raw = `true`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsBoolean())
+	checkCond(true == v.Bool())
+
+	topic = "parse bool (true)"
+	raw = `false`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsBoolean())
+	checkCond(false == v.Bool())
+
+	topic = "parse negative float"
+	raw = `-12345.12345`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsNumber())
+	checkCond(v.IsFloat())
+	checkCond(v.IsNegative())
+	checkCond(false == v.GreaterThanInt64Max())
+
+	topic = "parse positive float"
+	raw = `12345.12345`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsNumber())
+	checkCond(v.IsFloat())
+	checkCond(v.IsPositive())
+	checkCond(false == v.GreaterThanInt64Max())
+
+	topic = "parse negative integer"
+	raw = `-12345`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsNumber())
+	checkCond(v.IsInteger())
+	checkCond(v.IsNegative())
+	checkCond(false == v.GreaterThanInt64Max())
+
+	topic = "parse positive integer"
+	raw = `12345`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsNumber())
+	checkCond(v.IsInteger())
+	checkCond(v.IsPositive())
+	checkCond(false == v.GreaterThanInt64Max())
+
+	topic = "parse big uint64"
+	raw = `18446744073709551615` // 0xFFFFFFFFFFFFFFFF
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsNumber())
+	checkCond(v.IsInteger())
+	checkCond(v.IsPositive())
+	checkCond(v.GreaterThanInt64Max())
+
+	topic = "parse object in array"
+	raw = `[{}]`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsArray())
+	c, err = v.Get(0)
+	checkErr()
+	checkCond(c.IsObject())
+
+	topic = "parse array in object"
+	raw = `{"array":[]}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsObject())
+	c, err = v.Get("array")
+	checkErr()
+	checkCond(c.IsArray())
+}
+
+func TestValueError(t *testing.T) {
+	var checkCount int
+	var topic string
+	var err error
+	var raw string
+	var v *V
+	shouldError := func() {
+		checkCount++
+		if err == nil {
+			s, _ := v.MarshalString()
+			t.Errorf("%02d - %s - error expected but not caught, marshaled: %s", checkCount, topic, s)
+			return
+		}
+		t.Logf("%02d - %s - expected error string: %v", checkCount, topic, err)
+		return
+	}
+
+	topic = "invalid json"
+	v = &V{}
+	if v.String() != "" {
+		t.Errorf("uninitizlized object should be empty")
+		return
+	}
+
+	topic = "nil string input"
+	raw = ""
+	v, err = UnmarshalString(raw)
+	shouldError()
+
+	topic = "nil bytes input"
+	v, err = Unmarshal(nil)
+	shouldError()
+
+	topic = "illegal char"
+	raw = `\\`
+	v, err = UnmarshalString(raw)
+	shouldError()
+
+	topic = "no start chars"
+	raw = `     `
+	v, err = UnmarshalString(raw)
+	shouldError()
+
+	topic = "illegal float number"
+	raw = `1.a`
+	v, err = UnmarshalString(raw)
+	shouldError()
+
+	topic = "illegal negative interger"
+	raw = `-1a`
+	v, err = UnmarshalString(raw)
+	shouldError()
+
+	topic = "illegal positive interger"
+	raw = `1a`
+	v, err = UnmarshalString(raw)
+	shouldError()
+
+	topic = "illegal true"
+	raw = `trUE`
+	v, err = UnmarshalString(raw)
+	shouldError()
+
+	topic = "illegal false"
+	raw = `fAlse`
+	v, err = UnmarshalString(raw)
+	shouldError()
+
+	topic = "illegal bool in object"
+	raw = `{"bool":tRue}`
+	v, err = UnmarshalString(raw)
+	shouldError()
+
+	topic = "illegal bool in array"
+	raw = `[tRue]`
+	v, err = UnmarshalString(raw)
+	shouldError()
 }

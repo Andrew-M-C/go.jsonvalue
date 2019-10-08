@@ -114,7 +114,7 @@ func (ins *insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 	}
 
 	// this is not the last iterarion
-	child, err := v.GetArray(firstParam, otherParams[:paramCount-1])
+	child, err := v.GetArray(firstParam, otherParams[:paramCount-1]...)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (ins *insert) After(firstParam interface{}, otherParams ...interface{}) (*V
 	}
 
 	// this is not the last iterarion
-	child, err := v.GetArray(firstParam, otherParams[:paramCount-1])
+	child, err := v.GetArray(firstParam, otherParams[:paramCount-1]...)
 	if err != nil {
 		return nil, err
 	}

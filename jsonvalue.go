@@ -44,7 +44,7 @@ func Unmarshal(b []byte) (ret *V, err error) {
 
 	for i, c := range b {
 		switch c {
-		case ' ', '\r', '\n', '\t':
+		case ' ', '\r', '\n', '\t', '\b':
 			// continue
 		case '{':
 			// object start
@@ -281,7 +281,7 @@ func (v *V) IsArray() bool {
 
 // IsString tells whether value is a string
 func (v *V) IsString() bool {
-	return v.valueType == jsonparser.Null
+	return v.valueType == jsonparser.String
 }
 
 // IsNumber tells whether value is a number
@@ -297,6 +297,27 @@ func (v *V) IsFloat() bool {
 // IsInteger tells whether value is a fix point interger
 func (v *V) IsInteger() bool {
 	return v.valueType == jsonparser.Number && false == v.floated
+}
+
+// IsNegative tells whether value is a negative number
+func (v *V) IsNegative() bool {
+	return v.valueType == jsonparser.Number && v.negative
+}
+
+// IsPositive tells whether value is a positive number
+func (v *V) IsPositive() bool {
+	return v.valueType == jsonparser.Number && false == v.negative
+}
+
+// GreaterThanInt64Max tells whether value Exceeds 0x7fffffffffffffff
+func (v *V) GreaterThanInt64Max() bool {
+	if false == v.IsInteger() {
+		return false
+	}
+	if v.negative {
+		return false
+	}
+	return v.uint64Value > 0x7fffffffffffffff
 }
 
 // IsBoolean tells whether value is a boolean

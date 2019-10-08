@@ -43,3 +43,87 @@ func TestBasicFunction(t *testing.T) {
 
 	return
 }
+
+func TestMiscCharacters(t *testing.T) {
+	s := "\"/\b\f\t\r\n<>&你好世界"
+	expected := "\"\\\"\\/\\b\\f\\t\\r\\n\\u003c\\u003e\\u0026\\u4f60\\u597d\\u4e16\\u754c\""
+	v := NewString(s)
+	raw, err := v.MarshalString()
+	if err != nil {
+		t.Errorf("MarshalString() failed: %v", err)
+		return
+	}
+
+	t.Logf("marshaled: '%s'", raw)
+	if raw != expected {
+		t.Errorf("marshal does not acted as expected")
+		return
+	}
+}
+
+func TestPercentage(t *testing.T) {
+	s := "%"
+	expectedA := "\"\\u0025\""
+	expectedB := "\"%\""
+	v := NewString(s)
+	raw, err := v.MarshalString()
+	if err != nil {
+		t.Errorf("MarshalString() failed: %v", err)
+		return
+	}
+
+	t.Log("marshaled: '" + raw + "'")
+	if raw != expectedA && raw != expectedB {
+		t.Errorf("marshal does not acted as expected")
+		return
+	}
+}
+
+func TestMiscInt(t *testing.T) {
+	var err error
+	var checkCount int
+	checkInt := func(i, expected int) {
+		defer func() {
+			checkCount++
+		}()
+		if err != nil {
+			t.Errorf("%02d: Unexpected error: %v", checkCount, err)
+			return
+		}
+		if i != expected {
+			t.Errorf("%02d: i(%d) != %d", checkCount, i, expected)
+			return
+		}
+	}
+
+	raw := `[1,2,3,4,5,6,7]`
+	v, err := UnmarshalString(raw)
+	checkInt(0, 0)
+
+	i, err := v.GetInt(uint(2))
+	checkInt(i, 3)
+
+	_, err = v.GetInt(int64(2))
+	checkInt(i, 3)
+
+	_, err = v.GetInt(uint64(2))
+	checkInt(i, 3)
+
+	_, err = v.GetInt(int32(2))
+	checkInt(i, 3)
+
+	_, err = v.GetInt(uint32(2))
+	checkInt(i, 3)
+
+	_, err = v.GetInt(int16(2))
+	checkInt(i, 3)
+
+	_, err = v.GetInt(uint16(2))
+	checkInt(i, 3)
+
+	_, err = v.GetInt(int8(2))
+	checkInt(i, 3)
+
+	_, err = v.GetInt(uint8(2))
+	checkInt(i, 3)
+}
