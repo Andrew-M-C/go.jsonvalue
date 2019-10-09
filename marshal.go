@@ -15,6 +15,24 @@ var defaultOption = Opt{
 	OmitNull: false,
 }
 
+// MustMarshal is the same as Marshal, but panics if error pccurred
+func (v *V) MustMarshal(opt ...Opt) []byte {
+	ret, err := v.Marshal(opt...)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
+// MustMarshalString is the same as MarshalString, but panics if error pccurred
+func (v *V) MustMarshalString(opt ...Opt) string {
+	ret, err := v.MarshalString(opt...)
+	if err != nil {
+		panic(err)
+	}
+	return ret
+}
+
 // Marshal returns marshaled bytes
 func (v *V) Marshal(opt ...Opt) (b []byte, err error) {
 	if jsonparser.NotExist == v.valueType {
@@ -24,14 +42,11 @@ func (v *V) Marshal(opt ...Opt) (b []byte, err error) {
 	buf := bytes.Buffer{}
 
 	if 0 == len(opt) {
-		err = v.marshalToBuffer(&buf, &defaultOption)
+		v.marshalToBuffer(&buf, &defaultOption)
 	} else {
-		err = v.marshalToBuffer(&buf, &opt[0])
+		v.marshalToBuffer(&buf, &opt[0])
 	}
 
-	if err != nil {
-		return
-	}
 	return buf.Bytes(), err
 }
 
@@ -44,18 +59,15 @@ func (v *V) MarshalString(opt ...Opt) (s string, err error) {
 	buf := bytes.Buffer{}
 
 	if 0 == len(opt) {
-		err = v.marshalToBuffer(&buf, &defaultOption)
+		v.marshalToBuffer(&buf, &defaultOption)
 	} else {
-		err = v.marshalToBuffer(&buf, &opt[0])
+		v.marshalToBuffer(&buf, &opt[0])
 	}
 
-	if err != nil {
-		return
-	}
 	return buf.String(), err
 }
 
-func (v *V) marshalToBuffer(buf *bytes.Buffer, opt *Opt) (err error) {
+func (v *V) marshalToBuffer(buf *bytes.Buffer, opt *Opt) {
 	switch v.valueType {
 	default:
 		// do nothing

@@ -96,6 +96,9 @@ func (s *set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 	if v.valueType == jsonparser.NotExist {
 		return nil, ErrValueUninitialized
 	}
+	if c.valueType == jsonparser.NotExist {
+		return nil, ErrValueUninitialized
+	}
 
 	// this is the last iteration
 	if 0 == len(otherParams) {
@@ -135,7 +138,10 @@ func (s *set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 		if false == exist {
 			if _, err := intfToString(otherParams[0]); err == nil {
 				child = NewObject()
-			} else if _, err := intfToInt(otherParams[0]); err == nil {
+			} else if i, err := intfToInt(otherParams[0]); err == nil {
+				if i != 0 {
+					return nil, ErrOutOfRange
+				}
 				child = NewArray()
 			} else {
 				return nil, fmt.Errorf("unexpected type %v for Set()", reflect.TypeOf(otherParams[0]))
@@ -167,7 +173,10 @@ func (s *set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 			isNewChild = true
 			if _, err := intfToString(otherParams[0]); err == nil {
 				child = NewObject()
-			} else if _, err := intfToInt(otherParams[0]); err == nil {
+			} else if i, err := intfToInt(otherParams[0]); err == nil {
+				if i != 0 {
+					return nil, ErrOutOfRange
+				}
 				child = NewArray()
 			} else {
 				return nil, fmt.Errorf("unexpected type %v for Set()", reflect.TypeOf(otherParams[0]))
@@ -226,12 +235,21 @@ func (v *V) childAtIndex(pos int) (*V, bool) { // if nil returned, means that ju
 
 func (v *V) setAtIndex(child *V, pos int) error {
 	if 0 == v.arrayChildren.Len() {
+		if pos == 0 {
+			v.arrayChildren.PushBack(child)
+			return nil
+		}
 		return ErrOutOfRange
 	}
+
+	if pos == v.arrayChildren.Len() {
+		v.arrayChildren.PushBack(child)
+		return nil
+	}
+
 	if -1 == pos {
 		pos = v.arrayChildren.Len() - 1
 	}
-
 	e := v.elementAtIndex(pos)
 	if nil == e {
 		return ErrOutOfRange
