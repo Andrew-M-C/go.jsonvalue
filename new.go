@@ -92,7 +92,7 @@ func NewArray() *V {
 	return v
 }
 
-// NewFloat64 returns an initialied num jsonvalue object by float64 type
+// NewFloat64 returns an initialied num jsonvalue object by float64 type. The precision prec controls the number of digits. Use -1 in prec for automatically precision.
 func NewFloat64(f float64, prec int) *V {
 	v := new()
 	v.valueType = jsonparser.Number
@@ -110,7 +110,7 @@ func NewFloat64(f float64, prec int) *V {
 	return v
 }
 
-// NewFloat32 returns an initialied num jsonvalue object by float32 type
+// NewFloat32 returns an initialied num jsonvalue object by float32 type. The precision prec controls the number of digits. Use -1 in prec for automatically precision.
 func NewFloat32(f float32, prec int) *V {
 	v := new()
 	v.valueType = jsonparser.Number

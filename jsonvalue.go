@@ -8,7 +8,7 @@ import (
 	"github.com/buger/jsonparser"
 )
 
-// V is the main type of jsonvalue
+// V is the main type of jsonvalue, representing a JSON value.
 type V struct {
 	valueType      jsonparser.ValueType
 	rawNumBytes    []byte
@@ -36,7 +36,7 @@ func UnmarshalString(s string) (*V, error) {
 	return Unmarshal([]byte(s))
 }
 
-// Unmarshal parse raw bytes and return JSON value object
+// Unmarshal parse raw bytes(encoded in UTF-8 or pure AscII) and returns a *V instance.
 func Unmarshal(b []byte) (ret *V, err error) {
 	if nil == b || 0 == len(b) {
 		return nil, ErrNilParameter
@@ -309,7 +309,10 @@ func (v *V) IsPositive() bool {
 	return v.valueType == jsonparser.Number && false == v.negative
 }
 
-// GreaterThanInt64Max tells whether value Exceeds 0x7fffffffffffffff
+// GreaterThanInt64Max return true when ALL conditions below are met:
+// 	1. It is a number value.
+// 	2. It is a positive interger.
+// 	3. Its value is greater than 0x7fffffffffffffff.
 func (v *V) GreaterThanInt64Max() bool {
 	if false == v.IsInteger() {
 		return false
@@ -325,59 +328,59 @@ func (v *V) IsBoolean() bool {
 	return v.valueType == jsonparser.Boolean
 }
 
-// IsNull tells whether value is null
+// IsNull tells whether value is a null
 func (v *V) IsNull() bool {
 	return v.valueType == jsonparser.Null
 }
 
 // ==== value access ====
 
-// Bool returns represented bool value
+// Bool returns represented bool value. If value is not boolean, returns false.
 func (v *V) Bool() bool {
 	return v.boolValue
 }
 
-// Int returns represented int value
+// Int returns represented int value. If value is not a number, returns zero.
 func (v *V) Int() int {
 	return int(v.int64Value)
 }
 
-// Uint returns represented uint value
+// Uint returns represented uint value. If value is not a number, returns zero.
 func (v *V) Uint() uint {
 	return uint(v.uint64Value)
 }
 
-// Int64 returns represented int64 value
+// Int64 returns represented int64 value. If value is not a number, returns zero.
 func (v *V) Int64() int64 {
 	return v.int64Value
 }
 
-// Uint64 returns represented uint64 value
+// Uint64 returns represented uint64 value. If value is not a number, returns zero.
 func (v *V) Uint64() uint64 {
 	return v.uint64Value
 }
 
-// Int32 returns represented int32 value
+// Int32 returns represented int32 value. If value is not a number, returns zero.
 func (v *V) Int32() int32 {
 	return int32(v.int64Value)
 }
 
-// Uint32 returns represented uint32 value
+// Uint32 returns represented uint32 value. If value is not a number, returns zero.
 func (v *V) Uint32() uint32 {
 	return uint32(v.uint64Value)
 }
 
-// Float64 returns represented float64 value
+// Float64 returns represented float64 value. If value is not a number, returns zero.
 func (v *V) Float64() float64 {
 	return v.floatValue
 }
 
-// Float32 returns represented float32 value
+// Float32 returns represented float32 value. If value is not a number, returns zero.
 func (v *V) Float32() float32 {
 	return float32(v.floatValue)
 }
 
-// String returns represented string value
+// String returns represented string value or the description for the jsonvalue.V instance if it is not a string.
 func (v *V) String() string {
 	switch v.valueType {
 	default:
@@ -438,6 +441,8 @@ func (v *V) bufArrChildren(buf *bytes.Buffer) {
 }
 
 // RangeObjects goes through each children when this is an object value
+//
+// Return true in callback to continue range iteration, while false to break.
 func (v *V) RangeObjects(callback func(k string, v *V) bool) {
 	if false == v.IsObject() {
 		return
@@ -456,6 +461,8 @@ func (v *V) RangeObjects(callback func(k string, v *V) bool) {
 }
 
 // RangeArray goes through each children when this is an array value
+//
+// Return true in callback to continue range iteration, while false to break.
 func (v *V) RangeArray(callback func(i int, v *V) bool) {
 	if false == v.IsArray() {
 		return

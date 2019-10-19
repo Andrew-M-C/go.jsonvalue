@@ -6,8 +6,10 @@ import (
 	"github.com/buger/jsonparser"
 )
 
-// Opt is the option of jsonvalue
+// Opt is the option of jsonvalue.
 type Opt struct {
+	// OmitNull tells how to handle null json value. The default value is false.
+	// If OmitNull is true, null value will be omitted whan marshaling.
 	OmitNull bool
 }
 
