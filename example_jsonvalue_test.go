@@ -41,7 +41,7 @@ func ExampleNewFloat64() {
 }
 
 func ExampleOpt() {
-	raw := `{"string":"hello, world", "null":null}`
+	raw := `{"null":null}`
 	v, _ := jsonvalue.UnmarshalString(raw)
 
 	s := v.MustMarshalString()
@@ -49,8 +49,8 @@ func ExampleOpt() {
 	s = v.MustMarshalString(jsonvalue.Opt{OmitNull: true})
 	fmt.Println(s)
 	// Output:
-	// {"string":"hello, world","null":null}
-	// {"string":"hello, world"}
+	// {"null":null}
+	// {}
 }
 
 func ExampleAppend_InTheBeginning() {
