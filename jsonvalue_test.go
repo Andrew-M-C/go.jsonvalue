@@ -46,7 +46,7 @@ func TestBasicFunction(t *testing.T) {
 
 func TestMiscCharacters(t *testing.T) {
 	s := "\"/\b\f\t\r\n<>&你好世界"
-	expected := "\"\\\"\\/\\b\\f\\t\\r\\n\\u003c\\u003e\\u0026\\u4f60\\u597d\\u4e16\\u754c\""
+	expected := "\"\\\"\\/\\b\\f\\t\\r\\n\\u003C\\u003E\\u0026\\u4F60\\u597D\\u4E16\\u754C\""
 	v := NewString(s)
 	raw, err := v.MarshalString()
 	if err != nil {
@@ -56,7 +56,39 @@ func TestMiscCharacters(t *testing.T) {
 
 	t.Logf("marshaled: '%s'", raw)
 	if raw != expected {
-		t.Errorf("marshal does not acted as expected")
+		t.Errorf("marshal does not acted as expected <%s>", raw)
+		t.Errorf("%s <-- raw", raw)
+		t.Errorf("%s <-- expected", expected)
+		return
+	}
+}
+
+func TestUTF16(t *testing.T) {
+	orig := "👨‍👩‍👧‍👧你你"
+
+	v := NewObject()
+	v.SetString(orig).At("string")
+
+	data := struct {
+		String string `json:"string"`
+	}{}
+
+	s := v.MustMarshalString()
+	t.Logf("marshaled string '%s': '%s'", orig, s)
+	if orig == s {
+		t.Errorf("marshaled string should not equal!")
+		return
+	}
+
+	b := v.MustMarshal()
+	err := json.Unmarshal(b, &data)
+	if err != nil {
+		t.Errorf("unmarshal string '%s' failed: %v", orig, err)
+		return
+	}
+
+	if data.String != orig {
+		t.Errorf("unmarshaled string not expected! <%s>", string(b))
 		return
 	}
 }

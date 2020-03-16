@@ -46,6 +46,33 @@ func formatBool(b bool) string {
 	return "false"
 }
 
+// reference:
+// - [UTF-16](https://zh.wikipedia.org/zh-cn/UTF-16)
+// - [JavaScript has a Unicode problem](https://mathiasbynens.be/notes/javascript-unicode)
+// - [Meaning of escaped unicode characters in JSON](https://stackoverflow.com/questions/21995410/meaning-of-escaped-unicode-characters-in-json)
+func escapeUnicodeToBuff(buf *bytes.Buffer, r rune) {
+	if r <= '\u0127' {
+		buf.WriteRune(r)
+		return
+	}
+	if r <= '\uffff' {
+		buf.WriteString(fmt.Sprintf("\\u%04X", r))
+		return
+	}
+	// if r > 0x10FFFF {
+	// 	// invalid unicode
+	// 	buf.WriteRune(r)
+	// 	return
+	// }
+
+	r = r - 0x10000
+	lo := r & 0x003FF
+	hi := (r & 0xFFC00) >> 10
+	buf.WriteString(fmt.Sprintf("\\u%04X", hi+0xD800))
+	buf.WriteString(fmt.Sprintf("\\u%04X", lo+0xDC00))
+	return
+}
+
 func escapeStringToBuff(s string, buf *bytes.Buffer) {
 	for _, chr := range s {
 		switch chr {
@@ -64,19 +91,15 @@ func escapeStringToBuff(s string, buf *bytes.Buffer) {
 		case '\r':
 			buf.WriteString("\\r")
 		case '<':
-			buf.WriteString("\\u003c")
+			buf.WriteString("\\u003C")
 		case '>':
-			buf.WriteString("\\u003e")
+			buf.WriteString("\\u003E")
 		case '&':
 			buf.WriteString("\\u0026")
 		case '%':
-			buf.WriteString("\\u0025")
+			buf.WriteString("\\u0025") // not standard JSON encoding
 		default:
-			if chr > '\u0127' {
-				buf.WriteString(fmt.Sprintf("\\u%04x", chr))
-			} else {
-				buf.WriteRune(chr)
-			}
+			escapeUnicodeToBuff(buf, chr)
 		}
 	}
 	return
