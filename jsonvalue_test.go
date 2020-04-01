@@ -45,8 +45,8 @@ func TestBasicFunction(t *testing.T) {
 }
 
 func TestMiscCharacters(t *testing.T) {
-	s := "\"/\b\f\t\r\n<>&你好世界"
-	expected := "\"\\\"\\/\\b\\f\\t\\r\\n\\u003C\\u003E\\u0026\\u4F60\\u597D\\u4E16\\u754C\""
+	s := "\"/\b\f\t\r\n<>&你好世界\\n"
+	expected := "\"\\\"\\/\\b\\f\\t\\r\\n\\u003C\\u003E\\u0026\\u4F60\\u597D\\u4E16\\u754C\\\\n\""
 	v := NewString(s)
 	raw, err := v.MarshalString()
 	if err != nil {

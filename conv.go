@@ -80,6 +80,8 @@ func escapeStringToBuff(s string, buf *bytes.Buffer) {
 			buf.WriteString("\\\"")
 		case '/':
 			buf.WriteString("\\/")
+		case '\\':
+			buf.WriteString("\\\\")
 		case '\b':
 			buf.WriteString("\\b")
 		case '\f':
