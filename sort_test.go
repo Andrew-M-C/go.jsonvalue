@@ -1,6 +1,8 @@
 package jsonvalue
 
 import (
+	"fmt"
+	"strconv"
 	"testing"
 )
 
@@ -43,6 +45,76 @@ func TestSortArrayError(t *testing.T) {
 
 	v = NewArray()
 	v.SortArray(nil)
+
+	return
+}
+
+func TestSortMarshal(t *testing.T) {
+	// default sequence
+	expected := `{"0":0,"1":"1","2":2,"3":"3","4":4,"5":"5","6":6,"7":"7","8":8,"9":"9"}`
+	t.Logf("expected string: %s", expected)
+
+	for count := 0; count < 10; count++ {
+		v := NewObject()
+		for i := 0; i < 10; i++ {
+			iStr := strconv.Itoa(i)
+			if i&1 == 0 {
+				v.SetInt(i).At(iStr)
+			} else {
+				v.SetString(iStr).At(iStr)
+			}
+		}
+
+		s := v.MustMarshalString(Opt{MarshalLessFunc: DefaultStringSequence})
+		if s != expected {
+			t.Errorf("unexpected string: %s", s)
+			return
+		}
+	}
+
+	// key path
+	orig := `{
+		"object!":{
+			"string!!!": "a string",
+			"object!!":{
+				"array!!!!":[
+					1234,
+					{
+						"stringBB":"aa string",
+						"stringA":"a string",
+					}
+				]
+			},
+			"null":null
+		}
+	}`
+
+	v, err := UnmarshalString(orig)
+	if err != nil {
+		t.Errorf("unmarshal error: %v", err)
+		return
+	}
+
+	s := v.MustMarshalString(Opt{
+		OmitNull: true,
+		MarshalLessFunc: func(parentInfo *ParentInfo, keyA, keyB string, vA, vB *V) bool {
+			t.Logf("parentInfo: %v", parentInfo.KeyPath)
+			s := ""
+			for _, k := range parentInfo.KeyPath {
+				s += fmt.Sprintf(`"%s"<%d><%v|%v>  `, k.String(), k.Int(), k.IsString(), k.IsInt())
+			}
+			t.Logf("Key path: %v", s)
+
+			return len(keyA) <= len(keyB)
+		},
+	})
+	t.Logf("marshaled string: %v", s)
+
+	expected = `{"object!":{"object!!":{"array!!!!":[1234,{"stringA":"a string","stringBB":"aa string"}]},"string!!!":"a string"}}`
+	if s != expected {
+		t.Errorf("unpxpected marshaled string")
+		return
+	}
 
 	return
 }

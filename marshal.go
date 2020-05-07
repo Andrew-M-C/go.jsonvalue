@@ -11,6 +11,16 @@ type Opt struct {
 	// OmitNull tells how to handle null json value. The default value is false.
 	// If OmitNull is true, null value will be omitted when marshaling.
 	OmitNull bool
+
+	// MarshalLessFunc is used to handle sequences of marshaling. Since object is
+	// implemented by hash map, the sequence of keys is unexpectable. For situations
+	// those need settled JSON key-value sequence, please use MarshalLessFunc.
+	//
+	// Note: Elements in an array value would NOT trigger this function as they are
+	// already sorted.
+	//
+	// We provides a example DefaultStringSequence.
+	MarshalLessFunc MarshalLessFunc
 }
 
 var defaultOption = Opt{
@@ -44,9 +54,9 @@ func (v *V) Marshal(opt ...Opt) (b []byte, err error) {
 	buf := bytes.Buffer{}
 
 	if 0 == len(opt) {
-		v.marshalToBuffer(&buf, &defaultOption)
+		v.marshalToBuffer(nil, &buf, &defaultOption)
 	} else {
-		v.marshalToBuffer(&buf, &opt[0])
+		v.marshalToBuffer(nil, &buf, &opt[0])
 	}
 
 	return buf.Bytes(), err
@@ -61,15 +71,15 @@ func (v *V) MarshalString(opt ...Opt) (s string, err error) {
 	buf := bytes.Buffer{}
 
 	if 0 == len(opt) {
-		v.marshalToBuffer(&buf, &defaultOption)
+		v.marshalToBuffer(nil, &buf, &defaultOption)
 	} else {
-		v.marshalToBuffer(&buf, &opt[0])
+		v.marshalToBuffer(nil, &buf, &opt[0])
 	}
 
 	return buf.String(), err
 }
 
-func (v *V) marshalToBuffer(buf *bytes.Buffer, opt *Opt) {
+func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 	switch v.valueType {
 	default:
 		// do nothing
@@ -82,9 +92,9 @@ func (v *V) marshalToBuffer(buf *bytes.Buffer, opt *Opt) {
 	case jsonparser.Null:
 		v.marshalNull(buf)
 	case jsonparser.Object:
-		v.marshalObject(buf, opt)
+		v.marshalObject(parentInfo, buf, opt)
 	case jsonparser.Array:
-		v.marshalArray(buf, opt)
+		v.marshalArray(parentInfo, buf, opt)
 	}
 	return
 }
@@ -110,7 +120,13 @@ func (v *V) marshalNull(buf *bytes.Buffer) {
 	buf.WriteString("null")
 }
 
-func (v *V) marshalObject(buf *bytes.Buffer, opt *Opt) {
+func (v *V) marshalObject(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
+	if opt.MarshalLessFunc != nil {
+		sov := v.newSortObjectV(parentInfo, opt)
+		sov.marshalObjectWithSequence(buf, opt)
+		return
+	}
+
 	buf.WriteRune('{')
 	defer buf.WriteRune('}')
 
@@ -128,14 +144,14 @@ func (v *V) marshalObject(buf *bytes.Buffer, opt *Opt) {
 		escapeStringToBuff(k, buf)
 		buf.WriteString("\":")
 
-		child.marshalToBuffer(buf, opt)
+		child.marshalToBuffer(nil, buf, opt)
 		i++
 	}
 
 	return
 }
 
-func (v *V) marshalArray(buf *bytes.Buffer, opt *Opt) {
+func (v *V) marshalArray(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 	buf.WriteRune('[')
 	defer buf.WriteRune(']')
 
@@ -143,7 +159,11 @@ func (v *V) marshalArray(buf *bytes.Buffer, opt *Opt) {
 		if i > 0 {
 			buf.WriteRune(',')
 		}
-		child.marshalToBuffer(buf, opt)
+		if opt.MarshalLessFunc == nil {
+			child.marshalToBuffer(nil, buf, opt)
+		} else {
+			child.marshalToBuffer(v.newParentInfo(parentInfo, intKey(i)), buf, opt)
+		}
 		return true
 	})
 
