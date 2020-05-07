@@ -9,7 +9,7 @@ import (
 // Opt is the option of jsonvalue.
 type Opt struct {
 	// OmitNull tells how to handle null json value. The default value is false.
-	// If OmitNull is true, null value will be omitted whan marshaling.
+	// If OmitNull is true, null value will be omitted when marshaling.
 	OmitNull bool
 }
 
