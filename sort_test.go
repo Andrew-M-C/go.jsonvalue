@@ -118,3 +118,39 @@ func TestSortMarshal(t *testing.T) {
 
 	return
 }
+
+func TestSortByStringSlice(t *testing.T) {
+	seq := []string{
+		"grandpa",
+		"grandma",
+		"father",
+		"mother",
+		"son",
+		"daughter",
+	}
+
+	v := NewObject()
+	v.SetString("Beef").At("friendB")
+	v.SetString("Fish").At("friendA")
+	v.SetString("Mayonnaise").At("daughter")
+	v.SetString("Ketchup").At("son")
+	v.SetString("Kentucky").At("grandpa")
+	v.SetString("McDonald").At("grandma")
+	v.SetString("Hanberger").At("father")
+	v.SetString("Chips").At("mother")
+	v.SetNull().At("relative")
+
+	s := v.MustMarshalString(Opt{
+		OmitNull:           true,
+		MarshalKeySequence: seq,
+	})
+	t.Logf("marshaled: '%s'", s)
+
+	expected := `{"grandpa":"Kentucky","grandma":"McDonald","father":"Hanberger","mother":"Chips","son":"Ketchup","daughter":"Mayonnaise","friendA":"Fish","friendB":"Beef"}`
+	if s != expected {
+		t.Errorf("unexpected marshal result")
+		return
+	}
+
+	return
+}

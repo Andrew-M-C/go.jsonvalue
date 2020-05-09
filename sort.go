@@ -178,7 +178,7 @@ func DefaultStringSequence(parent *ParentInfo, key1, key2 string, v1, v2 *V) boo
 	return strings.Compare(key1, key2) <= 0
 }
 
-func (sov *sortObjectV) marshalObjectWithSequence(buf *bytes.Buffer, opt *Opt) {
+func (sov *sortObjectV) marshalObjectWithLessFunc(buf *bytes.Buffer, opt *Opt) {
 	buf.WriteRune('{')
 	defer buf.WriteRune('}')
 
@@ -240,4 +240,92 @@ func (v *V) newSortObjectV(parentInfo *ParentInfo, opt *Opt) *sortObjectV {
 	}
 
 	return &sov
+}
+
+// marshalObjectWithStringSlice use a slice to determine sequence of object
+func (sssv *sortStringSliceV) marshalObjectWithStringSlice(buf *bytes.Buffer, opt *Opt) {
+	buf.WriteRune('{')
+	defer buf.WriteRune('}')
+
+	// sort
+	sort.Sort(sssv)
+
+	// marshal
+	marshaledCount := 0
+	for i, key := range sssv.keys {
+		child := sssv.values[i]
+		if child.IsNull() && opt.OmitNull {
+			continue
+		}
+		if marshaledCount > 0 {
+			buf.WriteRune(',')
+		}
+
+		buf.WriteRune('"')
+		escapeStringToBuff(key, buf)
+		buf.WriteString("\":")
+
+		child.marshalToBuffer(nil, buf, opt)
+		marshaledCount++
+	}
+
+	return
+}
+
+type sortStringSliceV struct {
+	v      *V
+	seq    map[string]int
+	keys   []string
+	values []*V
+}
+
+func (v *V) newSortStringSliceV(opt *Opt) *sortStringSliceV {
+	if nil == opt.keySequence {
+		opt.keySequence = make(map[string]int, len(opt.MarshalKeySequence))
+		for i, str := range opt.MarshalKeySequence {
+			opt.keySequence[str] = i
+		}
+	}
+
+	sssv := sortStringSliceV{
+		v:      v,
+		seq:    opt.keySequence,
+		keys:   make([]string, 0, v.Len()),
+		values: make([]*V, 0, v.Len()),
+	}
+	for k, child := range v.objectChildren {
+		sssv.keys = append(sssv.keys, k)
+		sssv.values = append(sssv.values, child)
+	}
+
+	return &sssv
+}
+
+func (sssv *sortStringSliceV) Len() int {
+	return len(sssv.values)
+}
+
+func (sssv *sortStringSliceV) Less(i, j int) bool {
+	k1 := sssv.keys[i]
+	k2 := sssv.keys[j]
+
+	seq1, exist1 := sssv.seq[k1]
+	seq2, exist2 := sssv.seq[k2]
+
+	if exist1 {
+		if exist2 {
+			return seq1 < seq2
+		}
+		return true
+	}
+	if exist2 {
+		return false
+	}
+
+	return k1 <= k2
+}
+
+func (sssv *sortStringSliceV) Swap(i, j int) {
+	sssv.keys[i], sssv.keys[j] = sssv.keys[j], sssv.keys[i]
+	sssv.values[i], sssv.values[j] = sssv.values[j], sssv.values[i]
 }

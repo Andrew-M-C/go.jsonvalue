@@ -21,6 +21,13 @@ type Opt struct {
 	//
 	// We provides a example DefaultStringSequence.
 	MarshalLessFunc MarshalLessFunc
+
+	// MarshalKeySequence is used to handle sequance of marshaling. This is much simpler
+	// than MarshalLessFunc, just pass a string slice identifying key sequence. For keys
+	// those are not in this slice, they would be appended in the end according to result
+	// of Go string comparing.
+	MarshalKeySequence []string
+	keySequence        map[string]int // generated from MarshalKeySequence
 }
 
 var defaultOption = Opt{
@@ -123,7 +130,12 @@ func (v *V) marshalNull(buf *bytes.Buffer) {
 func (v *V) marshalObject(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 	if opt.MarshalLessFunc != nil {
 		sov := v.newSortObjectV(parentInfo, opt)
-		sov.marshalObjectWithSequence(buf, opt)
+		sov.marshalObjectWithLessFunc(buf, opt)
+		return
+	}
+	if len(opt.MarshalKeySequence) > 0 {
+		sssv := v.newSortStringSliceV(opt)
+		sssv.marshalObjectWithStringSlice(buf, opt)
 		return
 	}
 

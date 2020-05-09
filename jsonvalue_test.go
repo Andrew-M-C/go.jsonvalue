@@ -64,7 +64,7 @@ func TestMiscCharacters(t *testing.T) {
 }
 
 func TestUTF16(t *testing.T) {
-	orig := "👨‍👩‍👧‍👧你你"
+	orig := "你👨‍👩‍👧‍👧你"
 
 	v := NewObject()
 	v.SetString(orig).At("string")
