@@ -24,20 +24,20 @@ func parseFloat(b []byte) (float64, error) {
 }
 
 // reference: https://golang.org/src/encoding/json/decode.go, func unquote()
-func parseString(b []byte) (string, error) {
+func parseString(b []byte) (string, []byte, error) {
 	firstQuote := bytes.Index(b, []byte{'"'})
 	lastQuote := bytes.LastIndex(b, []byte{'"'})
 	if firstQuote < 0 || firstQuote == lastQuote {
-		return "", ErrIllegalString
+		return "", nil, ErrIllegalString
 	}
 
 	b = b[firstQuote : lastQuote-firstQuote+1]
 
 	t, ok := unquoteBytes(b)
 	if false == ok {
-		return "", fmt.Errorf("invalid string '%s'", string(b))
+		return "", nil, fmt.Errorf("invalid string '%s'", string(b))
 	}
-	return string(t), nil
+	return string(t), b, nil
 }
 
 func unquoteBytes(s []byte) (t []byte, ok bool) {
@@ -188,7 +188,8 @@ func parseStringNoQuote(b []byte) (string, error) {
 		Cap:  sh.Len + int(s+s),
 	}
 	b = *(*[]byte)(unsafe.Pointer(&bh))
-	return parseString(b)
+	str, _, err := parseString(b)
+	return str, err
 }
 
 func formatBool(b bool) string {
@@ -220,38 +221,78 @@ func escapeUnicodeToBuff(buf *bytes.Buffer, r rune) {
 	r = r - 0x10000
 	lo := r & 0x003FF
 	hi := (r & 0xFFC00) >> 10
-	buf.WriteString(fmt.Sprintf("\\u%04X", hi+0xD800))
-	buf.WriteString(fmt.Sprintf("\\u%04X", lo+0xDC00))
+	// buf.WriteString(fmt.Sprintf("\\u%04X", hi+0xD800))
+	// buf.WriteString(fmt.Sprintf("\\u%04X", lo+0xDC00))
+
+	buffWriteHex(buf, hi+0xD800)
+	buffWriteHex(buf, lo+0xDC00)
 	return
 }
+
+func buffWriteHex(buf *bytes.Buffer, r rune) {
+	h0 := byte((r & 0xF000) >> 12)
+	h1 := byte((r & 0x0F00) >> 8)
+	h2 := byte((r & 0x00F0) >> 4)
+	h3 := byte((r & 0x000F) >> 0)
+	data := [6]byte{'\\', 'u', h0, h1, h2, h3}
+	buf.Write(data[:])
+	return
+}
+
+var (
+	escDoubleQuote = []byte{'\\', '"'}
+	escSlash       = []byte{'\\', '/'}
+	escBaskslash   = []byte{'\\', '\\'}
+	escBaskspace   = []byte{'\\', 'b'}
+	escVertTab     = []byte{'\\', 'f'}
+	escTab         = []byte{'\\', 't'}
+	escNewLine     = []byte{'\\', 'n'}
+	escReturn      = []byte{'\\', 'r'}
+	escLeftAngle   = []byte{'\\', 'u', '0', '0', '3', 'C'}
+	escRightAngle  = []byte{'\\', 'u', '0', '0', '3', 'E'}
+	escAnd         = []byte{'\\', 'u', '0', '0', '2', '6'}
+	escPercent     = []byte{'\\', 'u', '0', '0', '2', '5'}
+)
 
 func escapeStringToBuff(s string, buf *bytes.Buffer) {
 	for _, chr := range s {
 		switch chr {
 		case '"':
-			buf.WriteString("\\\"")
+			// buf.WriteString("\\\"")
+			buf.Write(escDoubleQuote)
 		case '/':
-			buf.WriteString("\\/")
+			// buf.WriteString("\\/")
+			buf.Write(escSlash)
 		case '\\':
-			buf.WriteString("\\\\")
+			// buf.WriteString("\\\\")
+			buf.Write(escBaskslash)
 		case '\b':
-			buf.WriteString("\\b")
+			// buf.WriteString("\\b")
+			buf.Write(escBaskspace)
 		case '\f':
-			buf.WriteString("\\f")
+			// buf.WriteString("\\f")
+			buf.Write(escVertTab)
 		case '\t':
-			buf.WriteString("\\t")
+			// buf.WriteString("\\t")
+			buf.Write(escTab)
 		case '\n':
-			buf.WriteString("\\n")
+			// buf.WriteString("\\n")
+			buf.Write(escNewLine)
 		case '\r':
-			buf.WriteString("\\r")
+			// buf.WriteString("\\r")
+			buf.Write(escReturn)
 		case '<':
-			buf.WriteString("\\u003C")
+			// buf.WriteString("\\u003C")
+			buf.Write(escLeftAngle)
 		case '>':
-			buf.WriteString("\\u003E")
+			// buf.WriteString("\\u003E")
+			buf.Write(escRightAngle)
 		case '&':
-			buf.WriteString("\\u0026")
-		case '%':
-			buf.WriteString("\\u0025") // not standard JSON encoding
+			// buf.WriteString("\\u0026")
+			buf.Write(escAnd)
+		case '%': // not standard JSON encoding
+			// buf.WriteString("\\u0025")
+			buf.Write(escPercent)
 		default:
 			escapeUnicodeToBuff(buf, chr)
 		}

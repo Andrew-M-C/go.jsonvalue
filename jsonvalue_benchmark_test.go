@@ -20,32 +20,51 @@ type object struct {
 func BenchmarkUnmarshalGoMapInterface(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		m := map[string]interface{}{}
-		err := json.Unmarshal(unmarshalText, &m)
-		if err != nil {
-			b.Errorf("unmarshal error: %v", err)
-			return
-		}
+		json.Unmarshal(unmarshalText, &m)
+	}
+	return
+}
+
+func BenchmarkMarshalGoMapInterface(b *testing.B) {
+	m := map[string]interface{}{}
+	json.Unmarshal(unmarshalText, &m)
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		m := map[string]interface{}{}
+		json.Marshal(&m)
 	}
 	return
 }
 
 func BenchmarkUnmarshalJsonvalue(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, err := Unmarshal(unmarshalText)
-		if err != nil {
-			b.Errorf("unmarshal error: %v", err)
-			return
-		}
+		Unmarshal(unmarshalText)
+	}
+}
+
+func BenchmarkMarshalJsonvalue(b *testing.B) {
+	j, _ := Unmarshal(unmarshalText)
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		j.Marshal()
 	}
 }
 
 func BenchmarkUnmarshalStruct(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		o := object{}
-		err := json.Unmarshal(unmarshalText, &o)
-		if err != nil {
-			b.Errorf("unmarshal error: %v", err)
-			return
-		}
+		json.Unmarshal(unmarshalText, &o)
+	}
+}
+
+func BenchmarkMarshalStruct(b *testing.B) {
+	o := object{}
+	json.Unmarshal(unmarshalText, &o)
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		json.Marshal(&o)
 	}
 }

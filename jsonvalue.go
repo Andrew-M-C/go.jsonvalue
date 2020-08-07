@@ -88,11 +88,10 @@ func Unmarshal(b []byte) (ret *V, err error) {
 		case '"':
 			ret = new()
 			ret.valueType = jsonparser.String
-			ret.stringValue, err = parseString(b[i:])
+			ret.stringValue, ret.valueBytes, err = parseString(b[i:])
 			if err != nil {
 				return nil, err
 			}
-			ret.valueBytes = nil
 			ret.parsed = true
 			return ret, nil
 
@@ -525,7 +524,7 @@ func (v *V) String() string {
 	case jsonparser.String:
 		if false == v.parsed {
 			var e error
-			v.stringValue, e = parseString(v.valueBytes)
+			v.stringValue, v.valueBytes, e = parseString(v.valueBytes)
 			if nil == e {
 				v.parsed = true
 			}
@@ -547,7 +546,7 @@ func (v *V) packObjChildren() string {
 }
 
 func (v *V) bufObjChildren(buf *bytes.Buffer) {
-	buf.WriteRune('{')
+	buf.WriteByte('{')
 	i := 0
 	for k, v := range v.objectChildren {
 		if i > 0 {
@@ -558,7 +557,7 @@ func (v *V) bufObjChildren(buf *bytes.Buffer) {
 		buf.WriteString(v.String())
 		i++
 	}
-	buf.WriteRune('}')
+	buf.WriteByte('}')
 }
 
 func (v *V) packArrChildren() string {
@@ -568,7 +567,7 @@ func (v *V) packArrChildren() string {
 }
 
 func (v *V) bufArrChildren(buf *bytes.Buffer) {
-	buf.WriteRune('[')
+	buf.WriteByte('[')
 	v.RangeArray(func(i int, v *V) bool {
 		if i > 0 {
 			buf.WriteString(", ")
@@ -577,7 +576,7 @@ func (v *V) bufArrChildren(buf *bytes.Buffer) {
 		i++
 		return true
 	})
-	buf.WriteRune(']')
+	buf.WriteByte(']')
 }
 
 // RangeObjects goes through each children when this is an object value

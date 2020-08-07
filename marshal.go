@@ -110,9 +110,9 @@ func (v *V) marshalString(buf *bytes.Buffer) {
 	if v.valueBytes != nil {
 		buf.Write(v.valueBytes)
 	} else {
-		buf.WriteRune('"')
+		buf.WriteByte('"')
 		escapeStringToBuff(v.stringValue, buf)
-		buf.WriteRune('"')
+		buf.WriteByte('"')
 	}
 	return
 }
@@ -143,8 +143,8 @@ func (v *V) marshalObject(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 		return
 	}
 
-	buf.WriteRune('{')
-	defer buf.WriteRune('}')
+	buf.WriteByte('{')
+	defer buf.WriteByte('}')
 
 	i := 0
 
@@ -153,10 +153,10 @@ func (v *V) marshalObject(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 			continue
 		}
 		if i > 0 {
-			buf.WriteRune(',')
+			buf.WriteByte(',')
 		}
 
-		buf.WriteRune('"')
+		buf.WriteByte('"')
 		escapeStringToBuff(k, buf)
 		buf.WriteString("\":")
 
@@ -168,12 +168,12 @@ func (v *V) marshalObject(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 }
 
 func (v *V) marshalArray(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
-	buf.WriteRune('[')
-	defer buf.WriteRune(']')
+	buf.WriteByte('[')
+	defer buf.WriteByte(']')
 
 	v.RangeArray(func(i int, child *V) bool {
 		if i > 0 {
-			buf.WriteRune(',')
+			buf.WriteByte(',')
 		}
 		if opt.MarshalLessFunc == nil {
 			child.marshalToBuffer(nil, buf, opt)
