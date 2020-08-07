@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"unsafe"
 )
 
 func parseUint(b []byte) (uint64, error) {
@@ -32,11 +33,19 @@ func parseString(b []byte) (string, error) {
 }
 
 func parseStringNoQuote(b []byte) (string, error) {
-	buf := bytes.Buffer{}
-	buf.WriteRune('"')
-	buf.Write(b)
-	buf.WriteRune('"')
-	return parseString(buf.Bytes())
+	if 0 == len(b) {
+		return "", nil
+	}
+	s := unsafe.Sizeof(b[0])
+	p := unsafe.Pointer(unsafe.Pointer(&b))
+	sh := (*reflect.SliceHeader)(p)
+	bh := reflect.SliceHeader{
+		Data: sh.Data - s,
+		Len:  sh.Len + int(s+s),
+		Cap:  sh.Len + int(s+s),
+	}
+	b = *(*[]byte)(unsafe.Pointer(&bh))
+	return parseString(b)
 }
 
 func formatBool(b bool) string {

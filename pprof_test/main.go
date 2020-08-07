@@ -12,6 +12,10 @@ import (
 // brew install graphviz
 // go tool pprof -http=:6060 ./profile
 
+const (
+	iteration = 1000000
+)
+
 var (
 	unmarshalText = []byte(`{"int":123456,"float":123.456789,"string":"Hello, world!","object":{"int":123456,"float":123.456789,"string":"Hello, world!","object":{"int":123456,"float":123.456789,"string":"Hello, world!","object":{"int":123456,"float":123.456789,"string":"Hello, world!","object":{"int":123456,"float":123.456789,"string":"Hello, world!"},"array":[{"int":123456,"float":123.456789,"string":"Hello, world!"},{"int":123456,"float":123.456789,"string":"Hello, world!"}]}}},"array":[{"int":123456,"float":123.456789,"string":"Hello, world!"},{"int":123456,"float":123.456789,"string":"Hello, world!"}]}`)
 	printf        = log.Printf
@@ -26,7 +30,7 @@ func jsonvalueTest() {
 	pprof.StartCPUProfile(f)
 	defer pprof.StopCPUProfile()
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < iteration; i++ {
 		_, err := jsonvalue.Unmarshal(unmarshalText)
 		if err != nil {
 			printf("unmarshal error: %v", err)
@@ -47,7 +51,7 @@ func mapInterfaceTest() {
 	pprof.StartCPUProfile(f)
 	defer pprof.StopCPUProfile()
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < iteration; i++ {
 		m := map[string]interface{}{}
 		err := json.Unmarshal(unmarshalText, &m)
 		if err != nil {
@@ -61,6 +65,7 @@ func mapInterfaceTest() {
 }
 
 func main() {
+	printf("start")
 	jsonvalueTest()
 	mapInterfaceTest()
 }

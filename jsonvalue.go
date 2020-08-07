@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
+	"reflect"
+	"unsafe"
 
 	"github.com/buger/jsonparser"
 )
@@ -46,7 +48,15 @@ func newArray() *V {
 
 // UnmarshalString is equavilent to Unmarshal(string(b))
 func UnmarshalString(s string) (*V, error) {
-	return Unmarshal([]byte(s))
+	// reference: https://stackoverflow.com/questions/41591097/slice-bounds-out-of-range-when-using-unsafe-pointer
+	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
+	bh := reflect.SliceHeader{
+		Data: sh.Data,
+		Len:  sh.Len,
+		Cap:  sh.Len,
+	}
+	b := *(*[]byte)(unsafe.Pointer(&bh))
+	return Unmarshal(b)
 }
 
 // Unmarshal parse raw bytes(encoded in UTF-8 or pure AscII) and returns a *V instance.
