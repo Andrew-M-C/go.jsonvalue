@@ -107,9 +107,13 @@ func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt)
 }
 
 func (v *V) marshalString(buf *bytes.Buffer) {
-	buf.WriteRune('"')
-	escapeStringToBuff(v.stringValue, buf)
-	buf.WriteRune('"')
+	if v.valueBytes != nil {
+		buf.Write(v.valueBytes)
+	} else {
+		buf.WriteRune('"')
+		escapeStringToBuff(v.stringValue, buf)
+		buf.WriteRune('"')
+	}
 	return
 }
 
@@ -119,7 +123,7 @@ func (v *V) marshalBoolean(buf *bytes.Buffer) {
 }
 
 func (v *V) marshalNumber(buf *bytes.Buffer) {
-	buf.Write(v.rawNumBytes)
+	buf.Write(v.valueBytes)
 	return
 }
 

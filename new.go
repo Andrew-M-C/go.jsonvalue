@@ -12,6 +12,7 @@ func NewString(s string) *V {
 	v := new()
 	v.valueType = jsonparser.String
 	v.stringValue = s
+	v.parsed = true
 	return v
 }
 
@@ -25,7 +26,8 @@ func NewInt64(i int64) *V {
 	v.int64Value = i
 	v.uint64Value = uint64(i)
 	s := strconv.FormatInt(v.int64Value, 10)
-	v.rawNumBytes = []byte(s)
+	v.valueBytes = []byte(s)
+	v.parsed = true
 	return v
 }
 
@@ -39,7 +41,8 @@ func NewUint64(u uint64) *V {
 	v.int64Value = int64(u)
 	v.uint64Value = u
 	s := strconv.FormatUint(v.uint64Value, 10)
-	v.rawNumBytes = []byte(s)
+	v.valueBytes = []byte(s)
+	v.parsed = true
 	return v
 }
 
@@ -68,6 +71,7 @@ func NewBool(b bool) *V {
 	v := new()
 	v.valueType = jsonparser.Boolean
 	v.boolValue = b
+	v.parsed = true
 	return v
 }
 
@@ -75,20 +79,21 @@ func NewBool(b bool) *V {
 func NewNull() *V {
 	v := new()
 	v.valueType = jsonparser.Null
+	v.parsed = true
 	return v
 }
 
 // NewObject returns an empty object-typed jsonvalue object
 func NewObject() *V {
-	v := new()
-	v.valueType = jsonparser.Object
+	v := newObject()
+	v.parsed = true
 	return v
 }
 
 // NewArray returns an emty array-typed jsonvalue object
 func NewArray() *V {
-	v := new()
-	v.valueType = jsonparser.Array
+	v := newArray()
+	v.parsed = true
 	return v
 }
 
@@ -102,11 +107,12 @@ func NewFloat64(f float64, prec int) *V {
 	v.uint64Value = uint64(f)
 	if prec >= 0 {
 		s := strconv.FormatFloat(f, 'f', prec, 64)
-		v.rawNumBytes = []byte(s)
+		v.valueBytes = []byte(s)
 	} else {
 		b, _ := json.Marshal(&f)
-		v.rawNumBytes = b
+		v.valueBytes = b
 	}
+	v.parsed = true
 	return v
 }
 
@@ -120,10 +126,11 @@ func NewFloat32(f float32, prec int) *V {
 	v.uint64Value = uint64(f)
 	if prec >= 0 {
 		s := strconv.FormatFloat(v.floatValue, 'f', prec, 32)
-		v.rawNumBytes = []byte(s)
+		v.valueBytes = []byte(s)
 	} else {
 		b, _ := json.Marshal(&f)
-		v.rawNumBytes = b
+		v.valueBytes = b
 	}
+	v.parsed = true
 	return v
 }

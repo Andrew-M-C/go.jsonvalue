@@ -11,7 +11,8 @@ import (
 // V is the main type of jsonvalue, representing a JSON value.
 type V struct {
 	valueType      jsonparser.ValueType
-	rawNumBytes    []byte
+	parsed         bool
+	valueBytes     []byte
 	negative       bool
 	floated        bool
 	stringValue    string
@@ -26,7 +27,19 @@ type V struct {
 func new() *V {
 	v := V{}
 	v.valueType = jsonparser.NotExist
+	return &v
+}
+
+func newObject() *V {
+	v := V{}
+	v.valueType = jsonparser.Object
 	v.objectChildren = make(map[string]*V)
+	return &v
+}
+
+func newArray() *V {
+	v := V{}
+	v.valueType = jsonparser.Array
 	v.arrayChildren = list.New()
 	return &v
 }
@@ -52,9 +65,27 @@ func Unmarshal(b []byte) (ret *V, err error) {
 		case '[':
 			return newFromArray(b[i:])
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-			return newFromNumber(b[i:])
+			ret, err = newFromNumber(b[i:])
+			if err != nil {
+				return
+			}
+			err = ret.parseNumber()
+			if err != nil {
+				return nil, err
+			}
+			return ret, nil
+
 		case '"':
-			return newFromString(b[i:])
+			ret = new()
+			ret.valueType = jsonparser.String
+			ret.stringValue, err = parseString(b[i:])
+			if err != nil {
+				return nil, err
+			}
+			ret.valueBytes = nil
+			ret.parsed = true
+			return ret, nil
+
 		case 't':
 			return newFromTrue(b[i:])
 		case 'f':
@@ -69,10 +100,8 @@ func Unmarshal(b []byte) (ret *V, err error) {
 	return nil, ErrRawBytesUnrecignized
 }
 
-// ==== simple object parsing ====
-func newFromNumber(b []byte) (ret *V, err error) {
-	v := new()
-	v.valueType = jsonparser.Number
+func (v *V) parseNumber() (err error) {
+	b := v.valueBytes
 
 	if bytes.Contains(b, []byte(".")) {
 		v.floated = true
@@ -81,7 +110,8 @@ func newFromNumber(b []byte) (ret *V, err error) {
 			return
 		}
 
-		v.negative = v.floatValue < 0
+		v.parsed = true
+		v.negative = (v.floatValue < 0)
 		v.int64Value = int64(v.floatValue)
 		v.uint64Value = uint64(v.floatValue)
 
@@ -92,6 +122,7 @@ func newFromNumber(b []byte) (ret *V, err error) {
 			return
 		}
 
+		v.parsed = true
 		v.uint64Value = uint64(v.int64Value)
 		v.floatValue = float64(v.int64Value)
 
@@ -102,42 +133,49 @@ func newFromNumber(b []byte) (ret *V, err error) {
 			return
 		}
 
+		v.parsed = true
 		v.int64Value = int64(v.uint64Value)
 		v.floatValue = float64(v.uint64Value)
 	}
 
-	v.rawNumBytes = b
+	return nil
+}
+
+// ==== simple object parsing ====
+func newFromNumber(b []byte) (ret *V, err error) {
+	v := new()
+	v.valueType = jsonparser.Number
+	v.valueBytes = b
 	return v, nil
 }
 
 func newFromString(b []byte) (ret *V, err error) {
 	v := new()
 	v.valueType = jsonparser.String
-	v.stringValue, err = parseString(b)
-	if err != nil {
-		return
-	}
+	v.valueBytes = b
 	return v, nil
 }
 
 func newFromTrue(b []byte) (ret *V, err error) {
-	if string(b) != "true" {
+	if len(b) != 4 || string(b) != "true" {
 		return nil, ErrNotValidBoolValue
 	}
-
 	v := new()
+	v.parsed = true
 	v.valueType = jsonparser.Boolean
+	v.valueBytes = []byte{'t', 'r', 'u', 'e'}
 	v.boolValue = true
 	return v, nil
 }
 
 func newFromFalse(b []byte) (ret *V, err error) {
-	if string(b) != "false" {
+	if len(b) != 5 || string(b) != "false" {
 		return nil, ErrNotValidBoolValue
 	}
-
 	v := new()
+	v.parsed = true
 	v.valueType = jsonparser.Boolean
+	v.valueBytes = []byte{'f', 'a', 'l', 's', 'e'}
 	v.boolValue = false
 	return v, nil
 }
@@ -148,8 +186,12 @@ func newFromBool(b []byte) (ret *V, err error) {
 
 	switch string(b) {
 	case "true":
+		v.parsed = true
+		v.valueBytes = []byte{'t', 'r', 'u', 'e'}
 		v.boolValue = true
 	case "false":
+		v.parsed = true
+		v.valueBytes = []byte{'f', 'a', 'l', 's', 'e'}
 		v.boolValue = false
 	default:
 		return nil, ErrNotValidBoolValue
@@ -159,19 +201,18 @@ func newFromBool(b []byte) (ret *V, err error) {
 }
 
 func newFromNull(b []byte) (ret *V, err error) {
-	if string(b) != "null" {
-		return nil, ErrNotValidNulllValue
+	if len(b) != 4 || string(b) != "null" {
+		return nil, ErrNotValidBoolValue
 	}
-
 	v := new()
+	v.parsed = true
 	v.valueType = jsonparser.Null
 	return v, nil
 }
 
 // ====
 func newFromArray(b []byte) (ret *V, err error) {
-	o := new()
-	o.valueType = jsonparser.Array
+	o := newArray()
 
 	jsonparser.ArrayEach(b, func(v []byte, t jsonparser.ValueType, _ int, _ error) {
 		if err != nil {
@@ -199,6 +240,7 @@ func newFromArray(b []byte) (ret *V, err error) {
 				return
 			}
 			child = new()
+			child.parsed = true
 			child.valueType = jsonparser.String
 			child.stringValue = s
 		}
@@ -219,8 +261,7 @@ func newFromArray(b []byte) (ret *V, err error) {
 
 // ==== object parsing ====
 func newFromObject(b []byte) (ret *V, err error) {
-	o := new()
-	o.valueType = jsonparser.Object
+	o := newObject()
 
 	err = jsonparser.ObjectEach(b, func(k, v []byte, t jsonparser.ValueType, _ int) error {
 		// key
@@ -249,6 +290,7 @@ func newFromObject(b []byte) (ret *V, err error) {
 				return err
 			}
 			child = new()
+			child.parsed = true
 			child.valueType = jsonparser.String
 			child.stringValue = s
 		}
@@ -291,22 +333,52 @@ func (v *V) IsNumber() bool {
 
 // IsFloat tells whether value is a float point number
 func (v *V) IsFloat() bool {
+	if v.valueType != jsonparser.Number {
+		return false
+	}
+	if false == v.parsed {
+		v.parseNumber()
+	}
 	return v.floated
 }
 
 // IsInteger tells whether value is a fix point interger
 func (v *V) IsInteger() bool {
-	return v.valueType == jsonparser.Number && false == v.floated
+	if v.valueType != jsonparser.Number {
+		return false
+	}
+	if false == v.parsed {
+		err := v.parseNumber()
+		if err != nil {
+			return false
+		}
+	}
+	return !(v.floated)
 }
 
 // IsNegative tells whether value is a negative number
 func (v *V) IsNegative() bool {
-	return v.valueType == jsonparser.Number && v.negative
+	if v.valueType != jsonparser.Number {
+		return false
+	}
+	if false == v.parsed {
+		v.parseNumber()
+	}
+	return v.negative
 }
 
 // IsPositive tells whether value is a positive number
 func (v *V) IsPositive() bool {
-	return v.valueType == jsonparser.Number && false == v.negative
+	if v.valueType != jsonparser.Number {
+		return false
+	}
+	if false == v.parsed {
+		err := v.parseNumber()
+		if err != nil {
+			return false
+		}
+	}
+	return !(v.negative)
 }
 
 // GreaterThanInt64Max return true when ALL conditions below are met:
@@ -314,8 +386,11 @@ func (v *V) IsPositive() bool {
 // 	2. It is a positive interger.
 // 	3. Its value is greater than 0x7fffffffffffffff.
 func (v *V) GreaterThanInt64Max() bool {
-	if false == v.IsInteger() {
+	if v.valueType != jsonparser.Number {
 		return false
+	}
+	if false == v.parsed {
+		v.parseNumber()
 	}
 	if v.negative {
 		return false
@@ -342,41 +417,89 @@ func (v *V) Bool() bool {
 
 // Int returns represented int value. If value is not a number, returns zero.
 func (v *V) Int() int {
+	if v.valueType != jsonparser.Number {
+		return 0
+	}
+	if false == v.parsed {
+		v.parseNumber()
+	}
 	return int(v.int64Value)
 }
 
 // Uint returns represented uint value. If value is not a number, returns zero.
 func (v *V) Uint() uint {
+	if v.valueType != jsonparser.Number {
+		return 0
+	}
+	if false == v.parsed {
+		v.parseNumber()
+	}
 	return uint(v.uint64Value)
 }
 
 // Int64 returns represented int64 value. If value is not a number, returns zero.
 func (v *V) Int64() int64 {
-	return v.int64Value
+	if v.valueType != jsonparser.Number {
+		return 0
+	}
+	if false == v.parsed {
+		v.parseNumber()
+	}
+	return int64(v.int64Value)
 }
 
 // Uint64 returns represented uint64 value. If value is not a number, returns zero.
 func (v *V) Uint64() uint64 {
-	return v.uint64Value
+	if v.valueType != jsonparser.Number {
+		return 0
+	}
+	if false == v.parsed {
+		v.parseNumber()
+	}
+	return uint64(v.uint64Value)
 }
 
 // Int32 returns represented int32 value. If value is not a number, returns zero.
 func (v *V) Int32() int32 {
+	if v.valueType != jsonparser.Number {
+		return 0
+	}
+	if false == v.parsed {
+		v.parseNumber()
+	}
 	return int32(v.int64Value)
 }
 
 // Uint32 returns represented uint32 value. If value is not a number, returns zero.
 func (v *V) Uint32() uint32 {
+	if v.valueType != jsonparser.Number {
+		return 0
+	}
+	if false == v.parsed {
+		v.parseNumber()
+	}
 	return uint32(v.uint64Value)
 }
 
 // Float64 returns represented float64 value. If value is not a number, returns zero.
 func (v *V) Float64() float64 {
+	if v.valueType != jsonparser.Number {
+		return 0.0
+	}
+	if false == v.parsed {
+		v.parseNumber()
+	}
 	return v.floatValue
 }
 
 // Float32 returns represented float32 value. If value is not a number, returns zero.
 func (v *V) Float32() float32 {
+	if v.valueType != jsonparser.Number {
+		return 0.0
+	}
+	if false == v.parsed {
+		v.parseNumber()
+	}
 	return float32(v.floatValue)
 }
 
@@ -388,8 +511,15 @@ func (v *V) String() string {
 	case jsonparser.Null:
 		return "null"
 	case jsonparser.Number:
-		return string(v.rawNumBytes)
+		return string(v.valueBytes)
 	case jsonparser.String:
+		if false == v.parsed {
+			var e error
+			v.stringValue, e = parseString(v.valueBytes)
+			if nil == e {
+				v.parsed = true
+			}
+		}
 		return v.stringValue
 	case jsonparser.Boolean:
 		return formatBool(v.boolValue)

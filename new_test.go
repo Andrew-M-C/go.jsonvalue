@@ -1,6 +1,7 @@
 package jsonvalue
 
 import (
+	"os"
 	"strconv"
 	"testing"
 )
@@ -134,13 +135,13 @@ func TestMiscValue(t *testing.T) {
 		checkErrMark++
 		if err != nil {
 			t.Errorf("%02d - %s - error: %v", checkErrMark, topic, err)
-			return
+			os.Exit(-1)
 		}
 	}
 	checkCond := func(b bool) {
 		if false == b {
 			t.Errorf("%02d - %s - failed, object: %v", checkErrMark, topic, v)
-			return
+			os.Exit(-1)
 		}
 	}
 
