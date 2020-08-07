@@ -221,21 +221,8 @@ func escapeUnicodeToBuff(buf *bytes.Buffer, r rune) {
 	r = r - 0x10000
 	lo := r & 0x003FF
 	hi := (r & 0xFFC00) >> 10
-	// buf.WriteString(fmt.Sprintf("\\u%04X", hi+0xD800))
-	// buf.WriteString(fmt.Sprintf("\\u%04X", lo+0xDC00))
-
-	buffWriteHex(buf, hi+0xD800)
-	buffWriteHex(buf, lo+0xDC00)
-	return
-}
-
-func buffWriteHex(buf *bytes.Buffer, r rune) {
-	h0 := byte((r & 0xF000) >> 12)
-	h1 := byte((r & 0x0F00) >> 8)
-	h2 := byte((r & 0x00F0) >> 4)
-	h3 := byte((r & 0x000F) >> 0)
-	data := [6]byte{'\\', 'u', h0, h1, h2, h3}
-	buf.Write(data[:])
+	buf.WriteString(fmt.Sprintf("\\u%04X", hi+0xD800))
+	buf.WriteString(fmt.Sprintf("\\u%04X", lo+0xDC00))
 	return
 }
 
