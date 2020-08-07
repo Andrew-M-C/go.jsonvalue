@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
+	"time"
 
 	jsonvalue "github.com/Andrew-M-C/go.jsonvalue"
 )
@@ -13,7 +14,7 @@ import (
 // go tool pprof -http=:6060 ./profile
 
 const (
-	iteration = 100000
+	iteration = 200000
 )
 
 var (
@@ -27,6 +28,7 @@ func jsonvalueUnmarshalTest() {
 		log.Fatal(err)
 	}
 
+	defer f.Close()
 	pprof.StartCPUProfile(f)
 	defer pprof.StopCPUProfile()
 
@@ -54,6 +56,7 @@ func jsonvalueMarshalTest() {
 		log.Fatal(err)
 	}
 
+	defer f.Close()
 	pprof.StartCPUProfile(f)
 	defer pprof.StopCPUProfile()
 
@@ -75,6 +78,7 @@ func mapInterfaceUnmarshalTest() {
 		log.Fatal(err)
 	}
 
+	defer f.Close()
 	pprof.StartCPUProfile(f)
 	defer pprof.StopCPUProfile()
 
@@ -104,6 +108,7 @@ func mapInterfaceMarshalTest() {
 		log.Fatal(err)
 	}
 
+	defer f.Close()
 	pprof.StartCPUProfile(f)
 	defer pprof.StopCPUProfile()
 
@@ -119,10 +124,52 @@ func mapInterfaceMarshalTest() {
 	return
 }
 
+type object struct {
+	Int    int       `json:"int"`
+	Float  float64   `json:"float"`
+	String string    `json:"string"`
+	Object *object   `json:"object,omitempty"`
+	Array  []*object `json:"array,omitempty"`
+}
+
+func structMarshalTest() {
+	o := object{}
+	json.Unmarshal(unmarshalText, &o)
+
+	f, err := os.OpenFile("struct-marshal.profile", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer f.Close()
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+
+	for i := 0; i < iteration; i++ {
+		_, err := json.Marshal(&o)
+		if err != nil {
+			printf("marshal error: %v", err)
+			return
+		}
+	}
+
+	printf("struct marshal done")
+	return
+}
+
 func main() {
-	printf("start")
-	jsonvalueUnmarshalTest()
-	jsonvalueMarshalTest()
-	mapInterfaceUnmarshalTest()
-	mapInterfaceMarshalTest()
+	run := func(f func()) {
+		start := time.Now().Local()
+		printf("start: %v", start)
+		f()
+		printf("done, elapsed %v", time.Since(start))
+	}
+
+	run(jsonvalueUnmarshalTest)
+	run(jsonvalueMarshalTest)
+	run(mapInterfaceUnmarshalTest)
+	run(mapInterfaceMarshalTest)
+	run(structMarshalTest)
+
+	return
 }

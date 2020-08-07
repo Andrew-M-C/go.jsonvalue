@@ -31,8 +31,11 @@ func BenchmarkMarshalGoMapInterface(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		m := map[string]interface{}{}
-		json.Marshal(&m)
+		_, err := json.Marshal(&m)
+		if err != nil {
+			b.Errorf("marshal error: %v", err)
+			return
+		}
 	}
 	return
 }
@@ -48,7 +51,11 @@ func BenchmarkMarshalJsonvalue(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		j.Marshal()
+		_, err := j.Marshal()
+		if err != nil {
+			b.Errorf("marshal error: %v", err)
+			return
+		}
 	}
 }
 
@@ -65,6 +72,10 @@ func BenchmarkMarshalStruct(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		json.Marshal(&o)
+		_, err := json.Marshal(&o)
+		if err != nil {
+			b.Errorf("marshal error: %v", err)
+			return
+		}
 	}
 }
