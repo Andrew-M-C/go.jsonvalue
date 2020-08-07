@@ -27,4 +27,6 @@ const (
 	ErrTypeNotMatch = Error("not match given type")
 	// ErrNotArrayValue shows that operation target value is not an array
 	ErrNotArrayValue = Error("not an array typed value")
+	// ErrIllegalString shows that it is not a legal JSON string typed value
+	ErrIllegalString = Error("illegal string")
 )

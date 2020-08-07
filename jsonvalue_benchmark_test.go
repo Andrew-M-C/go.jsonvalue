@@ -49,8 +49,3 @@ func BenchmarkUnmarshalStruct(b *testing.B) {
 		}
 	}
 }
-
-// func BenchmarkUnmarshalJsonparser(b *testing.B) {
-// 	for i := 0; i < b.N; i++ {
-// 	}
-// }
