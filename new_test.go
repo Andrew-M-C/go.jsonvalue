@@ -162,6 +162,22 @@ func TestMiscValue(t *testing.T) {
 	v, err = UnmarshalString(raw)
 	checkErr()
 	checkCond(v.IsString())
+	checkCond(v.Int() == 0)
+	checkCond(v.Uint() == 0)
+	checkCond(v.Int64() == 0)
+	checkCond(v.Uint64() == 0)
+	checkCond(v.Int32() == 0)
+	checkCond(v.Uint32() == 0)
+	checkCond(v.Float64() == 0)
+	checkCond(v.Float32() == 0)
+	checkCond(v.IsFloat() == false)
+	checkCond(v.IsInteger() == false)
+
+	topic = "parse string with special character"
+	raw = `"\"\\\/\f\t\r\n\b\u0030\uD87E\uDC04"`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	checkCond(v.IsString())
 
 	topic = "parse null"
 	raw = `null`
@@ -245,6 +261,110 @@ func TestMiscValue(t *testing.T) {
 	c, err = v.Get("array")
 	checkErr()
 	checkCond(c.IsArray())
+
+	topic = "parse float in object"
+	raw = `{"float":123.4567}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("float")
+	checkErr()
+	checkCond(v.IsFloat())
+
+	topic = "parse integer in object"
+	raw = `{"int":123}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("int")
+	checkErr()
+	checkCond(v.IsInteger())
+
+	topic = "parse int in object"
+	raw = `{"int":123}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("int")
+	checkErr()
+	checkCond(v.Int() == 123)
+
+	topic = "parse uint in object"
+	raw = `{"uint":123}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("uint")
+	checkErr()
+	checkCond(v.Uint() == 123)
+
+	topic = "parse int64 in object"
+	raw = `{"int":123}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("int")
+	checkErr()
+	checkCond(v.Int64() == 123)
+
+	topic = "parse uint64 in object"
+	raw = `{"uint":123}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("uint")
+	checkErr()
+	checkCond(v.Uint64() == 123)
+
+	topic = "parse int32 in object"
+	raw = `{"int":123}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("int")
+	checkErr()
+	checkCond(v.Int32() == 123)
+
+	topic = "parse uint32 in object"
+	raw = `{"uint":123}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("uint")
+	checkErr()
+	checkCond(v.Uint32() == 123)
+
+	topic = "parse float32 in object"
+	raw = `{"float":123.456}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("float")
+	checkErr()
+	checkCond(v.Float32() == 123.456)
+
+	topic = "parse float64 in object"
+	raw = `{"float":123.456}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("float")
+	checkErr()
+	checkCond(v.Float64() == 123.456)
+
+	topic = "parse negative in object"
+	raw = `{"negative":-123}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("negative")
+	checkErr()
+	checkCond(v.IsNegative())
+
+	topic = "parse positive in object"
+	raw = `{"positive":123}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("positive")
+	checkErr()
+	checkCond(v.IsPositive())
+
+	topic = "parse greater than int64 in object"
+	raw = `{"int":9223372036854775808}`
+	v, err = UnmarshalString(raw)
+	checkErr()
+	v, err = v.Get("int")
+	checkErr()
+	checkCond(v.GreaterThanInt64Max())
 }
 
 func TestRange(t *testing.T) {
@@ -469,6 +589,21 @@ func TestValueError(t *testing.T) {
 
 	topic = "illegal null"
 	raw = `nUll`
+	v, err = UnmarshalString(raw)
+	shouldError()
+
+	topic = "illegal string"
+	raw = `"too many quote""`
+	v, err = UnmarshalString(raw)
+	shouldError()
+
+	topic = "too short string"
+	raw = `"`
+	v, err = UnmarshalString(raw)
+	shouldError()
+
+	topic = "illegal escaping"
+	raw = `"\"`
 	v, err = UnmarshalString(raw)
 	shouldError()
 

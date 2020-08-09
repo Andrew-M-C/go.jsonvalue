@@ -158,12 +158,12 @@ func newFromNumber(b []byte) (ret *V, err error) {
 	return v, nil
 }
 
-func newFromString(b []byte) (ret *V, err error) {
-	v := new()
-	v.valueType = jsonparser.String
-	v.valueBytes = b
-	return v, nil
-}
+// func newFromString(b []byte) (ret *V, err error) {
+// 	v := new()
+// 	v.valueType = jsonparser.String
+// 	v.valueBytes = b
+// 	return v, nil
+// }
 
 func newFromTrue(b []byte) (ret *V, err error) {
 	if len(b) != 4 || string(b) != "true" {
