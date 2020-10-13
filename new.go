@@ -83,11 +83,60 @@ func NewNull() *V {
 	return v
 }
 
-// NewObject returns an empty object-typed jsonvalue object
-func NewObject() *V {
+// NewObject returns an object-typed jsonvalue object. If keyValues is specified, it will also create some key-values in
+// the object. Now we supports basic types only. Such as int/uint series, string, bool, nil.
+func NewObject(keyValues ...map[string]interface{}) *V {
 	v := newObject()
 	v.parsed = true
+
+	if len(keyValues) > 0 {
+		kv := keyValues[0]
+		if kv != nil {
+			v.parseNewObjectKV(kv)
+		}
+	}
+
 	return v
+}
+
+func (v *V) parseNewObjectKV(kv map[string]interface{}) {
+	for k, val := range kv {
+		switch val.(type) {
+		case nil:
+			v.SetNull().At(k)
+		case string:
+			v.SetString(val.(string)).At(k)
+		case bool:
+			v.SetBool(val.(bool)).At(k)
+		case int:
+			v.SetInt(val.(int)).At(k)
+		case uint:
+			v.SetUint(val.(uint)).At(k)
+		case int8:
+			v.SetInt32(int32(val.(int8))).At(k)
+		case uint8:
+			v.SetUint32(uint32(val.(uint8))).At(k)
+		case int16:
+			v.SetInt32(int32(val.(int16))).At(k)
+		case uint16:
+			v.SetUint32(uint32(val.(uint16))).At(k)
+		case int32:
+			v.SetInt32(val.(int32)).At(k)
+		case uint32:
+			v.SetUint32(val.(uint32)).At(k)
+		case int64:
+			v.SetInt64(val.(int64)).At(k)
+		case uint64:
+			v.SetUint64(val.(uint64)).At(k)
+		case float32:
+			v.SetFloat32(val.(float32), -1).At(k)
+		case float64:
+			v.SetFloat64(val.(float64), -1).At(k)
+		default:
+			// continue
+		}
+	}
+	return
 }
 
 // NewArray returns an emty array-typed jsonvalue object
@@ -97,7 +146,8 @@ func NewArray() *V {
 	return v
 }
 
-// NewFloat64 returns an initialied num jsonvalue object by float64 type. The precision prec controls the number of digits. Use -1 in prec for automatically precision.
+// NewFloat64 returns an initialied num jsonvalue object by float64 type. The precision prec controls the number of
+// digits. Use -1 in prec for automatically precision.
 func NewFloat64(f float64, prec int) *V {
 	v := new()
 	v.valueType = jsonparser.Number
@@ -116,7 +166,8 @@ func NewFloat64(f float64, prec int) *V {
 	return v
 }
 
-// NewFloat32 returns an initialied num jsonvalue object by float32 type. The precision prec controls the number of digits. Use -1 in prec for automatically precision.
+// NewFloat32 returns an initialied num jsonvalue object by float32 type. The precision prec controls the number of
+// digits. Use -1 in prec for automatically precision.
 func NewFloat32(f float32, prec int) *V {
 	v := new()
 	v.valueType = jsonparser.Number

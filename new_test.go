@@ -365,6 +365,58 @@ func TestMiscValue(t *testing.T) {
 	v, err = v.Get("int")
 	checkErr()
 	checkCond(v.GreaterThanInt64Max())
+
+	topic = "create an initialized JSON object"
+	v = NewObject(map[string]interface{}{
+		"null":    nil,
+		"string":  "string",
+		"true":    true,
+		"int":     int(-1),
+		"uint":    uint(1),
+		"int8":    int8(-2),
+		"uint8":   uint8(2),
+		"int16":   int16(-3),
+		"uint16":  uint16(3),
+		"int32":   int32(-4),
+		"uint32":  uint32(4),
+		"int64":   int64(-5),
+		"uint64":  uint64(5),
+		"float32": float32(-1.1),
+		"float64": float64(-2.2),
+	})
+	checkCond(v.GetNull("null") == nil)
+	str, err := v.GetString("string")
+	checkErr()
+
+	checkCond(str == "string")
+	bl, err := v.GetBool("true")
+	checkErr()
+	checkCond(bl == true)
+
+	checkInt := func(k string, target int) {
+		var i int
+		i, err = v.GetInt(k)
+		checkErr()
+		checkCond(i == target)
+	}
+	checkInt("int", -1)
+	checkInt("uint", 1)
+	checkInt("int8", -2)
+	checkInt("uint8", 2)
+	checkInt("int16", -3)
+	checkInt("uint16", 3)
+	checkInt("int32", -4)
+	checkInt("uint32", 4)
+	checkInt("int64", -5)
+	checkInt("uint64", 5)
+
+	f32, err := v.GetFloat32("float32")
+	checkErr()
+	checkCond(f32 == float32(-1.1))
+
+	f64, err := v.GetFloat64("float64")
+	checkErr()
+	checkCond(f64 == float64(-2.2))
 }
 
 func TestRange(t *testing.T) {
