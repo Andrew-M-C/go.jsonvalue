@@ -2,9 +2,36 @@ package jsonvalue
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/buger/jsonparser"
 )
+
+func (v *V) delFromObjectChildren(key string) (exist bool) {
+	_, exist = v.objectChildren[key]
+	if exist {
+		delete(v.objectChildren, key)
+		v.delCaselessKey(key)
+		return true
+	}
+
+	lowerKey := strings.ToLower(key)
+	keys, exist := v.lowerCaseKeys[lowerKey]
+	if !exist {
+		return false
+	}
+
+	for actualKey := range keys {
+		_, exist = v.objectChildren[actualKey]
+		if exist {
+			delete(v.objectChildren, actualKey)
+			v.delCaselessKey(actualKey)
+			return true
+		}
+	}
+
+	return false
+}
 
 // Delete deletes specified JSON value
 func (v *V) Delete(firstParam interface{}, otherParams ...interface{}) error {
@@ -32,10 +59,9 @@ func (v *V) deleteInCurrValue(param interface{}) error {
 			return err
 		}
 
-		if _, exist := v.objectChildren[key]; false == exist {
+		if exist := v.delFromObjectChildren(key); !exist {
 			return ErrNotFound
 		}
-		delete(v.objectChildren, key)
 		return nil
 	}
 

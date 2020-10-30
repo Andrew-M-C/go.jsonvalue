@@ -52,6 +52,10 @@ func TestGet(t *testing.T) {
 		check(t, err, "GetInt32", i == -1234)
 	}
 	{
+		i, err := o.GetInt32("data", "negATive") // caseless
+		check(t, err, "GetInt32_caseless", i == -1234)
+	}
+	{
 		i, err := o.GetUint32("data", "year")
 		check(t, err, "GetUint64", i == 2019)
 	}

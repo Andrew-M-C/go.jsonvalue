@@ -5,6 +5,7 @@ import (
 	"container/list"
 	"fmt"
 	"reflect"
+	"strings"
 	"unsafe"
 
 	"github.com/buger/jsonparser"
@@ -24,6 +25,9 @@ type V struct {
 	floatValue     float64
 	objectChildren map[string]*V
 	arrayChildren  *list.List
+
+	// As official json package supports caseless key accessing, I decide to di it as well
+	lowerCaseKeys map[string]map[string]struct{}
 }
 
 func new() *V {
@@ -36,6 +40,7 @@ func newObject() *V {
 	v := V{}
 	v.valueType = jsonparser.Object
 	v.objectChildren = make(map[string]*V)
+	v.lowerCaseKeys = make(map[string]map[string]struct{})
 	return &v
 }
 
@@ -44,6 +49,33 @@ func newArray() *V {
 	v.valueType = jsonparser.Array
 	v.arrayChildren = list.New()
 	return &v
+}
+
+func (v *V) addCaselessKey(k string) {
+	lowerK := strings.ToLower(k)
+	keys, exist := v.lowerCaseKeys[lowerK]
+	if !exist {
+		keys = make(map[string]struct{})
+		v.lowerCaseKeys[lowerK] = keys
+	}
+	keys[k] = struct{}{}
+	return
+}
+
+func (v *V) delCaselessKey(k string) {
+	lowerK := strings.ToLower(k)
+	keys, exist := v.lowerCaseKeys[lowerK]
+	if !exist {
+		return
+	}
+
+	delete(keys, k)
+
+	if len(keys) == 0 {
+		delete(v.lowerCaseKeys, lowerK)
+	}
+
+	return
 }
 
 // UnmarshalString is equavilent to Unmarshal(string(b))
@@ -307,7 +339,7 @@ func newFromObject(b []byte) (ret *V, err error) {
 		if err != nil {
 			return err
 		}
-		o.objectChildren[key] = child
+		o.setToObjectChildren(key, child)
 		return nil
 	})
 

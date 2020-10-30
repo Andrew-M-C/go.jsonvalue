@@ -2,6 +2,7 @@ package jsonvalue
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/buger/jsonparser"
 )
@@ -31,6 +32,28 @@ func (v *V) Get(firstParam interface{}, otherParams ...interface{}) (*V, error) 
 	return child.Get(otherParams[0], otherParams[1:]...)
 }
 
+func (v *V) getFromObjectChildren(key string) (child *V, exist bool) {
+	child, exist = v.objectChildren[key]
+	if exist {
+		return child, true
+	}
+
+	lowerCaseKey := strings.ToLower(key)
+	keys, exist := v.lowerCaseKeys[lowerCaseKey]
+	if !exist {
+		return nil, false
+	}
+
+	for actualKey := range keys {
+		child, exist = v.objectChildren[actualKey]
+		if exist {
+			return child, true
+		}
+	}
+
+	return nil, false
+}
+
 func (v *V) getInCurrValue(param interface{}) (*V, error) {
 	if v.valueType == jsonparser.Array {
 		// integer expected
@@ -50,8 +73,8 @@ func (v *V) getInCurrValue(param interface{}) (*V, error) {
 		if err != nil {
 			return nil, err
 		}
-		child, exist := v.objectChildren[key]
-		if false == exist {
+		child, exist := v.getFromObjectChildren(key)
+		if !exist {
 			return nil, ErrNotFound
 		}
 		return child, nil
