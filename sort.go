@@ -40,7 +40,7 @@ func newSortV(v *V, lessFunc ArrayLessFunc) *sortArrayV {
 		children: make([]*V, 0, v.Len()),
 	}
 
-	for e := v.arrayChildren.Front(); e != nil; e = e.Next() {
+	for e := v.children.array.Front(); e != nil; e = e.Next() {
 		sav.children = append(sav.children, e.Value.(*V))
 	}
 	return &sav
@@ -51,9 +51,9 @@ func (v *sortArrayV) Sort() {
 	sort.Sort(v)
 
 	// re-arrange children
-	v.v.arrayChildren.Init()
+	v.v.children.array.Init()
 	for _, child := range v.children {
-		v.v.arrayChildren.PushBack(child)
+		v.v.children.array.PushBack(child)
 	}
 	return
 }
@@ -231,10 +231,10 @@ func (v *V) newSortObjectV(parentInfo *ParentInfo, opt *Opt) *sortObjectV {
 	sov := sortObjectV{
 		parentInfo: parentInfo,
 		lessFunc:   opt.MarshalLessFunc,
-		keys:       make([]string, 0, len(v.objectChildren)),
-		values:     make([]*V, 0, len(v.objectChildren)),
+		keys:       make([]string, 0, len(v.children.object)),
+		values:     make([]*V, 0, len(v.children.object)),
 	}
-	for k, child := range v.objectChildren {
+	for k, child := range v.children.object {
 		sov.keys = append(sov.keys, k)
 		sov.values = append(sov.values, child)
 	}
@@ -293,7 +293,7 @@ func (v *V) newSortStringSliceV(opt *Opt) *sortStringSliceV {
 		keys:   make([]string, 0, v.Len()),
 		values: make([]*V, 0, v.Len()),
 	}
-	for k, child := range v.objectChildren {
+	for k, child := range v.children.object {
 		sssv.keys = append(sssv.keys, k)
 		sssv.values = append(sssv.values, child)
 	}

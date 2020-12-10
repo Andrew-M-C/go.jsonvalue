@@ -117,7 +117,7 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 		if nil == e {
 			return nil, ErrOutOfRange
 		}
-		v.arrayChildren.InsertBefore(c, e)
+		v.children.array.InsertBefore(c, e)
 		return c, nil
 	}
 
@@ -166,7 +166,7 @@ func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V
 		if nil == e {
 			return nil, ErrOutOfRange
 		}
-		v.arrayChildren.InsertAfter(c, e)
+		v.children.array.InsertAfter(c, e)
 		return c, nil
 	}
 

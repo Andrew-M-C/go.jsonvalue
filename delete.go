@@ -32,10 +32,10 @@ func (v *V) deleteInCurrValue(param interface{}) error {
 			return err
 		}
 
-		if _, exist := v.objectChildren[key]; false == exist {
+		if _, exist := v.children.object[key]; false == exist {
 			return ErrNotFound
 		}
-		delete(v.objectChildren, key)
+		delete(v.children.object, key)
 		return nil
 	}
 
@@ -50,7 +50,7 @@ func (v *V) deleteInCurrValue(param interface{}) error {
 		if nil == e {
 			return ErrOutOfRange
 		}
-		v.arrayChildren.Remove(e)
+		v.children.array.Remove(e)
 		return nil
 	}
 

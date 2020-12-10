@@ -106,7 +106,7 @@ func (apd *Append) InTheBeginning(params ...interface{}) (*V, error) {
 			return nil, ErrNotArrayValue
 		}
 
-		v.arrayChildren.PushBack(c)
+		v.children.array.PushBack(c)
 		return c, nil
 	}
 
@@ -116,7 +116,7 @@ func (apd *Append) InTheBeginning(params ...interface{}) (*V, error) {
 		return nil, err
 	}
 
-	child.arrayChildren.PushFront(c)
+	child.children.array.PushFront(c)
 	return c, nil
 }
 
@@ -135,7 +135,7 @@ func (apd *Append) InTheEnd(params ...interface{}) (*V, error) {
 			return nil, ErrNotArrayValue
 		}
 
-		v.arrayChildren.PushBack(c)
+		v.children.array.PushBack(c)
 		return c, nil
 	}
 
@@ -145,6 +145,6 @@ func (apd *Append) InTheEnd(params ...interface{}) (*V, error) {
 		return nil, err
 	}
 
-	child.arrayChildren.PushBack(c)
+	child.children.array.PushBack(c)
 	return c, nil
 }

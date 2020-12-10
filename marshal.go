@@ -111,14 +111,14 @@ func (v *V) marshalString(buf *bytes.Buffer) {
 		buf.Write(v.valueBytes)
 	} else {
 		buf.WriteByte('"')
-		escapeStringToBuff(v.stringValue, buf)
+		escapeStringToBuff(v.value.str, buf)
 		buf.WriteByte('"')
 	}
 	return
 }
 
 func (v *V) marshalBoolean(buf *bytes.Buffer) {
-	buf.WriteString(formatBool(v.boolValue))
+	buf.WriteString(formatBool(v.value.boolean))
 	return
 }
 
@@ -148,7 +148,7 @@ func (v *V) marshalObject(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 
 	i := 0
 
-	for k, child := range v.objectChildren {
+	for k, child := range v.children.object {
 		if child.IsNull() && opt.OmitNull {
 			continue
 		}

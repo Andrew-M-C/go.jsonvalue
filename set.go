@@ -119,7 +119,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 			if err != nil {
 				return nil, err
 			}
-			v.objectChildren[k] = c
+			v.children.object[k] = c
 			return c, nil
 
 		case jsonparser.Array:
@@ -141,7 +141,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 		if err != nil {
 			return nil, err
 		}
-		child, exist := v.objectChildren[k]
+		child, exist := v.children.object[k]
 		if false == exist {
 			if _, err := intfToString(otherParams[0]); err == nil {
 				child = NewObject()
@@ -163,7 +163,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 			return nil, err
 		}
 		if false == exist {
-			v.objectChildren[k] = child
+			v.children.object[k] = child
 		}
 		return c, nil
 	}
@@ -199,7 +199,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 		}
 		// OK to add this object
 		if isNewChild {
-			v.arrayChildren.PushBack(child)
+			v.children.array.PushBack(child)
 		}
 		return c, nil
 	}
@@ -209,7 +209,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 }
 
 func (v *V) elementAtIndex(pos int) *list.Element {
-	l := v.arrayChildren.Len()
+	l := v.children.array.Len()
 	if 0 == l {
 		return nil
 	}
@@ -225,7 +225,7 @@ func (v *V) elementAtIndex(pos int) *list.Element {
 	// find element at pos
 	var e *list.Element
 	i := 0
-	for e = v.arrayChildren.Front(); e != nil && i < pos; e = e.Next() {
+	for e = v.children.array.Front(); e != nil && i < pos; e = e.Next() {
 		i++
 	}
 	return e
@@ -241,27 +241,27 @@ func (v *V) childAtIndex(pos int) (*V, bool) { // if nil returned, means that ju
 }
 
 func (v *V) setAtIndex(child *V, pos int) error {
-	if 0 == v.arrayChildren.Len() {
+	if 0 == v.children.array.Len() {
 		if pos == 0 {
-			v.arrayChildren.PushBack(child)
+			v.children.array.PushBack(child)
 			return nil
 		}
 		return ErrOutOfRange
 	}
 
-	if pos == v.arrayChildren.Len() {
-		v.arrayChildren.PushBack(child)
+	if pos == v.children.array.Len() {
+		v.children.array.PushBack(child)
 		return nil
 	}
 
 	if -1 == pos {
-		pos = v.arrayChildren.Len() - 1
+		pos = v.children.array.Len() - 1
 	}
 	e := v.elementAtIndex(pos)
 	if nil == e {
 		return ErrOutOfRange
 	}
-	v.arrayChildren.InsertBefore(child, e)
-	v.arrayChildren.Remove(e)
+	v.children.array.InsertBefore(child, e)
+	v.children.array.Remove(e)
 	return nil
 }

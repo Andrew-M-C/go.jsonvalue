@@ -10,9 +10,9 @@ import (
 func (v *V) Len() int {
 	switch v.valueType {
 	case jsonparser.Array:
-		return v.arrayChildren.Len()
+		return v.children.array.Len()
 	case jsonparser.Object:
-		return len(v.objectChildren)
+		return len(v.children.object)
 	default:
 		return 0
 	}
@@ -50,7 +50,7 @@ func (v *V) getInCurrValue(param interface{}) (*V, error) {
 		if err != nil {
 			return nil, err
 		}
-		child, exist := v.objectChildren[key]
+		child, exist := v.children.object[key]
 		if false == exist {
 			return nil, ErrNotFound
 		}
