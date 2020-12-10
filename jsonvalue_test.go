@@ -5,6 +5,8 @@ import (
 	"testing"
 )
 
+// go test -v -failfast -cover -coverprofile xxx.prof && go tool cover -html xxx.prof
+
 func TestBasicFunction(t *testing.T) {
 	raw := `{"message":"hello, 世界","float":1234.123456789123456789,"true":true,"false":false,"null":null,"obj":{"msg":"hi"},"arr":["你好","world",null],"uint":1234,"int":-1234}`
 
