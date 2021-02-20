@@ -1,14 +1,14 @@
-# jsonvalue
-
-[Engligh](./README.md)
+# Jsonvalue - 方便而快速的 Go JSON 包
 
 [![Travis](https://travis-ci.org/Andrew-M-C/go.jsonvalue.svg?branch=master)](https://travis-ci.org/Andrew-M-C/go.jsonvalue)
 [![Coveralls](https://coveralls.io/repos/github/Andrew-M-C/go.jsonvalue/badge.svg?branch=master)](https://coveralls.io/github/Andrew-M-C/go.jsonvalue)
 [![Go report](https://goreportcard.com/badge/github.com/Andrew-M-C/go.jsonvalue)](https://goreportcard.com/report/github.com/Andrew-M-C/go.jsonvalue)
 [![Codebeat](https://codebeat.co/badges/ecf87760-2987-48a7-a6dd-4d9fcad57256)](https://codebeat.co/projects/github-com-andrew-m-c-go-jsonvalue-master)<br>
 [![GoDoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue?status.svg)](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue)
-[![Latest](https://img.shields.io/badge/latest-v1.0.3-blue.svg)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.0.3)
+[![Latest](https://img.shields.io/badge/latest-v1.0.4-blue.svg)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.0.4)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
+[English](./README.md)
 
 **Jsonvalue** 是一个用于处理 JSON 序列化/反序列化的 Go 语言包。当处理普通的 `struct` 不适合处理的 JSON 场景时，以前我们会使用 `map[string]interface{}` 来处理。但是这个方法其实有不少问题和困难。参见[这篇文章](https://cloud.tencent.com/developer/article/1676060)。这个包就是为了解决这个问题而开发的。
 
