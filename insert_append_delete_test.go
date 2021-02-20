@@ -296,6 +296,11 @@ func TestMiscInsertError(t *testing.T) {
 		_, err = v.InsertNull().Before("object", "not exist")
 		shouldError(err)
 	}
+	topic = "uninitialized append"
+	{
+		_, err := (&Append{}).InTheBeginning("dummy")
+		shouldError(err)
+	}
 }
 
 func TestMiscAppendError(t *testing.T) {

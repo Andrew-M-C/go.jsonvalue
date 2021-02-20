@@ -99,10 +99,10 @@ func TestGet(t *testing.T) {
 		v, err := o.GetObject("data")
 		check(t, err, "GetObject", v.IsObject())
 	}
-	// {
-	// 	v, err := o.GetObject("Data")
-	// 	check(t, err, "GetObject", v.IsObject())
-	// }
+	{
+		v, err := o.GetObject("Data")
+		check(t, err, "GetObject", v.IsObject())
+	}
 	{
 		v, _ := o.GetObject("not_exist")
 		check(t, nil, "GetObject", v.String() == "")
