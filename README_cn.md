@@ -141,3 +141,58 @@ func main(){
     // ID001
 }
 ```
+
+### 原样保留数字类型值文本
+
+其实 JSON 中对于数字是没有整型和浮点型的区别的，原因是 Javascript 中没有整型，所有的数字统一采用 IEEE 754 双精度浮点型来表示。
+在 `map[string]interface{}` 中对于数字类型，也是采用 `float64` 来保存数字的。这就导致当在 JSON 中使用 64 位整型时，如果采用 map，那么可能会导致整型精度的损失。
+
+这个问题的标准解决方案其实是改用 string 来传递相关的类型值。但是对于历史问题的参数，或者是其他特殊需求而必须采用数值型的话，那么可以采用 jsonvalue 来对原始值进行解析。
+针对这个场景，jsonvalue 提供了以下功能：
+
+- 可以使用 `v.IsFloat()`, `v.GreaterThanInt64Max()` 等函数，判断该 JSON 数值的原始信息。
+- 对于数值类型的 JSON，使用 `v.String()` 函数，获取原始的 JSON 文本内容，一字不差，不会因为一次反序列化+序列化的过程而损失信息。
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/Andrew-M-C/go.jsonvalue"
+)
+
+func main() {
+	s := `{"num":12.001000}`
+	v, _ := jsonvalue.UnmarshalString(s)
+	n, _ := v.Get("num")
+	fmt.Println(n.String())
+	fmt.Println(v.MustMarshalString())
+	// Output:
+	// 12.001000
+	// {"num":12.001000}
+}
+```
+
+此外，从 v1.0.5 开始，jsonvalue 将会支持获取保存在 string 类型 JSON 值中的数字，举例如下：
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/Andrew-M-C/go.jsonvalue"
+)
+
+func main() {
+	s := `{"num":"12"}`
+	v, _ := jsonvalue.UnmarshalString(s)
+	n, _ := v.Get("num")
+	fmt.Println(n.String())
+    fmt.Println(n.Int())
+    fmt.Println(n.MustMarshalString())
+	// Output:
+	// 12
+	// 12
+    // "12"
+}
+```

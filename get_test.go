@@ -18,7 +18,7 @@ func check(t *testing.T, err error, function string, b bool) {
 }
 
 func TestGet(t *testing.T) {
-	full := `{"data":{"message":["hello","world",true,null],"author":"Andrew","year":2019,"YYYY.MM":2019.12,"negative":-1234}}`
+	full := `{"data":{"message":["hello","world",true,null],"author":"Andrew","year":2019,"YYYY.MM":2019.12,"negative":-1234,"num_in_str":"2020.02","invalid_num_in_str":"2020/02"}}`
 	o, err := UnmarshalString(full)
 	if err != nil {
 		t.Errorf("UnmarshalString failed: %v", err)
@@ -102,10 +102,22 @@ func TestGet(t *testing.T) {
 	{
 		v, err := o.GetObject("Data")
 		check(t, err, "GetObject", v.IsObject())
+		check(t, nil, "int in object", v.Int() == 0)
 	}
 	{
 		v, _ := o.GetObject("not_exist")
 		check(t, nil, "GetObject", v.String() == "")
+	}
+	{
+		v, err := o.Get("data", "num_in_str")
+		check(t, err, "Get", v.IsString())
+		check(t, nil, "int in string", v.Int() == 2020)
+		check(t, nil, "float64 in string", v.Float64() == 2020.02)
+	}
+	{
+		v, err := o.Get("data", "invalid_num_in_str")
+		check(t, err, "Get", v.IsString())
+		check(t, nil, "invalid float64 in string", v.Float64() == 0)
 	}
 
 	return

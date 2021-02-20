@@ -526,6 +526,18 @@ func (v *V) IsNull() bool {
 
 // ==== value access ====
 
+func getNumberFromNotNumberValue(v *V) *V {
+	if !v.IsString() {
+		return NewInt(0)
+	}
+	ret, _ := newFromNumber([]byte(v.value.str))
+	err := ret.parseNumber()
+	if err != nil {
+		return NewInt64(0)
+	}
+	return ret
+}
+
 // Bool returns represented bool value. If value is not boolean, returns false.
 //
 // Bool 返回布尔类型值。如果当前值不是布尔类型，则返回 false。
@@ -538,7 +550,7 @@ func (v *V) Bool() bool {
 // Int 返回 int 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int() int {
 	if v.valueType != jsonparser.Number {
-		return 0
+		return getNumberFromNotNumberValue(v).Int()
 	}
 	if false == v.status.parsed {
 		v.parseNumber()
@@ -551,7 +563,7 @@ func (v *V) Int() int {
 // Uint 返回 uint 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint() uint {
 	if v.valueType != jsonparser.Number {
-		return 0
+		return getNumberFromNotNumberValue(v).Uint()
 	}
 	if false == v.status.parsed {
 		v.parseNumber()
@@ -564,7 +576,7 @@ func (v *V) Uint() uint {
 // Int64 返回 int64 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int64() int64 {
 	if v.valueType != jsonparser.Number {
-		return 0
+		return getNumberFromNotNumberValue(v).Int64()
 	}
 	if false == v.status.parsed {
 		v.parseNumber()
@@ -577,7 +589,7 @@ func (v *V) Int64() int64 {
 // Uint64 返回 uint64 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint64() uint64 {
 	if v.valueType != jsonparser.Number {
-		return 0
+		return getNumberFromNotNumberValue(v).Uint64()
 	}
 	if false == v.status.parsed {
 		v.parseNumber()
@@ -590,7 +602,7 @@ func (v *V) Uint64() uint64 {
 // Int32 返回 int32 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int32() int32 {
 	if v.valueType != jsonparser.Number {
-		return 0
+		return getNumberFromNotNumberValue(v).Int32()
 	}
 	if false == v.status.parsed {
 		v.parseNumber()
@@ -603,7 +615,7 @@ func (v *V) Int32() int32 {
 // Uint32 返回 uint32 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint32() uint32 {
 	if v.valueType != jsonparser.Number {
-		return 0
+		return getNumberFromNotNumberValue(v).Uint32()
 	}
 	if false == v.status.parsed {
 		v.parseNumber()
@@ -616,7 +628,7 @@ func (v *V) Uint32() uint32 {
 // Float64 返回 float64 类型值。如果当前值不是数字类型，则返回 0.0。
 func (v *V) Float64() float64 {
 	if v.valueType != jsonparser.Number {
-		return 0.0
+		return getNumberFromNotNumberValue(v).Float64()
 	}
 	if false == v.status.parsed {
 		v.parseNumber()
@@ -629,7 +641,7 @@ func (v *V) Float64() float64 {
 // Float32 返回 float32 类型值。如果当前值不是数字类型，则返回 0.0。
 func (v *V) Float32() float32 {
 	if v.valueType != jsonparser.Number {
-		return 0.0
+		return getNumberFromNotNumberValue(v).Float32()
 	}
 	if false == v.status.parsed {
 		v.parseNumber()
