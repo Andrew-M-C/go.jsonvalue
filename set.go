@@ -124,6 +124,11 @@ func (v *V) SetArray() *Set {
 	return v.Set(NewArray())
 }
 
+func (v *V) setToObjectChildren(key string, child *V) {
+	v.children.object[key] = child
+	v.addCaselessKey(key)
+}
+
 // At completes the following operation of Set(). It defines posttion of value in Set() and return the new value set.
 //
 // The usage of At() is perhaps the most important. This function will recursivly search for child value, and set the
@@ -155,7 +160,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 			if err != nil {
 				return nil, err
 			}
-			v.children.object[k] = c
+			v.setToObjectChildren(k, c)
 			return c, nil
 
 		case jsonparser.Array:
@@ -177,7 +182,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 		if err != nil {
 			return nil, err
 		}
-		child, exist := v.children.object[k]
+		child, exist := v.getFromObjectChildren(k)
 		if false == exist {
 			if _, err := intfToString(otherParams[0]); err == nil {
 				child = NewObject()
@@ -199,7 +204,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 			return nil, err
 		}
 		if false == exist {
-			v.children.object[k] = child
+			v.setToObjectChildren(k, child)
 		}
 		return c, nil
 	}

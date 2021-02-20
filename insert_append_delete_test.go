@@ -26,7 +26,7 @@ func TestInsertAppend(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	raw := `{"array":[1,2,3,4,5,6],"string":"string to be deleted","object":{"number":12345}}`
+	raw := `{"array":[1,2,3,4,5,6],"string":"string to be deleted","object":{"number":12345},"Object":{}}`
 	o, err := UnmarshalString(raw)
 	if err != nil {
 		t.Errorf("UnmarshalString failed: %v", err)
@@ -62,6 +62,24 @@ func TestDelete(t *testing.T) {
 	err = o.Delete("object")
 	if err != nil {
 		t.Errorf("Delete 'object' failed: %v", err)
+		return
+	}
+
+	sub, err = o.Get("object")
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+		return
+	}
+
+	err = o.Delete("object") // delete another "object", actually "Object"
+	if err != nil {
+		t.Errorf("Delete 'object' failed: %v", err)
+		return
+	}
+
+	_, err = o.Get("object")
+	if err != ErrNotFound {
+		t.Errorf("unexpected error: %v", err)
 		return
 	}
 
