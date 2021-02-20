@@ -6,10 +6,14 @@ import (
 	"github.com/buger/jsonparser"
 )
 
-// Opt is the option of jsonvalue.
+// Opt is the option of jsonvalue in marshaling.
+//
+// Opt 表示序列化当前 jsonvalue 类型时的参数
 type Opt struct {
 	// OmitNull tells how to handle null json value. The default value is false.
 	// If OmitNull is true, null value will be omitted when marshaling.
+	//
+	// OmitNull 表示是否忽略 JSON 中的 null 类型值。默认为 false.
 	OmitNull bool
 
 	// MarshalLessFunc is used to handle sequences of marshaling. Since object is
@@ -19,13 +23,26 @@ type Opt struct {
 	// Note: Elements in an array value would NOT trigger this function as they are
 	// already sorted.
 	//
-	// We provides a example DefaultStringSequence.
+	// We provides a example DefaultStringSequence. It is quite useful when calculating
+	// idempotence of a JSON text, as key-value sequences should be fixed.
+	//
+	// MarshalLessFunc 用于处理序列化 JSON 对象类型时，键值对的顺序。由于 object 类型是采用 go 原生的 map 类型，采用哈希算法实现，
+	// 因此其键值对的顺序是不可控的。而为了提高效率，jsonvalue 的内部实现中并不会刻意保存键值对的顺序。如果有必要在序列化时固定键值对顺序的话，
+	// 可以使用这个函数。
+	//
+	// 注意：array 类型中键值对的顺序不受这个函数的影响
+	//
+	// 此外，我们提供了一个例子: DefaultStringSequence。当需要计算 JSON 文本的幂等值时，
+	// 由于需要不变的键值对顺序，因此这个函数是非常有用的。
 	MarshalLessFunc MarshalLessFunc
 
 	// MarshalKeySequence is used to handle sequance of marshaling. This is much simpler
 	// than MarshalLessFunc, just pass a string slice identifying key sequence. For keys
 	// those are not in this slice, they would be appended in the end according to result
-	// of Go string comparing.
+	// of Go string comparing. Therefore this parameter is useful for ensure idempotence.
+	//
+	// MarshalKeySequence 也用于处理序列化时的键值对顺序。与 MarshalLessFunc 不同，这个只需要用字符串切片的形式指定键的顺序即可，
+	// 实现上更为简易和直观。对于那些不在指定切片中的键，那么将会统一放在结尾，并且按照 go 字符串对比的结果排序。也可以保证幂等。
 	MarshalKeySequence []string
 	keySequence        map[string]int // generated from MarshalKeySequence
 }
@@ -34,7 +51,9 @@ var defaultOption = Opt{
 	OmitNull: false,
 }
 
-// MustMarshal is the same as Marshal, but panics if error pccurred
+// MustMarshal is the same as Marshal, but panics if error pccurred. But there will be no errors when using jsonvalue correctly.
+//
+// MustMarshal 与 Marshal 相同，但是当错误发生时，会 panic。但是标准使用的时候不会有错误。
 func (v *V) MustMarshal(opt ...Opt) []byte {
 	ret, err := v.Marshal(opt...)
 	if err != nil {
@@ -43,7 +62,9 @@ func (v *V) MustMarshal(opt ...Opt) []byte {
 	return ret
 }
 
-// MustMarshalString is the same as MarshalString, but panics if error pccurred
+// MustMarshalString is the same as MarshalString, but panics if error pccurred. But there will be no errors when using jsonvalue correctly.
+//
+// MustMarshalString 与 MarshalString 相同，但是当错误发生时，会 panic。但是标准使用的时候不会有错误。
 func (v *V) MustMarshalString(opt ...Opt) string {
 	ret, err := v.MarshalString(opt...)
 	if err != nil {
@@ -52,7 +73,9 @@ func (v *V) MustMarshalString(opt ...Opt) string {
 	return ret
 }
 
-// Marshal returns marshaled bytes
+// Marshal returns marshaled bytes.
+//
+// Marshal 返回序列化后的 JSON 字节序列。
 func (v *V) Marshal(opt ...Opt) (b []byte, err error) {
 	if jsonparser.NotExist == v.valueType {
 		return nil, ErrValueUninitialized
@@ -69,7 +92,9 @@ func (v *V) Marshal(opt ...Opt) (b []byte, err error) {
 	return buf.Bytes(), err
 }
 
-// MarshalString is same with Marshal, but returns string
+// MarshalString is same with Marshal, but returns string. It is much more efficient than string(b).
+//
+// MarshalString 与 Marshal 相同, 不同的是返回 string 类型。它比 string(b) 操作更高效。
 func (v *V) MarshalString(opt ...Opt) (s string, err error) {
 	if jsonparser.NotExist == v.valueType {
 		return "", ErrValueUninitialized

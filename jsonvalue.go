@@ -3,15 +3,34 @@
 // As a quick start:
 // 	v := jsonvalue.NewObject()
 // 	v.SetString("Hello, JSON").At("someObject", "someObject", "someObject", "message")  // automatically create sub objects
-// 	fmt.Println(v.MustMarshalString())                                                  // marshal to string type
+// 	fmt.Println(v.MustMarshalString())                                                  // marshal to string type. Use MustMarshal if you want []byte instead.
 // 	// Output:
 // 	// {"someObject":{"someObject":{"someObject":{"message":"Hello, JSON!"}}}
+//
 // If you want to parse raw JSON data, use Unmarshal()
 // 	raw := []byte(`{"message":"hello, world"}`)
 // 	v, err := jsonvalue.Unmarshal(raw)
 // 	s, _ := v.GetString("message")
 // 	fmt.Println(s)
 // 	// Output:
+// 	// hello, world
+//
+// jsonvalue 包用于 JSON 的解析（反序列化）和编码（序列化）。通常情况下我们用 struct 来处理结构化的 JSON，但是有时候使用 struct 不方便或者是功能不足的时候，
+// go 一般而言使用的是 "map[string]interface{}"，但是后者也有很多不方便的地方。本包即是用于替代这些不方便的情况的。
+//
+// 快速上手：
+// 	v := jsonvalue.NewObject()
+// 	v.SetString("Hello, JSON").At("someObject", "someObject", "someObject", "message")  // 自动创建子成员
+// 	fmt.Println(v.MustMarshalString())                                                  // 序列化为 string 类型，如果你要 []byte 类型，则使用 MustMarshal 函数。
+// 	// 输出:
+// 	// {"someObject":{"someObject":{"someObject":{"message":"Hello, JSON!"}}}
+//
+// 如果要反序列化原始的 JSON 文本，则使用 Unmarshal():
+// 	raw := []byte(`{"message":"hello, world"}`)
+// 	v, err := jsonvalue.Unmarshal(raw)
+// 	s, _ := v.GetString("message")
+// 	fmt.Println(s)
+// 	// 输出:
 // 	// hello, world
 package jsonvalue
 
@@ -26,6 +45,8 @@ import (
 )
 
 // V is the main type of jsonvalue, representing a JSON value.
+//
+// V 是 jsonvalue 的主类型，表示一个 JSON 值。
 type V struct {
 	valueType  jsonparser.ValueType
 	valueBytes []byte
@@ -70,7 +91,9 @@ func newArray() *V {
 	return &v
 }
 
-// UnmarshalString is equavilent to Unmarshal(string(b))
+// UnmarshalString is equavilent to Unmarshal(string(b)), but much more efficient.
+//
+// UnmarshalString 等效于 Unmarshal(string(b))，但效率更高。
 func UnmarshalString(s string) (*V, error) {
 	// reference: https://stackoverflow.com/questions/41591097/slice-bounds-out-of-range-when-using-unsafe-pointer
 	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
@@ -84,6 +107,8 @@ func UnmarshalString(s string) (*V, error) {
 }
 
 // Unmarshal parse raw bytes(encoded in UTF-8 or pure AscII) and returns a *V instance.
+//
+// Unmarshal 解析原始的字节类型数据（以 UTF-8 或纯 AscII 编码），并返回一个 *V 对象。
 func Unmarshal(b []byte) (ret *V, err error) {
 	if nil == b || 0 == len(b) {
 		return nil, ErrNilParameter
@@ -345,26 +370,37 @@ func newFromObject(b []byte) (ret *V, err error) {
 // ==== type access ====
 
 // IsObject tells whether value is an object
+//
+// IsObject 判断当前值是不是一个对象类型
 func (v *V) IsObject() bool {
 	return v.valueType == jsonparser.Object
 }
 
 // IsArray tells whether value is an array
+//
+// IsArray 判断当前值是不是一个数组类型
 func (v *V) IsArray() bool {
 	return v.valueType == jsonparser.Array
 }
 
 // IsString tells whether value is a string
+//
+// IsString 判断当前值是不是一个字符串类型
 func (v *V) IsString() bool {
 	return v.valueType == jsonparser.String
 }
 
 // IsNumber tells whether value is a number
+//
+// IsNumber 判断当前值是不是一个数字类型
 func (v *V) IsNumber() bool {
 	return v.valueType == jsonparser.Number
 }
 
-// IsFloat tells whether value is a float point number
+// IsFloat tells whether value is a float point number. If there is no decimal point in original text, it returns false
+// while IsNumber returns true.
+//
+// IsFloat 判断当前值是不是一个浮点数类型。如果给定的数不包含小数点，那么即便是数字类型，该函数也会返回 false.
 func (v *V) IsFloat() bool {
 	if v.valueType != jsonparser.Number {
 		return false
@@ -376,6 +412,8 @@ func (v *V) IsFloat() bool {
 }
 
 // IsInteger tells whether value is a fix point interger
+//
+// IsNumber 判断当前值是不是一个定点数整型
 func (v *V) IsInteger() bool {
 	if v.valueType != jsonparser.Number {
 		return false
@@ -390,6 +428,8 @@ func (v *V) IsInteger() bool {
 }
 
 // IsNegative tells whether value is a negative number
+//
+// IsNegative 判断当前值是不是一个负数
 func (v *V) IsNegative() bool {
 	if v.valueType != jsonparser.Number {
 		return false
@@ -401,6 +441,8 @@ func (v *V) IsNegative() bool {
 }
 
 // IsPositive tells whether value is a positive number
+//
+// IsPositive 判断当前值是不是一个正数
 func (v *V) IsPositive() bool {
 	if v.valueType != jsonparser.Number {
 		return false
@@ -418,6 +460,11 @@ func (v *V) IsPositive() bool {
 // 	1. It is a number value.
 // 	2. It is a positive interger.
 // 	3. Its value is greater than 0x7fffffffffffffff.
+//
+// GreaterThanInt64Max 判断当前值是否超出 int64 可表示的范围。当以下条件均成立时，返回 true，否则返回 false：
+// 	1. 是一个数字类型值.
+// 	2. 是一个正整型数字.
+// 	3. 该正整数的值大于 0x7fffffffffffffff.
 func (v *V) GreaterThanInt64Max() bool {
 	if v.valueType != jsonparser.Number {
 		return false
@@ -432,11 +479,15 @@ func (v *V) GreaterThanInt64Max() bool {
 }
 
 // IsBoolean tells whether value is a boolean
+//
+// IsBoolean 判断当前值是不是一个布尔类型
 func (v *V) IsBoolean() bool {
 	return v.valueType == jsonparser.Boolean
 }
 
 // IsNull tells whether value is a null
+//
+// IsBoolean 判断当前值是不是一个空类型
 func (v *V) IsNull() bool {
 	return v.valueType == jsonparser.Null
 }
@@ -444,11 +495,15 @@ func (v *V) IsNull() bool {
 // ==== value access ====
 
 // Bool returns represented bool value. If value is not boolean, returns false.
+//
+// Bool 返回布尔类型值。如果当前值不是布尔类型，则返回 false。
 func (v *V) Bool() bool {
 	return v.value.boolean
 }
 
 // Int returns represented int value. If value is not a number, returns zero.
+//
+// Int 返回 int 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int() int {
 	if v.valueType != jsonparser.Number {
 		return 0
@@ -460,6 +515,8 @@ func (v *V) Int() int {
 }
 
 // Uint returns represented uint value. If value is not a number, returns zero.
+//
+// Uint 返回 uint 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint() uint {
 	if v.valueType != jsonparser.Number {
 		return 0
@@ -471,6 +528,8 @@ func (v *V) Uint() uint {
 }
 
 // Int64 returns represented int64 value. If value is not a number, returns zero.
+//
+// Int64 返回 int64 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int64() int64 {
 	if v.valueType != jsonparser.Number {
 		return 0
@@ -482,6 +541,8 @@ func (v *V) Int64() int64 {
 }
 
 // Uint64 returns represented uint64 value. If value is not a number, returns zero.
+//
+// Uint64 返回 uint64 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint64() uint64 {
 	if v.valueType != jsonparser.Number {
 		return 0
@@ -493,6 +554,8 @@ func (v *V) Uint64() uint64 {
 }
 
 // Int32 returns represented int32 value. If value is not a number, returns zero.
+//
+// Int32 返回 int32 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int32() int32 {
 	if v.valueType != jsonparser.Number {
 		return 0
@@ -504,6 +567,8 @@ func (v *V) Int32() int32 {
 }
 
 // Uint32 returns represented uint32 value. If value is not a number, returns zero.
+//
+// Uint32 返回 uint32 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint32() uint32 {
 	if v.valueType != jsonparser.Number {
 		return 0
@@ -515,6 +580,8 @@ func (v *V) Uint32() uint32 {
 }
 
 // Float64 returns represented float64 value. If value is not a number, returns zero.
+//
+// Float64 返回 float64 类型值。如果当前值不是数字类型，则返回 0.0。
 func (v *V) Float64() float64 {
 	if v.valueType != jsonparser.Number {
 		return 0.0
@@ -526,6 +593,8 @@ func (v *V) Float64() float64 {
 }
 
 // Float32 returns represented float32 value. If value is not a number, returns zero.
+//
+// Float32 返回 float32 类型值。如果当前值不是数字类型，则返回 0.0。
 func (v *V) Float32() float32 {
 	if v.valueType != jsonparser.Number {
 		return 0.0
@@ -537,7 +606,12 @@ func (v *V) Float32() float32 {
 }
 
 // String returns represented string value or the description for the jsonvalue.V instance if it is not a string.
+//
+// String 返回 string 类型值。如果当前值不是字符串类型，则返回当前 *V 类型的描述说明。
 func (v *V) String() string {
+	if v == nil {
+		return ""
+	}
 	switch v.valueType {
 	default:
 		return ""
