@@ -5,7 +5,7 @@
 [![Go report](https://goreportcard.com/badge/github.com/Andrew-M-C/go.jsonvalue)](https://goreportcard.com/report/github.com/Andrew-M-C/go.jsonvalue)
 [![Codebeat](https://codebeat.co/badges/ecf87760-2987-48a7-a6dd-4d9fcad57256)](https://codebeat.co/projects/github-com-andrew-m-c-go-jsonvalue-master)<br>
 [![GoDoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue?status.svg)](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue)
-[![Latest](https://img.shields.io/badge/latest-v1.0.4-blue.svg)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.0.4)
+[![Latest](https://img.shields.io/badge/latest-v1.0.5-blue.svg)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.0.5)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 [中文版](./README_cn.md)
