@@ -40,7 +40,7 @@ func (v *V) delFromObjectChildren(key string) (exist bool) {
 // 数组的第2（从1算起）个值。
 func (v *V) Delete(firstParam interface{}, otherParams ...interface{}) error {
 	paramCount := len(otherParams)
-	if 0 == paramCount {
+	if paramCount == 0 {
 		return v.deleteInCurrValue(firstParam)
 	}
 
@@ -48,7 +48,7 @@ func (v *V) Delete(firstParam interface{}, otherParams ...interface{}) error {
 	if err != nil {
 		return err
 	}
-	// if nil == child {
+	// if child == nil {
 	// 	return ErrNotFound
 	// }
 

@@ -149,7 +149,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 	}
 
 	// this is the last iteration
-	if 0 == len(otherParams) {
+	if len(otherParams) == 0 {
 		switch v.valueType {
 		default:
 			return nil, fmt.Errorf("%v type does not supports Set()", v.valueType)
@@ -183,7 +183,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 			return nil, err
 		}
 		child, exist := v.getFromObjectChildren(k)
-		if false == exist {
+		if !exist {
 			if _, err := intfToString(otherParams[0]); err == nil {
 				child = NewObject()
 			} else if i, err := intfToInt(otherParams[0]); err == nil {
@@ -203,7 +203,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 		if err != nil {
 			return nil, err
 		}
-		if false == exist {
+		if !exist {
 			v.setToObjectChildren(k, child)
 		}
 		return c, nil
@@ -251,7 +251,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 
 func (v *V) elementAtIndex(pos int) *list.Element {
 	l := v.children.array.Len()
-	if 0 == l {
+	if l == 0 {
 		return nil
 	}
 	if pos < 0 {
@@ -282,7 +282,7 @@ func (v *V) childAtIndex(pos int) (*V, bool) { // if nil returned, means that ju
 }
 
 func (v *V) setAtIndex(child *V, pos int) error {
-	if 0 == v.children.array.Len() {
+	if v.children.array.Len() == 0 {
 		if pos == 0 {
 			v.children.array.PushBack(child)
 			return nil

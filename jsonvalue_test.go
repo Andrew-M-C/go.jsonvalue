@@ -42,8 +42,6 @@ func TestBasicFunction(t *testing.T) {
 	// 	b, _ := json.Marshal(&v)
 	// 	t.Logf("official: %v", string(b))
 	// }
-
-	return
 }
 
 func TestMiscCharacters(t *testing.T) {

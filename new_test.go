@@ -428,7 +428,6 @@ func TestMustMarshalError(t *testing.T) {
 	v := &V{}
 	v.MustMarshal()
 	v.MustMarshalString()
-	return
 }
 
 func TestMustMarshalStringError(t *testing.T) {
@@ -440,7 +439,6 @@ func TestMustMarshalStringError(t *testing.T) {
 
 	v := &V{}
 	v.MustMarshalString()
-	return
 }
 
 func TestValueError(t *testing.T) {
@@ -457,7 +455,6 @@ func TestValueError(t *testing.T) {
 			return
 		}
 		t.Logf("%02d - %s - expected error string: %v", checkCount, topic, err)
-		return
 	}
 
 	topic = "invalid json"

@@ -104,7 +104,6 @@ func (v *V) addCaselessKey(k string) {
 		v.children.lowerCaseKeys[lowerK] = keys
 	}
 	keys[k] = struct{}{}
-	return
 }
 
 func (v *V) delCaselessKey(k string) {
@@ -119,8 +118,6 @@ func (v *V) delCaselessKey(k string) {
 	if len(keys) == 0 {
 		delete(v.children.lowerCaseKeys, lowerK)
 	}
-
-	return
 }
 
 // UnmarshalString is equavilent to Unmarshal(string(b)), but much more efficient.
@@ -128,13 +125,16 @@ func (v *V) delCaselessKey(k string) {
 // UnmarshalString 等效于 Unmarshal(string(b))，但效率更高。
 func UnmarshalString(s string) (*V, error) {
 	// reference: https://stackoverflow.com/questions/41591097/slice-bounds-out-of-range-when-using-unsafe-pointer
-	sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
-	bh := reflect.SliceHeader{
-		Data: sh.Data,
-		Len:  sh.Len,
-		Cap:  sh.Len,
-	}
-	b := *(*[]byte)(unsafe.Pointer(&bh))
+	// sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
+	// bh := reflect.SliceHeader{
+	// 	Data: sh.Data,
+	// 	Len:  sh.Len,
+	// 	Cap:  sh.Len,
+	// }
+	// b := *(*[]byte)(unsafe.Pointer(&bh))
+	sh := (*reflect.SliceHeader)(unsafe.Pointer(&s))
+	sh.Cap = sh.Len
+	b := *(*[]byte)(unsafe.Pointer(sh))
 	return Unmarshal(b)
 }
 
@@ -142,7 +142,7 @@ func UnmarshalString(s string) (*V, error) {
 //
 // Unmarshal 解析原始的字节类型数据（以 UTF-8 或纯 AscII 编码），并返回一个 *V 对象。
 func Unmarshal(b []byte) (ret *V, err error) {
-	if nil == b || 0 == len(b) {
+	if nil == b || len(b) == 0 {
 		return nil, ErrNilParameter
 	}
 
@@ -205,7 +205,7 @@ func (v *V) parseNumber() (err error) {
 		v.value.i64 = int64(v.value.f64)
 		v.value.u64 = uint64(v.value.f64)
 
-	} else if '-' == b[0] {
+	} else if b[0] == '-' {
 		v.status.negative = true
 		v.value.i64, err = parseInt(b)
 		if err != nil {
@@ -339,7 +339,6 @@ func newFromArray(b []byte) (ret *V, err error) {
 			return
 		}
 		o.children.array.PushBack(child)
-		return
 	})
 
 	// done
@@ -437,7 +436,7 @@ func (v *V) IsFloat() bool {
 	if v.valueType != jsonparser.Number {
 		return false
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		v.parseNumber()
 	}
 	return v.status.floated
@@ -450,7 +449,7 @@ func (v *V) IsInteger() bool {
 	if v.valueType != jsonparser.Number {
 		return false
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		err := v.parseNumber()
 		if err != nil {
 			return false
@@ -466,7 +465,7 @@ func (v *V) IsNegative() bool {
 	if v.valueType != jsonparser.Number {
 		return false
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		v.parseNumber()
 	}
 	return v.status.negative
@@ -479,7 +478,7 @@ func (v *V) IsPositive() bool {
 	if v.valueType != jsonparser.Number {
 		return false
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		err := v.parseNumber()
 		if err != nil {
 			return false
@@ -501,7 +500,7 @@ func (v *V) GreaterThanInt64Max() bool {
 	if v.valueType != jsonparser.Number {
 		return false
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		v.parseNumber()
 	}
 	if v.status.negative {
@@ -552,7 +551,7 @@ func (v *V) Int() int {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Int()
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		v.parseNumber()
 	}
 	return int(v.value.i64)
@@ -565,7 +564,7 @@ func (v *V) Uint() uint {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Uint()
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		v.parseNumber()
 	}
 	return uint(v.value.u64)
@@ -578,7 +577,7 @@ func (v *V) Int64() int64 {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Int64()
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		v.parseNumber()
 	}
 	return int64(v.value.i64)
@@ -591,7 +590,7 @@ func (v *V) Uint64() uint64 {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Uint64()
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		v.parseNumber()
 	}
 	return uint64(v.value.u64)
@@ -604,7 +603,7 @@ func (v *V) Int32() int32 {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Int32()
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		v.parseNumber()
 	}
 	return int32(v.value.i64)
@@ -617,7 +616,7 @@ func (v *V) Uint32() uint32 {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Uint32()
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		v.parseNumber()
 	}
 	return uint32(v.value.u64)
@@ -630,7 +629,7 @@ func (v *V) Float64() float64 {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Float64()
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		v.parseNumber()
 	}
 	return v.value.f64
@@ -643,7 +642,7 @@ func (v *V) Float32() float32 {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Float32()
 	}
-	if false == v.status.parsed {
+	if !v.status.parsed {
 		v.parseNumber()
 	}
 	return float32(v.value.f64)
@@ -664,7 +663,7 @@ func (v *V) String() string {
 	case jsonparser.Number:
 		return string(v.valueBytes)
 	case jsonparser.String:
-		if false == v.status.parsed {
+		if !v.status.parsed {
 			var e error
 			v.value.str, v.valueBytes, e = parseString(v.valueBytes)
 			if nil == e {

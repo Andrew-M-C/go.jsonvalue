@@ -83,7 +83,7 @@ func (v *V) Marshal(opt ...Opt) (b []byte, err error) {
 
 	buf := bytes.Buffer{}
 
-	if 0 == len(opt) {
+	if len(opt) == 0 {
 		v.marshalToBuffer(nil, &buf, &defaultOption)
 	} else {
 		v.marshalToBuffer(nil, &buf, &opt[0])
@@ -102,7 +102,7 @@ func (v *V) MarshalString(opt ...Opt) (s string, err error) {
 
 	buf := bytes.Buffer{}
 
-	if 0 == len(opt) {
+	if len(opt) == 0 {
 		v.marshalToBuffer(nil, &buf, &defaultOption)
 	} else {
 		v.marshalToBuffer(nil, &buf, &opt[0])
@@ -128,7 +128,6 @@ func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt)
 	case jsonparser.Array:
 		v.marshalArray(parentInfo, buf, opt)
 	}
-	return
 }
 
 func (v *V) marshalString(buf *bytes.Buffer) {
@@ -139,17 +138,14 @@ func (v *V) marshalString(buf *bytes.Buffer) {
 		escapeStringToBuff(v.value.str, buf)
 		buf.WriteByte('"')
 	}
-	return
 }
 
 func (v *V) marshalBoolean(buf *bytes.Buffer) {
 	buf.WriteString(formatBool(v.value.boolean))
-	return
 }
 
 func (v *V) marshalNumber(buf *bytes.Buffer) {
 	buf.Write(v.valueBytes)
-	return
 }
 
 func (v *V) marshalNull(buf *bytes.Buffer) {
@@ -188,8 +184,6 @@ func (v *V) marshalObject(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 		child.marshalToBuffer(nil, buf, opt)
 		i++
 	}
-
-	return
 }
 
 func (v *V) marshalArray(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
@@ -207,6 +201,4 @@ func (v *V) marshalArray(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 		}
 		return true
 	})
-
-	return
 }

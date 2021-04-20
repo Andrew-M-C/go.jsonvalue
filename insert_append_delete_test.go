@@ -65,7 +65,7 @@ func TestDelete(t *testing.T) {
 		return
 	}
 
-	sub, err = o.Get("object")
+	_, err = o.Get("object")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 		return
@@ -146,14 +146,12 @@ func TestMiscInsert(t *testing.T) {
 		if err != nil {
 			t.Errorf("%02d - unexpected error: %v", checkCount, err)
 		}
-		return
 	}
 	checkCond := func(b bool) {
 		if false {
 			t.Errorf("%02d - check failed", checkCount)
 		}
 		checkCount++
-		return
 	}
 
 	v.AppendNull().InTheBeginning()
@@ -249,7 +247,6 @@ func TestMiscInsertError(t *testing.T) {
 			return
 		}
 		t.Logf("expected error string: %v", err)
-		return
 	}
 
 	topic = "not initialized"
@@ -390,7 +387,6 @@ func TestMiscDeleteError(t *testing.T) {
 			return
 		}
 		t.Logf("expected error string: %v", err)
-		return
 	}
 
 	{

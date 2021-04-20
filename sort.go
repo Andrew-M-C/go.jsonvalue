@@ -23,13 +23,12 @@ func (v *V) SortArray(lessFunc ArrayLessFunc) {
 	if nil == lessFunc {
 		return
 	}
-	if false == v.IsArray() {
+	if !v.IsArray() {
 		return
 	}
 
 	sav := newSortV(v, lessFunc)
 	sav.Sort()
-	return
 }
 
 type sortArrayV struct {
@@ -60,7 +59,6 @@ func (v *sortArrayV) Sort() {
 	for _, child := range v.children {
 		v.v.children.array.PushBack(child)
 	}
-	return
 }
 
 func (v *sortArrayV) Len() int {
@@ -228,8 +226,6 @@ func (sov *sortObjectV) marshalObjectWithLessFunc(buf *bytes.Buffer, opt *Opt) {
 		child.marshalToBuffer(child.newParentInfo(sov.parentInfo, stringKey(key)), buf, opt)
 		marshaledCount++
 	}
-
-	return
 }
 
 type sortObjectV struct {
@@ -293,8 +289,6 @@ func (sssv *sortStringSliceV) marshalObjectWithStringSlice(buf *bytes.Buffer, op
 		child.marshalToBuffer(nil, buf, opt)
 		marshaledCount++
 	}
-
-	return
 }
 
 type sortStringSliceV struct {

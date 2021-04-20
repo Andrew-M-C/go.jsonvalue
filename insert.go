@@ -140,7 +140,7 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 
 	// this is the last iteration
 	paramCount := len(otherParams)
-	if 0 == paramCount {
+	if paramCount == 0 {
 		if v.valueType != jsonparser.Array {
 			return nil, ErrNotArrayValue
 		}
@@ -196,7 +196,7 @@ func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V
 
 	// this is the last iteration
 	paramCount := len(otherParams)
-	if 0 == paramCount {
+	if paramCount == 0 {
 		if v.valueType != jsonparser.Array {
 			return nil, ErrNotArrayValue
 		}

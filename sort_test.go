@@ -34,8 +34,6 @@ func TestSortArray(t *testing.T) {
 		t.Errorf("array sort failed")
 		return
 	}
-
-	return
 }
 
 func TestSortArrayError(t *testing.T) {
@@ -45,8 +43,6 @@ func TestSortArrayError(t *testing.T) {
 
 	v = NewArray()
 	v.SortArray(nil)
-
-	return
 }
 
 func TestSortMarshal(t *testing.T) {
@@ -115,8 +111,6 @@ func TestSortMarshal(t *testing.T) {
 		t.Errorf("unpxpected marshaled string")
 		return
 	}
-
-	return
 }
 
 func TestSortByStringSlice(t *testing.T) {
@@ -151,6 +145,4 @@ func TestSortByStringSlice(t *testing.T) {
 		t.Errorf("unexpected marshal result")
 		return
 	}
-
-	return
 }

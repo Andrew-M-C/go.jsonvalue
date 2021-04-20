@@ -34,7 +34,7 @@ func parseString(b []byte) (string, []byte, error) {
 	b = b[firstQuote : lastQuote-firstQuote+1]
 
 	t, ok := unquoteBytes(b)
-	if false == ok {
+	if !ok {
 		return "", nil, fmt.Errorf("invalid string '%s'", string(b))
 	}
 	return string(t), b, nil
@@ -176,7 +176,7 @@ func getu4(s []byte) rune {
 }
 
 func parseStringNoQuote(b []byte) (string, error) {
-	if 0 == len(b) {
+	if len(b) == 0 {
 		return "", nil
 	}
 	s := unsafe.Sizeof(b[0])
@@ -223,7 +223,6 @@ func escapeUnicodeToBuff(buf *bytes.Buffer, r rune) {
 	hi := (r & 0xFFC00) >> 10
 	buf.WriteString(fmt.Sprintf("\\u%04X", hi+0xD800))
 	buf.WriteString(fmt.Sprintf("\\u%04X", lo+0xDC00))
-	return
 }
 
 var (
@@ -284,31 +283,30 @@ func escapeStringToBuff(s string, buf *bytes.Buffer) {
 			escapeUnicodeToBuff(buf, chr)
 		}
 	}
-	return
 }
 
 func intfToInt(v interface{}) (u int, err error) {
-	switch v.(type) {
+	switch v := v.(type) {
 	case int:
-		u = int(v.(int))
+		u = v
 	case uint:
-		u = int(v.(uint))
+		u = int(v)
 	case int64:
-		u = int(v.(int64))
+		u = int(v)
 	case uint64:
-		u = int(v.(uint64))
+		u = int(v)
 	case int32:
-		u = int(v.(int32))
+		u = int(v)
 	case uint32:
-		u = int(v.(uint32))
+		u = int(v)
 	case int16:
-		u = int(v.(int16))
+		u = int(v)
 	case uint16:
-		u = int(v.(uint16))
+		u = int(v)
 	case int8:
-		u = int(v.(int8))
+		u = int(v)
 	case uint8:
-		u = int(v.(uint8))
+		u = int(v)
 	default:
 		err = fmt.Errorf("%s is not a number", reflect.TypeOf(v).String())
 	}
@@ -346,14 +344,12 @@ func intfToInt(v interface{}) (u int, err error) {
 // }
 
 func intfToString(v interface{}) (s string, err error) {
-	switch v.(type) {
+	switch str := v.(type) {
 	case string:
-		s = v.(string)
+		return str, nil
 	default:
-		err = fmt.Errorf("%s is not a string", reflect.TypeOf(v).String())
+		return "", fmt.Errorf("%s is not a string", reflect.TypeOf(v).String())
 	}
-
-	return
 }
 
 // func intfToJsonvalue(v interface{}) (j *V, err error) {

@@ -133,7 +133,7 @@ func (apd *Append) InTheBeginning(params ...interface{}) (*V, error) {
 
 	// this is the last iteration
 	paramCount := len(params)
-	if 0 == paramCount {
+	if paramCount == 0 {
 		if v.valueType != jsonparser.Array {
 			return nil, ErrNotArrayValue
 		}
@@ -164,7 +164,7 @@ func (apd *Append) InTheEnd(params ...interface{}) (*V, error) {
 
 	// this is the last iteration
 	paramCount := len(params)
-	if 0 == paramCount {
+	if paramCount == 0 {
 		if v.valueType != jsonparser.Array {
 			return nil, ErrNotArrayValue
 		}

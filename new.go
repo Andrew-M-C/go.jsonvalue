@@ -123,42 +123,41 @@ func NewObject(keyValues ...map[string]interface{}) *V {
 
 func (v *V) parseNewObjectKV(kv map[string]interface{}) {
 	for k, val := range kv {
-		switch val.(type) {
+		switch val := val.(type) {
 		case nil:
 			v.SetNull().At(k)
 		case string:
-			v.SetString(val.(string)).At(k)
+			v.SetString(val).At(k)
 		case bool:
-			v.SetBool(val.(bool)).At(k)
+			v.SetBool(val).At(k)
 		case int:
-			v.SetInt(val.(int)).At(k)
+			v.SetInt(val).At(k)
 		case uint:
-			v.SetUint(val.(uint)).At(k)
+			v.SetUint(val).At(k)
 		case int8:
-			v.SetInt32(int32(val.(int8))).At(k)
+			v.SetInt32(int32(val)).At(k)
 		case uint8:
-			v.SetUint32(uint32(val.(uint8))).At(k)
+			v.SetUint32(uint32(val)).At(k)
 		case int16:
-			v.SetInt32(int32(val.(int16))).At(k)
+			v.SetInt32(int32(val)).At(k)
 		case uint16:
-			v.SetUint32(uint32(val.(uint16))).At(k)
+			v.SetUint32(uint32(val)).At(k)
 		case int32:
-			v.SetInt32(val.(int32)).At(k)
+			v.SetInt32(val).At(k)
 		case uint32:
-			v.SetUint32(val.(uint32)).At(k)
+			v.SetUint32(val).At(k)
 		case int64:
-			v.SetInt64(val.(int64)).At(k)
+			v.SetInt64(val).At(k)
 		case uint64:
-			v.SetUint64(val.(uint64)).At(k)
+			v.SetUint64(val).At(k)
 		case float32:
-			v.SetFloat32(val.(float32), -1).At(k)
+			v.SetFloat32(val, -1).At(k)
 		case float64:
-			v.SetFloat64(val.(float64), -1).At(k)
+			v.SetFloat64(val, -1).At(k)
 		default:
 			// continue
 		}
 	}
-	return
 }
 
 // NewArray returns an emty array-typed jsonvalue object

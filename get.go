@@ -30,7 +30,7 @@ func (v *V) Get(firstParam interface{}, otherParams ...interface{}) (*V, error) 
 		return nil, err
 	}
 
-	if 0 == len(otherParams) {
+	if len(otherParams) == 0 {
 		return child, nil
 	}
 	return child.Get(otherParams[0], otherParams[1:]...)

@@ -18,7 +18,6 @@ func TestSet(t *testing.T) {
 	if string(b) != `{"data":{"message":[{"hello":"Hello, world!"}]}}` {
 		t.Errorf("test Set() failed")
 	}
-	return
 }
 
 func TestSetInteger(t *testing.T) {
@@ -155,27 +154,27 @@ func TestSetMisc(t *testing.T) {
 	v.SetFloat64(1234.12345678, 8).At("data", "float64")
 	f, err := v.Get("data", "float64")
 	checkErr()
-	check("1234.12345678" == f.String())
+	check(f.String() == "1234.12345678")
 
 	topic = "SetFloat32"
 	v.SetFloat32(1234.123, 4).At("data", "float32")
 	f, err = v.Get("data", "float32")
 	checkErr()
-	check("1234.1230" == f.String())
+	check(f.String() == "1234.1230")
 
 	topic = "SetObject"
 	v.SetObject().At("data", "object")
 	v.SetString("hello").At("data", "object", "message")
 	o, err := v.Get("data", "object")
 	checkErr()
-	check(o.IsObject() && 1 == o.Len())
+	check(o.IsObject() && o.Len() == 1)
 
 	topic = "SetArray"
 	v.SetArray().At("data", "array")
 	v.AppendNull().InTheEnd("data", "array")
 	a, err := v.Get("data", "array")
 	checkErr()
-	check(a.IsArray() && 1 == a.Len())
+	check(a.IsArray() && a.Len() == 1)
 
 	topic = "SetString in array of a object"
 	a = NewArray()
@@ -214,7 +213,6 @@ func TestSetError(t *testing.T) {
 			return
 		}
 		t.Logf("expected error string: %v", err)
-		return
 	}
 
 	{

@@ -128,10 +128,7 @@ func TestRange(t *testing.T) {
 	v.RangeObjects(func(k string, v *V) bool {
 		caughtKey = k
 		caughtValue = v.String()
-		if k == "string" {
-			return false
-		}
-		return true
+		return k != "string"
 	})
 	if caughtKey == "string" && caughtValue == "hello, world" {
 		// OK

@@ -14,7 +14,6 @@ func check(t *testing.T, err error, function string, b bool) {
 		t.Errorf("%s() failed", function)
 		os.Exit(1)
 	}
-	return
 }
 
 func TestGet(t *testing.T) {
@@ -119,8 +118,6 @@ func TestGet(t *testing.T) {
 		check(t, err, "Get", v.IsString())
 		check(t, nil, "invalid float64 in string", v.Float64() == 0)
 	}
-
-	return
 }
 
 func TestMiscError(t *testing.T) {
@@ -134,7 +131,6 @@ func TestMiscError(t *testing.T) {
 			return
 		}
 		t.Logf("expected error string: %v", err)
-		return
 	}
 
 	{

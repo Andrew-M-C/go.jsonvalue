@@ -24,7 +24,7 @@ type ArrayIter struct {
 //
 // 在回调函数中返回 true 表示继续迭代，返回 false 表示退出迭代
 func (v *V) RangeObjects(callback func(k string, v *V) bool) {
-	if false == v.IsObject() {
+	if !v.IsObject() {
 		return
 	}
 	if nil == callback {
@@ -33,11 +33,10 @@ func (v *V) RangeObjects(callback func(k string, v *V) bool) {
 
 	for k, v := range v.children.object {
 		ok := callback(k, v)
-		if false == ok {
+		if !ok {
 			break
 		}
 	}
-	return
 }
 
 // IterObjects returns a channel for range statement of object type JSON.
@@ -66,7 +65,7 @@ func (v *V) IterObjects() <-chan *ObjectIter {
 //
 // 在回调函数中返回 true 表示继续迭代，返回 false 表示退出迭代
 func (v *V) RangeArray(callback func(i int, v *V) bool) {
-	if false == v.IsArray() {
+	if !v.IsArray() {
 		return
 	}
 	if nil == callback {
@@ -77,7 +76,7 @@ func (v *V) RangeArray(callback func(i int, v *V) bool) {
 	for e := v.children.array.Front(); e != nil; e = e.Next() {
 		v := e.Value.(*V)
 		ok := callback(i, v)
-		if false == ok {
+		if !ok {
 			break
 		}
 		i++
