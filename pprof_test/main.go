@@ -8,9 +8,11 @@ import (
 	"time"
 
 	jsonvalue "github.com/Andrew-M-C/go.jsonvalue"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // brew install graphviz
+// go run .
 // go tool pprof -http=:6060 ./profile
 
 const (
@@ -41,7 +43,6 @@ func jsonvalueUnmarshalTest() {
 	}
 
 	printf("jsonvalue unmarshal done")
-	return
 }
 
 func jsonvalueMarshalTest() {
@@ -69,7 +70,6 @@ func jsonvalueMarshalTest() {
 	}
 
 	printf("jsonvalue marshal done")
-	return
 }
 
 func mapInterfaceUnmarshalTest() {
@@ -92,7 +92,6 @@ func mapInterfaceUnmarshalTest() {
 	}
 
 	printf("mapinterface unmarshal done")
-	return
 }
 
 func mapInterfaceMarshalTest() {
@@ -121,7 +120,6 @@ func mapInterfaceMarshalTest() {
 	}
 
 	printf("mapinterface marshal done")
-	return
 }
 
 type object struct {
@@ -130,6 +128,28 @@ type object struct {
 	String string    `json:"string"`
 	Object *object   `json:"object,omitempty"`
 	Array  []*object `json:"array,omitempty"`
+}
+
+func structUnmarshalTest() {
+	f, err := os.OpenFile("struct-unmarshal.profile", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer f.Close()
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+
+	for i := 0; i < iteration; i++ {
+		o := object{}
+		err := json.Unmarshal(unmarshalText, &o)
+		if err != nil {
+			printf("unmarshal error: %v", err)
+			return
+		}
+	}
+
+	printf("struct unmarshal done")
 }
 
 func structMarshalTest() {
@@ -154,7 +174,54 @@ func structMarshalTest() {
 	}
 
 	printf("struct marshal done")
-	return
+}
+
+func jsoniterUnmarshalTest() {
+	j := jsoniter.ConfigCompatibleWithStandardLibrary
+	f, err := os.OpenFile("jsoniter-unmarshal.profile", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer f.Close()
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+
+	for i := 0; i < iteration; i++ {
+		o := object{}
+		err := j.Unmarshal(unmarshalText, &o)
+		if err != nil {
+			printf("unmarshal error: %v", err)
+			return
+		}
+	}
+
+	printf("jsoniter unmarshal done")
+}
+
+func jsoniterMarshalTest() {
+	j := jsoniter.ConfigCompatibleWithStandardLibrary
+	o := object{}
+	j.Unmarshal(unmarshalText, &o)
+
+	f, err := os.OpenFile("jsoniter-marshal.profile", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer f.Close()
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+
+	for i := 0; i < iteration; i++ {
+		_, err := json.Marshal(&o)
+		if err != nil {
+			printf("marshal error: %v", err)
+			return
+		}
+	}
+
+	printf("jsoniter marshal done")
 }
 
 func main() {
@@ -167,9 +234,13 @@ func main() {
 
 	run(jsonvalueUnmarshalTest)
 	run(jsonvalueMarshalTest)
+
 	run(mapInterfaceUnmarshalTest)
 	run(mapInterfaceMarshalTest)
+
+	run(structUnmarshalTest)
 	run(structMarshalTest)
 
-	return
+	run(jsoniterUnmarshalTest)
+	run(jsoniterMarshalTest)
 }
