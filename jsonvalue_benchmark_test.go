@@ -3,11 +3,14 @@ package jsonvalue
 import (
 	"encoding/json"
 	"testing"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 // go test -bench=. -run=none -benchmem -benchtime=10s
 
 var unmarshalText = []byte(`{"int":123456,"float":123.456789,"string":"Hello, world!","object":{"int":123456,"float":123.456789,"string":"Hello, world!","object":{"int":123456,"float":123.456789,"string":"Hello, world!","object":{"int":123456,"float":123.456789,"string":"Hello, world!","object":{"int":123456,"float":123.456789,"string":"Hello, world!"},"array":[{"int":123456,"float":123.456789,"string":"Hello, world!"},{"int":123456,"float":123.456789,"string":"Hello, world!"}]}}},"array":[{"int":123456,"float":123.456789,"string":"Hello, world!"},{"int":123456,"float":123.456789,"string":"Hello, world!"}]}`)
+var jsonit = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type object struct {
 	Int    int       `json:"int"`
@@ -17,15 +20,14 @@ type object struct {
 	Array  []*object `json:"array,omitempty"`
 }
 
-func BenchmarkUnmarshalGoMapInterface(b *testing.B) {
+func BenchmarkMapInterfUnmarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		m := map[string]interface{}{}
 		json.Unmarshal(unmarshalText, &m)
 	}
-	return
 }
 
-func BenchmarkMarshalGoMapInterface(b *testing.B) {
+func BenchmarkMapInterfMarshal(b *testing.B) {
 	m := map[string]interface{}{}
 	json.Unmarshal(unmarshalText, &m)
 	b.ResetTimer()
@@ -37,16 +39,30 @@ func BenchmarkMarshalGoMapInterface(b *testing.B) {
 			return
 		}
 	}
-	return
 }
 
-func BenchmarkUnmarshalJsonvalue(b *testing.B) {
+func BenchmarkJsoniterrUnmarshal(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		jsoniter.Get(unmarshalText)
+	}
+}
+
+// func BenchmarkJsoniterrMarshal(b *testing.B) {
+// 	j := jsoniter.Get(unmarshalText)
+// 	b.ResetTimer()
+
+// 	for i := 0; i < b.N; i++ {
+// 		j.ToString()
+// 	}
+// }
+
+func BenchmarkJsonvalueUnmarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Unmarshal(unmarshalText)
 	}
 }
 
-func BenchmarkMarshalJsonvalue(b *testing.B) {
+func BenchmarkJsonvalueMarshal(b *testing.B) {
 	j, _ := Unmarshal(unmarshalText)
 	b.ResetTimer()
 
@@ -59,16 +75,37 @@ func BenchmarkMarshalJsonvalue(b *testing.B) {
 	}
 }
 
-func BenchmarkUnmarshalStruct(b *testing.B) {
+func BenchmarkGoStdJsonStructUnmarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		o := object{}
 		json.Unmarshal(unmarshalText, &o)
 	}
 }
 
-func BenchmarkMarshalStruct(b *testing.B) {
+func BenchmarkGoStdJsonStructMarshal(b *testing.B) {
 	o := object{}
 	json.Unmarshal(unmarshalText, &o)
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := json.Marshal(&o)
+		if err != nil {
+			b.Errorf("marshal error: %v", err)
+			return
+		}
+	}
+}
+
+func BenchmarkJsoniternStructUnmarshal(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		o := object{}
+		jsonit.Unmarshal(unmarshalText, &o)
+	}
+}
+
+func BenchmarkJsoniternStructMarshal(b *testing.B) {
+	o := object{}
+	jsonit.Unmarshal(unmarshalText, &o)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
