@@ -38,18 +38,16 @@ import (
 	"bytes"
 	"container/list"
 	"fmt"
-	"reflect"
 	"strings"
-	"unsafe"
 
-	"github.com/buger/jsonparser"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // V is the main type of jsonvalue, representing a JSON value.
 //
 // V 是 jsonvalue 的主类型，表示一个 JSON 值。
 type V struct {
-	valueType  jsonparser.ValueType
+	valueType  jsoniter.ValueType
 	valueBytes []byte
 
 	status struct {
@@ -70,20 +68,20 @@ type V struct {
 		object map[string]*V
 		array  *list.List
 
-		// As official json package supports caseless key accessing, I decide to di it as well
+		// As official json package supports caseless key accessing, I decide to do it as well
 		lowerCaseKeys map[string]map[string]struct{}
 	}
 }
 
 func new() *V {
 	v := V{}
-	v.valueType = jsonparser.NotExist
+	v.valueType = jsoniter.InvalidValue
 	return &v
 }
 
 func newObject() *V {
 	v := V{}
-	v.valueType = jsonparser.Object
+	v.valueType = jsoniter.ObjectValue
 	v.children.object = make(map[string]*V)
 	v.children.lowerCaseKeys = make(map[string]map[string]struct{})
 	return &v
@@ -91,7 +89,7 @@ func newObject() *V {
 
 func newArray() *V {
 	v := V{}
-	v.valueType = jsonparser.Array
+	v.valueType = jsoniter.ArrayValue
 	v.children.array = list.New()
 	return &v
 }
@@ -132,10 +130,7 @@ func UnmarshalString(s string) (*V, error) {
 	// 	Cap:  sh.Len,
 	// }
 	// b := *(*[]byte)(unsafe.Pointer(&bh))
-	sh := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-	sh.Cap = sh.Len
-	b := *(*[]byte)(unsafe.Pointer(sh))
-	return Unmarshal(b)
+	return Unmarshal(unsafeStoB(s))
 }
 
 // Unmarshal parse raw bytes(encoded in UTF-8 or pure AscII) and returns a *V instance.
@@ -152,11 +147,11 @@ func Unmarshal(b []byte) (ret *V, err error) {
 			// continue
 		case '{':
 			// object start
-			return newFromObject(b[i:])
+			return newFromObject(jsoniter.Get(b[i:]))
 		case '[':
-			return newFromArray(b[i:])
+			return newFromArray(jsoniter.Get(b[i:]))
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-			ret, err = newFromNumber(b[i:])
+			ret, err = newFromNumberBytes(b[i:])
 			if err != nil {
 				return
 			}
@@ -168,8 +163,8 @@ func Unmarshal(b []byte) (ret *V, err error) {
 
 		case '"':
 			ret = new()
-			ret.valueType = jsonparser.String
-			ret.value.str, ret.valueBytes, err = parseString(b[i:])
+			ret.valueType = jsoniter.StringValue
+			ret.value.str, _, err = parseString(b[i:])
 			if err != nil {
 				return nil, err
 			}
@@ -181,7 +176,10 @@ func Unmarshal(b []byte) (ret *V, err error) {
 		case 'f':
 			return newFromFalse(b[i:])
 		case 'n':
-			return newFromNull(b[i:])
+			if bytes.HasPrefix(b[i:], []byte("null")) {
+				return newFromNull()
+			}
+			return nil, ErrNotValidNulllValue
 		default:
 			return nil, ErrRawBytesUnrecignized
 		}
@@ -232,16 +230,23 @@ func (v *V) parseNumber() (err error) {
 }
 
 // ==== simple object parsing ====
-func newFromNumber(b []byte) (ret *V, err error) {
+func newFromNumber(any jsoniter.Any) (ret *V, err error) {
 	v := new()
-	v.valueType = jsonparser.Number
+	v.valueType = jsoniter.NumberValue
+	v.valueBytes = unsafeStoB(any.ToString())
+	return v, nil
+}
+
+func newFromNumberBytes(b []byte) (ret *V, err error) {
+	v := new()
+	v.valueType = jsoniter.NumberValue
 	v.valueBytes = b
 	return v, nil
 }
 
 // func newFromString(b []byte) (ret *V, err error) {
 // 	v := new()
-// 	v.valueType = jsonparser.String
+// 	v.valueType = jsoniter.StringValue
 // 	v.valueBytes = b
 // 	return v, nil
 // }
@@ -252,7 +257,7 @@ func newFromTrue(b []byte) (ret *V, err error) {
 	}
 	v := new()
 	v.status.parsed = true
-	v.valueType = jsonparser.Boolean
+	v.valueType = jsoniter.BoolValue
 	v.valueBytes = []byte{'t', 'r', 'u', 'e'}
 	v.value.boolean = true
 	return v, nil
@@ -264,7 +269,7 @@ func newFromFalse(b []byte) (ret *V, err error) {
 	}
 	v := new()
 	v.status.parsed = true
-	v.valueType = jsonparser.Boolean
+	v.valueType = jsoniter.BoolValue
 	v.valueBytes = []byte{'f', 'a', 'l', 's', 'e'}
 	v.value.boolean = false
 	return v, nil
@@ -272,7 +277,7 @@ func newFromFalse(b []byte) (ret *V, err error) {
 
 func newFromBool(b []byte) (ret *V, err error) {
 	v := new()
-	v.valueType = jsonparser.Boolean
+	v.valueType = jsoniter.BoolValue
 
 	switch string(b) {
 	case "true":
@@ -290,111 +295,90 @@ func newFromBool(b []byte) (ret *V, err error) {
 	return v, nil
 }
 
-func newFromNull(b []byte) (ret *V, err error) {
-	if len(b) != 4 || string(b) != "null" {
-		return nil, ErrNotValidBoolValue
-	}
+func newFromNull() (ret *V, err error) {
 	v := new()
 	v.status.parsed = true
-	v.valueType = jsonparser.Null
+	v.valueType = jsoniter.NilValue
 	return v, nil
 }
 
 // ====
-func newFromArray(b []byte) (ret *V, err error) {
+func newFromArray(any jsoniter.Any) (ret *V, err error) {
 	o := newArray()
+	le := any.Size()
 
-	jsonparser.ArrayEach(b, func(v []byte, t jsonparser.ValueType, _ int, _ error) {
-		if err != nil {
-			return
-		}
-
+	for i := 0; i < le; i++ {
+		ch := any.Get(i)
 		var child *V
-
-		switch t {
+		switch ch.ValueType() {
 		default:
-			err = fmt.Errorf("invalid value type: %v", t)
-		case jsonparser.Object:
-			child, err = newFromObject(v)
-		case jsonparser.Array:
-			child, err = newFromArray(v)
-		case jsonparser.Number:
-			child, err = newFromNumber(v)
-		case jsonparser.Boolean:
-			child, err = newFromBool(v)
-		case jsonparser.Null:
-			child, err = newFromNull(v)
-		case jsonparser.String:
-			s, err := parseStringNoQuote(v)
-			if err != nil {
-				return
-			}
+			err = fmt.Errorf("unmarshal error: %w", ch.LastError())
+			// err = fmt.Errorf("invalid value type: %v", ch.ValueType())
+			return nil, err
+		case jsoniter.ObjectValue:
+			child, err = newFromObject(ch)
+		case jsoniter.ArrayValue:
+			child, err = newFromArray(ch)
+		case jsoniter.NumberValue:
+			child, err = newFromNumber(ch)
+		case jsoniter.BoolValue:
+			child, err = newFromBool(unsafeStoB(ch.ToString()))
+		case jsoniter.NilValue:
+			child, err = newFromNull()
+		case jsoniter.StringValue:
 			child = new()
 			child.status.parsed = true
-			child.valueType = jsonparser.String
-			child.value.str = s
+			child.valueType = jsoniter.StringValue
+			child.value.str = ch.ToString()
 		}
 
 		if err != nil {
-			return
+			return nil, err
 		}
 		o.children.array.PushBack(child)
-	})
+	}
 
 	// done
-	if err != nil {
-		return
-	}
 	return o, nil
 }
 
 // ==== object parsing ====
-func newFromObject(b []byte) (ret *V, err error) {
+func newFromObject(any jsoniter.Any) (ret *V, err error) {
 	o := newObject()
+	keys := any.Keys()
 
-	err = jsonparser.ObjectEach(b, func(k, v []byte, t jsonparser.ValueType, _ int) error {
-		// key
+	for _, k := range keys {
+		ch := any.Get(k)
 		var child *V
-		key, err := parseStringNoQuote(k)
-		if err != nil {
-			return err
-		}
-
-		switch t {
+		switch ch.ValueType() {
 		default:
-			return fmt.Errorf("invalid value type: %v", t)
-		case jsonparser.Object:
-			child, err = newFromObject(v)
-		case jsonparser.Array:
-			child, err = newFromArray(v)
-		case jsonparser.Number:
-			child, err = newFromNumber(v)
-		case jsonparser.Boolean:
-			child, err = newFromBool(v)
-		case jsonparser.Null:
-			child, err = newFromNull(v)
-		case jsonparser.String:
-			s, err := parseStringNoQuote(v)
-			if err != nil {
-				return err
-			}
+			err = fmt.Errorf("unmarshal error: %w", ch.LastError())
+			// err = fmt.Errorf("invalid value type: %v", ch.ValueType())
+			return nil, err
+		case jsoniter.ObjectValue:
+			child, err = newFromObject(ch)
+		case jsoniter.ArrayValue:
+			child, err = newFromArray(ch)
+		case jsoniter.NumberValue:
+			child, err = newFromNumber(ch)
+		case jsoniter.BoolValue:
+			child, err = newFromBool(unsafeStoB(ch.ToString()))
+		case jsoniter.NilValue:
+			child, err = newFromNull()
+		case jsoniter.StringValue:
 			child = new()
 			child.status.parsed = true
-			child.valueType = jsonparser.String
-			child.value.str = s
+			child.valueType = jsoniter.StringValue
+			child.value.str = ch.ToString()
 		}
 
 		if err != nil {
-			return err
+			return nil, err
 		}
-		o.setToObjectChildren(key, child)
-		return nil
-	})
+		o.setToObjectChildren(k, child)
+	}
 
 	// done
-	if err != nil {
-		return
-	}
 	return o, nil
 }
 
@@ -404,28 +388,28 @@ func newFromObject(b []byte) (ret *V, err error) {
 //
 // IsObject 判断当前值是不是一个对象类型
 func (v *V) IsObject() bool {
-	return v.valueType == jsonparser.Object
+	return v.valueType == jsoniter.ObjectValue
 }
 
 // IsArray tells whether value is an array
 //
 // IsArray 判断当前值是不是一个数组类型
 func (v *V) IsArray() bool {
-	return v.valueType == jsonparser.Array
+	return v.valueType == jsoniter.ArrayValue
 }
 
 // IsString tells whether value is a string
 //
 // IsString 判断当前值是不是一个字符串类型
 func (v *V) IsString() bool {
-	return v.valueType == jsonparser.String
+	return v.valueType == jsoniter.StringValue
 }
 
 // IsNumber tells whether value is a number
 //
 // IsNumber 判断当前值是不是一个数字类型
 func (v *V) IsNumber() bool {
-	return v.valueType == jsonparser.Number
+	return v.valueType == jsoniter.NumberValue
 }
 
 // IsFloat tells whether value is a float point number. If there is no decimal point in original text, it returns false
@@ -433,7 +417,7 @@ func (v *V) IsNumber() bool {
 //
 // IsFloat 判断当前值是不是一个浮点数类型。如果给定的数不包含小数点，那么即便是数字类型，该函数也会返回 false.
 func (v *V) IsFloat() bool {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return false
 	}
 	if !v.status.parsed {
@@ -446,7 +430,7 @@ func (v *V) IsFloat() bool {
 //
 // IsNumber 判断当前值是不是一个定点数整型
 func (v *V) IsInteger() bool {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return false
 	}
 	if !v.status.parsed {
@@ -462,7 +446,7 @@ func (v *V) IsInteger() bool {
 //
 // IsNegative 判断当前值是不是一个负数
 func (v *V) IsNegative() bool {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return false
 	}
 	if !v.status.parsed {
@@ -475,7 +459,7 @@ func (v *V) IsNegative() bool {
 //
 // IsPositive 判断当前值是不是一个正数
 func (v *V) IsPositive() bool {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return false
 	}
 	if !v.status.parsed {
@@ -497,7 +481,7 @@ func (v *V) IsPositive() bool {
 // 	2. 是一个正整型数字.
 // 	3. 该正整数的值大于 0x7fffffffffffffff.
 func (v *V) GreaterThanInt64Max() bool {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return false
 	}
 	if !v.status.parsed {
@@ -513,14 +497,14 @@ func (v *V) GreaterThanInt64Max() bool {
 //
 // IsBoolean 判断当前值是不是一个布尔类型
 func (v *V) IsBoolean() bool {
-	return v.valueType == jsonparser.Boolean
+	return v.valueType == jsoniter.BoolValue
 }
 
 // IsNull tells whether value is a null
 //
 // IsBoolean 判断当前值是不是一个空类型
 func (v *V) IsNull() bool {
-	return v.valueType == jsonparser.Null
+	return v.valueType == jsoniter.NilValue
 }
 
 // ==== value access ====
@@ -529,7 +513,7 @@ func getNumberFromNotNumberValue(v *V) *V {
 	if !v.IsString() {
 		return NewInt(0)
 	}
-	ret, _ := newFromNumber([]byte(v.value.str))
+	ret, _ := newFromNumberBytes([]byte(v.value.str))
 	err := ret.parseNumber()
 	if err != nil {
 		return NewInt64(0)
@@ -548,7 +532,7 @@ func (v *V) Bool() bool {
 //
 // Int 返回 int 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int() int {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return getNumberFromNotNumberValue(v).Int()
 	}
 	if !v.status.parsed {
@@ -561,7 +545,7 @@ func (v *V) Int() int {
 //
 // Uint 返回 uint 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint() uint {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return getNumberFromNotNumberValue(v).Uint()
 	}
 	if !v.status.parsed {
@@ -574,7 +558,7 @@ func (v *V) Uint() uint {
 //
 // Int64 返回 int64 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int64() int64 {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return getNumberFromNotNumberValue(v).Int64()
 	}
 	if !v.status.parsed {
@@ -587,7 +571,7 @@ func (v *V) Int64() int64 {
 //
 // Uint64 返回 uint64 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint64() uint64 {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return getNumberFromNotNumberValue(v).Uint64()
 	}
 	if !v.status.parsed {
@@ -600,7 +584,7 @@ func (v *V) Uint64() uint64 {
 //
 // Int32 返回 int32 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int32() int32 {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return getNumberFromNotNumberValue(v).Int32()
 	}
 	if !v.status.parsed {
@@ -613,7 +597,7 @@ func (v *V) Int32() int32 {
 //
 // Uint32 返回 uint32 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint32() uint32 {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return getNumberFromNotNumberValue(v).Uint32()
 	}
 	if !v.status.parsed {
@@ -626,7 +610,7 @@ func (v *V) Uint32() uint32 {
 //
 // Float64 返回 float64 类型值。如果当前值不是数字类型，则返回 0.0。
 func (v *V) Float64() float64 {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return getNumberFromNotNumberValue(v).Float64()
 	}
 	if !v.status.parsed {
@@ -639,7 +623,7 @@ func (v *V) Float64() float64 {
 //
 // Float32 返回 float32 类型值。如果当前值不是数字类型，则返回 0.0。
 func (v *V) Float32() float32 {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != jsoniter.NumberValue {
 		return getNumberFromNotNumberValue(v).Float32()
 	}
 	if !v.status.parsed {
@@ -658,11 +642,11 @@ func (v *V) String() string {
 	switch v.valueType {
 	default:
 		return ""
-	case jsonparser.Null:
+	case jsoniter.NilValue:
 		return "null"
-	case jsonparser.Number:
+	case jsoniter.NumberValue:
 		return string(v.valueBytes)
-	case jsonparser.String:
+	case jsoniter.StringValue:
 		if !v.status.parsed {
 			var e error
 			v.value.str, v.valueBytes, e = parseString(v.valueBytes)
@@ -671,11 +655,11 @@ func (v *V) String() string {
 			}
 		}
 		return v.value.str
-	case jsonparser.Boolean:
+	case jsoniter.BoolValue:
 		return formatBool(v.value.boolean)
-	case jsonparser.Object:
+	case jsoniter.ObjectValue:
 		return v.packObjChildren()
-	case jsonparser.Array:
+	case jsoniter.ArrayValue:
 		return v.packArrChildren()
 	}
 }

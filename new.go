@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/buger/jsonparser"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // NewString returns an initialied string jsonvalue object
@@ -12,7 +12,7 @@ import (
 // NewString 用给定的 string 返回一个初始化好的字符串类型的 jsonvalue 值
 func NewString(s string) *V {
 	v := new()
-	v.valueType = jsonparser.String
+	v.valueType = jsoniter.StringValue
 	v.value.str = s
 	v.status.parsed = true
 	return v
@@ -23,7 +23,7 @@ func NewString(s string) *V {
 // NewInt64 用给定的 int64 返回一个初始化好的数字类型的 jsonvalue 值
 func NewInt64(i int64) *V {
 	v := new()
-	v.valueType = jsonparser.Number
+	v.valueType = jsoniter.NumberValue
 	v.status.floated = false
 	v.status.negative = i < 0
 	v.value.f64 = float64(i)
@@ -40,7 +40,7 @@ func NewInt64(i int64) *V {
 // NewUint64 用给定的 uint64 返回一个初始化好的数字类型的 jsonvalue 值
 func NewUint64(u uint64) *V {
 	v := new()
-	v.valueType = jsonparser.Number
+	v.valueType = jsoniter.NumberValue
 	v.status.floated = false
 	v.status.negative = false
 	v.value.f64 = float64(u)
@@ -85,7 +85,7 @@ func NewUint32(u uint32) *V {
 // NewBool 用给定的 bool 返回一个初始化好的布尔类型的 jsonvalue 值
 func NewBool(b bool) *V {
 	v := new()
-	v.valueType = jsonparser.Boolean
+	v.valueType = jsoniter.BoolValue
 	v.value.boolean = b
 	v.status.parsed = true
 	return v
@@ -96,7 +96,7 @@ func NewBool(b bool) *V {
 // NewNull 返回一个初始化好的 null 类型的 jsonvalue 值
 func NewNull() *V {
 	v := new()
-	v.valueType = jsonparser.Null
+	v.valueType = jsoniter.NilValue
 	v.status.parsed = true
 	return v
 }
@@ -176,7 +176,7 @@ func NewArray() *V {
 // 参数 precision prec 指定需要编码的小数点后的位数。使用 -1 则交给编译器自行判断。
 func NewFloat64(f float64, prec int) *V {
 	v := new()
-	v.valueType = jsonparser.Number
+	v.valueType = jsoniter.NumberValue
 	v.status.negative = f < 0
 	v.value.f64 = f
 	v.value.i64 = int64(f)
@@ -199,7 +199,7 @@ func NewFloat64(f float64, prec int) *V {
 // 参数 precision prec 指定需要编码的小数点后的位数。使用 -1 则交给编译器自行判断。
 func NewFloat32(f float32, prec int) *V {
 	v := new()
-	v.valueType = jsonparser.Number
+	v.valueType = jsoniter.NumberValue
 	v.status.negative = f < 0
 	v.value.f64 = float64(f)
 	v.value.i64 = int64(f)

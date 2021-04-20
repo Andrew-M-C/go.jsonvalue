@@ -77,7 +77,7 @@ func TestSortMarshal(t *testing.T) {
 					1234,
 					{
 						"stringBB":"aa string",
-						"stringA":"a string",
+						"stringA":"a string"
 					}
 				]
 			},

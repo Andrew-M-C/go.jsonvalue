@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/buger/jsonparser"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // Len returns length of an object or array type JSON value.
@@ -12,9 +12,9 @@ import (
 // Len 返回当前对象类型或数组类型的 JSON 的成员长度。如果不是这两种类型，那么会返回 0。
 func (v *V) Len() int {
 	switch v.valueType {
-	case jsonparser.Array:
+	case jsoniter.ArrayValue:
 		return v.children.array.Len()
-	case jsonparser.Object:
+	case jsoniter.ObjectValue:
 		return len(v.children.object)
 	default:
 		return 0
@@ -59,7 +59,7 @@ func (v *V) getFromObjectChildren(key string) (child *V, exist bool) {
 }
 
 func (v *V) getInCurrValue(param interface{}) (*V, error) {
-	if v.valueType == jsonparser.Array {
+	if v.valueType == jsoniter.ArrayValue {
 		// integer expected
 		pos, err := intfToInt(param)
 		if err != nil {
@@ -71,7 +71,7 @@ func (v *V) getInCurrValue(param interface{}) (*V, error) {
 		}
 		return child, nil
 
-	} else if v.valueType == jsonparser.Object {
+	} else if v.valueType == jsoniter.ObjectValue {
 		// string expected
 		key, err := intfToString(param)
 		if err != nil {
@@ -96,7 +96,7 @@ func (v *V) GetString(firstParam interface{}, otherParams ...interface{}) (strin
 	if err != nil {
 		return "", err
 	}
-	if ret.valueType != jsonparser.String {
+	if ret.valueType != jsoniter.StringValue {
 		return "", ErrTypeNotMatch
 	}
 	return ret.String(), nil
@@ -110,7 +110,7 @@ func (v *V) GetInt(firstParam interface{}, otherParams ...interface{}) (int, err
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != jsoniter.NumberValue {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Int(), nil
@@ -124,7 +124,7 @@ func (v *V) GetUint(firstParam interface{}, otherParams ...interface{}) (uint, e
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != jsoniter.NumberValue {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Uint(), nil
@@ -138,7 +138,7 @@ func (v *V) GetInt64(firstParam interface{}, otherParams ...interface{}) (int64,
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != jsoniter.NumberValue {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Int64(), nil
@@ -152,7 +152,7 @@ func (v *V) GetUint64(firstParam interface{}, otherParams ...interface{}) (uint6
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != jsoniter.NumberValue {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Uint64(), nil
@@ -166,7 +166,7 @@ func (v *V) GetInt32(firstParam interface{}, otherParams ...interface{}) (int32,
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != jsoniter.NumberValue {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Int32(), nil
@@ -180,7 +180,7 @@ func (v *V) GetUint32(firstParam interface{}, otherParams ...interface{}) (uint3
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != jsoniter.NumberValue {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Uint32(), nil
@@ -194,7 +194,7 @@ func (v *V) GetFloat64(firstParam interface{}, otherParams ...interface{}) (floa
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != jsoniter.NumberValue {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Float64(), nil
@@ -208,7 +208,7 @@ func (v *V) GetFloat32(firstParam interface{}, otherParams ...interface{}) (floa
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != jsoniter.NumberValue {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Float32(), nil
@@ -222,7 +222,7 @@ func (v *V) GetBool(firstParam interface{}, otherParams ...interface{}) (bool, e
 	if err != nil {
 		return false, err
 	}
-	if ret.valueType != jsonparser.Boolean {
+	if ret.valueType != jsoniter.BoolValue {
 		return false, ErrTypeNotMatch
 	}
 	return ret.Bool(), nil
@@ -236,7 +236,7 @@ func (v *V) GetNull(firstParam interface{}, otherParams ...interface{}) error {
 	if err != nil {
 		return err
 	}
-	if ret.valueType != jsonparser.Null {
+	if ret.valueType != jsoniter.NilValue {
 		return ErrTypeNotMatch
 	}
 	return nil
@@ -250,7 +250,7 @@ func (v *V) GetObject(firstParam interface{}, otherParams ...interface{}) (*V, e
 	if err != nil {
 		return nil, err
 	}
-	if ret.valueType != jsonparser.Object {
+	if ret.valueType != jsoniter.ObjectValue {
 		return nil, ErrTypeNotMatch
 	}
 	return ret, nil
@@ -264,7 +264,7 @@ func (v *V) GetArray(firstParam interface{}, otherParams ...interface{}) (*V, er
 	if err != nil {
 		return nil, err
 	}
-	if ret.valueType != jsonparser.Array {
+	if ret.valueType != jsoniter.ArrayValue {
 		return nil, ErrTypeNotMatch
 	}
 	return ret, nil

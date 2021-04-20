@@ -3,7 +3,7 @@ package jsonvalue
 import (
 	"bytes"
 
-	"github.com/buger/jsonparser"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // Opt is the option of jsonvalue in marshaling.
@@ -77,7 +77,7 @@ func (v *V) MustMarshalString(opt ...Opt) string {
 //
 // Marshal 返回序列化后的 JSON 字节序列。
 func (v *V) Marshal(opt ...Opt) (b []byte, err error) {
-	if jsonparser.NotExist == v.valueType {
+	if v.valueType == jsoniter.InvalidValue {
 		return nil, ErrValueUninitialized
 	}
 
@@ -96,7 +96,7 @@ func (v *V) Marshal(opt ...Opt) (b []byte, err error) {
 //
 // MarshalString 与 Marshal 相同, 不同的是返回 string 类型。它比 string(b) 操作更高效。
 func (v *V) MarshalString(opt ...Opt) (s string, err error) {
-	if jsonparser.NotExist == v.valueType {
+	if v.valueType == jsoniter.InvalidValue {
 		return "", ErrValueUninitialized
 	}
 
@@ -115,17 +115,17 @@ func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt)
 	switch v.valueType {
 	default:
 		// do nothing
-	case jsonparser.String:
+	case jsoniter.StringValue:
 		v.marshalString(buf)
-	case jsonparser.Boolean:
+	case jsoniter.BoolValue:
 		v.marshalBoolean(buf)
-	case jsonparser.Number:
+	case jsoniter.NumberValue:
 		v.marshalNumber(buf)
-	case jsonparser.Null:
+	case jsoniter.NilValue:
 		v.marshalNull(buf)
-	case jsonparser.Object:
+	case jsoniter.ObjectValue:
 		v.marshalObject(parentInfo, buf, opt)
-	case jsonparser.Array:
+	case jsoniter.ArrayValue:
 		v.marshalArray(parentInfo, buf, opt)
 	}
 }

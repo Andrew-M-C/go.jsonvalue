@@ -1,7 +1,7 @@
 package jsonvalue
 
 import (
-	"github.com/buger/jsonparser"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // Append type is for InTheEnd() or InTheBeginning() function. Please refer to related functions.
@@ -124,17 +124,17 @@ func (v *V) AppendArray() *Append {
 func (apd *Append) InTheBeginning(params ...interface{}) (*V, error) {
 	v := apd.v
 	c := apd.c
-	if nil == v || v.valueType == jsonparser.NotExist {
+	if nil == v || v.valueType == jsoniter.InvalidValue {
 		return nil, ErrValueUninitialized
 	}
-	if nil == c || c.valueType == jsonparser.NotExist {
+	if nil == c || c.valueType == jsoniter.InvalidValue {
 		return nil, ErrValueUninitialized
 	}
 
 	// this is the last iteration
 	paramCount := len(params)
 	if paramCount == 0 {
-		if v.valueType != jsonparser.Array {
+		if v.valueType != jsoniter.ArrayValue {
 			return nil, ErrNotArrayValue
 		}
 
@@ -158,14 +158,14 @@ func (apd *Append) InTheBeginning(params ...interface{}) (*V, error) {
 func (apd *Append) InTheEnd(params ...interface{}) (*V, error) {
 	v := apd.v
 	c := apd.c
-	if v.valueType == jsonparser.NotExist {
+	if v.valueType == jsoniter.InvalidValue {
 		return nil, ErrValueUninitialized
 	}
 
 	// this is the last iteration
 	paramCount := len(params)
 	if paramCount == 0 {
-		if v.valueType != jsonparser.Array {
+		if v.valueType != jsoniter.ArrayValue {
 			return nil, ErrNotArrayValue
 		}
 

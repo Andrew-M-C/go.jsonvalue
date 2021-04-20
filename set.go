@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/buger/jsonparser"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // Set type is for At() only. Please refer to At() function.
@@ -141,10 +141,10 @@ func (v *V) setToObjectChildren(key string, child *V) {
 func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error) {
 	v := s.v
 	c := s.c
-	if nil == v || v.valueType == jsonparser.NotExist {
+	if nil == v || v.valueType == jsoniter.InvalidValue {
 		return nil, ErrValueUninitialized
 	}
-	if nil == c || c.valueType == jsonparser.NotExist {
+	if nil == c || c.valueType == jsoniter.InvalidValue {
 		return nil, ErrValueUninitialized
 	}
 
@@ -154,7 +154,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 		default:
 			return nil, fmt.Errorf("%v type does not supports Set()", v.valueType)
 
-		case jsonparser.Object:
+		case jsoniter.ObjectValue:
 			var k string
 			k, err := intfToString(firstParam)
 			if err != nil {
@@ -163,7 +163,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 			v.setToObjectChildren(k, c)
 			return c, nil
 
-		case jsonparser.Array:
+		case jsoniter.ArrayValue:
 			pos, err := intfToInt(firstParam)
 			if err != nil {
 				return nil, err
@@ -177,7 +177,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 	}
 
 	// this is not the last iterarion
-	if v.valueType == jsonparser.Object {
+	if v.valueType == jsoniter.ObjectValue {
 		k, err := intfToString(firstParam)
 		if err != nil {
 			return nil, err
@@ -210,7 +210,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 	}
 
 	// array type
-	if v.valueType == jsonparser.Array {
+	if v.valueType == jsoniter.ArrayValue {
 		pos, err := intfToInt(firstParam)
 		if err != nil {
 			return nil, err

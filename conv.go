@@ -8,7 +8,6 @@ import (
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
-	"unsafe"
 )
 
 func parseUint(b []byte) (uint64, error) {
@@ -173,23 +172,6 @@ func getu4(s []byte) rune {
 		r = r*16 + rune(c)
 	}
 	return r
-}
-
-func parseStringNoQuote(b []byte) (string, error) {
-	if len(b) == 0 {
-		return "", nil
-	}
-	s := unsafe.Sizeof(b[0])
-	p := unsafe.Pointer(unsafe.Pointer(&b))
-	sh := (*reflect.SliceHeader)(p)
-	bh := reflect.SliceHeader{
-		Data: sh.Data - s,
-		Len:  sh.Len + int(s+s),
-		Cap:  sh.Len + int(s+s),
-	}
-	b = *(*[]byte)(unsafe.Pointer(&bh))
-	str, _, err := parseString(b)
-	return str, err
 }
 
 func formatBool(b bool) string {

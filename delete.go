@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/buger/jsonparser"
+	jsoniter "github.com/json-iterator/go"
 )
 
 func (v *V) delFromObjectChildren(key string) (exist bool) {
@@ -56,7 +56,7 @@ func (v *V) Delete(firstParam interface{}, otherParams ...interface{}) error {
 }
 
 func (v *V) deleteInCurrValue(param interface{}) error {
-	if v.valueType == jsonparser.Object {
+	if v.valueType == jsoniter.ObjectValue {
 		// string expected
 		key, err := intfToString(param)
 		if err != nil {
@@ -69,7 +69,7 @@ func (v *V) deleteInCurrValue(param interface{}) error {
 		return nil
 	}
 
-	if v.valueType == jsonparser.Array {
+	if v.valueType == jsoniter.ArrayValue {
 		// interger expected
 		pos, err := intfToInt(param)
 		if err != nil {

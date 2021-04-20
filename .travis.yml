@@ -1,14 +1,16 @@
 language: go
 
 go:
-  - 1.12
   - 1.13
+  - 1.14
+  - 1.15
+  - 1.16
 
 install:
   - go get github.com/mattn/goveralls
 
 before_script:
-  - go get github.com/buger/jsonparser
+  - go mod tidy
 
 script:
   - go test -v -failfast -covermode=count -coverprofile=coverage.out && $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN

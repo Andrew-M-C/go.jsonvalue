@@ -1,7 +1,7 @@
 package jsonvalue
 
 import (
-	"github.com/buger/jsonparser"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // Insert type is for After() and Before() function. Please refer for realated function.
@@ -134,14 +134,14 @@ func (v *V) InsertArray() *Insert {
 func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*V, error) {
 	v := ins.v
 	c := ins.c
-	if v.valueType == jsonparser.NotExist {
+	if v.valueType == jsoniter.InvalidValue {
 		return nil, ErrValueUninitialized
 	}
 
 	// this is the last iteration
 	paramCount := len(otherParams)
 	if paramCount == 0 {
-		if v.valueType != jsonparser.Array {
+		if v.valueType != jsoniter.ArrayValue {
 			return nil, ErrNotArrayValue
 		}
 
@@ -187,17 +187,17 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V, error) {
 	v := ins.v
 	c := ins.c
-	if nil == v || v.valueType == jsonparser.NotExist {
+	if nil == v || v.valueType == jsoniter.InvalidValue {
 		return nil, ErrValueUninitialized
 	}
-	if nil == c || c.valueType == jsonparser.NotExist {
+	if nil == c || c.valueType == jsoniter.InvalidValue {
 		return nil, ErrValueUninitialized
 	}
 
 	// this is the last iteration
 	paramCount := len(otherParams)
 	if paramCount == 0 {
-		if v.valueType != jsonparser.Array {
+		if v.valueType != jsoniter.ArrayValue {
 			return nil, ErrNotArrayValue
 		}
 
