@@ -2,6 +2,7 @@ package jsonvalue
 
 import (
 	"encoding/json"
+	"fmt"
 	"testing"
 )
 
@@ -64,7 +65,11 @@ func TestMiscCharacters(t *testing.T) {
 }
 
 func TestUTF16(t *testing.T) {
-	orig := "你👨‍👩‍👧‍👧你"
+	// orig := "你👨‍👩‍👧‍👧你"
+	orig := fmt.Sprintf(
+		"%c%c%c%c%c%c%c%c%c",
+		0x2F804, 0x1F468, 0x200D, 0x1F469, 0x200D, 0x1F467, 0x200D, 0x1F467, 0x4F60,
+	)
 
 	v := NewObject()
 	v.SetString(orig).At("string")
