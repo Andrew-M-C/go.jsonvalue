@@ -40,6 +40,14 @@ func (v *V) SetString(s string) *Set {
 	return v.Set(NewString(s))
 }
 
+// SetBytes is equivalent to Set(NewString(base64.StdEncoding.EncodeToString(b)))
+//
+// SetBytes 等效于 Set(NewString(base64.StdEncoding.EncodeToString(b)))
+func (v *V) SetBytes(b []byte) *Set {
+	s := b64.EncodeToString(b)
+	return v.SetString(s)
+}
+
 // SetBool is equivalent to Set(jsonvalue.NewBool(b))
 //
 // SetBool 等效于 Set(jsonvalue.NewBool(b))

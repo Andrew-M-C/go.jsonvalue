@@ -37,6 +37,7 @@ package jsonvalue
 import (
 	"bytes"
 	"container/list"
+	"encoding/base64"
 	"fmt"
 	"reflect"
 	"strings"
@@ -44,6 +45,13 @@ import (
 
 	"github.com/buger/jsonparser"
 )
+
+var (
+	b64 = base64.StdEncoding
+)
+
+// test:
+// go test -v -failfast -cover -coverprofile ./cover.out && go tool cover -html=./cover.out -o ./cover.html && open ./cover.html
 
 // V is the main type of jsonvalue, representing a JSON value.
 //
@@ -644,6 +652,21 @@ func (v *V) Float32() float32 {
 		v.parseNumber()
 	}
 	return float32(v.num.f64)
+}
+
+// Bytes returns represented binary data which is encoede as Base64 string. []byte{} would be returned if value is
+// not a string type or base64 decode failed.
+//
+// Bytes 返回以 Base64 编码在 string 类型中的二进制数据。如果当前值不是字符串类型，或者是 base64 编码失败，则返回 []byte{}。
+func (v *V) Bytes() []byte {
+	if v.valueType != jsonparser.String {
+		return []byte{}
+	}
+	b, err := b64.DecodeString(v.valueStr)
+	if err != nil {
+		return []byte{}
+	}
+	return b
 }
 
 // String returns represented string value or the description for the jsonvalue.V instance if it is not a string.

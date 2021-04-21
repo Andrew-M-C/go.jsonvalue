@@ -1,6 +1,8 @@
 package jsonvalue
 
 import (
+	"bytes"
+	"encoding/hex"
 	"testing"
 )
 
@@ -176,12 +178,35 @@ func TestSetMisc(t *testing.T) {
 	checkErr()
 	check(a.IsArray() && a.Len() == 1)
 
+	topic = "GetBytes"
+	s := "1234567890"
+	data, _ := hex.DecodeString(s)
+	v.SetString(s).At("string")
+	v.SetBytes(data).At("bytes")
+	dataRead, err := v.GetBytes("bytes")
+	checkErr()
+	t.Logf("set data: %s", hex.EncodeToString(data))
+	t.Logf("Got data: %s", hex.EncodeToString(dataRead))
+	check(bytes.Equal(data, dataRead))
+	_, err = a.GetBytes("string")
+	check(err != nil)
+
+	topic = "Bytes"
+	child, _ := v.Get("string")
+	t.Logf("Get: %v", child)
+	check(len(child.Bytes()) == 0)
+	child, _ = v.Get("data")
+	t.Logf("Get: %v", child)
+	check(len(child.Bytes()) == 0)
+	child, _ = v.Get("bytes")
+	check(bytes.Equal(data, child.Bytes()))
+
 	topic = "SetString in array of a object"
 	a = NewArray()
 	a.AppendObject().InTheBeginning()
 	_, err = a.SetString("hello").At(0)
 	checkErr()
-	s, err := a.GetString(0)
+	s, err = a.GetString(0)
 	checkErr()
 	check(s == "hello")
 

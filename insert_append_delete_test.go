@@ -391,7 +391,7 @@ func TestMiscDeleteError(t *testing.T) {
 
 	{
 		var err error
-		raw := `{"hello":"world","object":{"hello":"world","object":{"int":123456}},"array":[123456]}`
+		raw := `{"Hello":"world","object":{"hello":"world","object":{"int":123456}},"array":[123456]}`
 		v, _ := UnmarshalString(raw)
 
 		// param error

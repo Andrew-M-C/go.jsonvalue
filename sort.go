@@ -81,44 +81,41 @@ func (v *sortArrayV) Swap(i, j int) {
 //
 // Key 是 KeyPath 类型的成员
 type Key struct {
-	v interface{}
+	s string
+	i int
 }
 
 func intKey(i int) Key {
-	return Key{v: i}
+	return Key{i: i}
 }
 
 func stringKey(s string) Key {
-	return Key{v: s}
+	return Key{s: s}
 }
 
 // String returns string value of a key
 //
 // String 返回当前键值对的键的描述
 func (k *Key) String() string {
-	if s, ok := k.v.(string); ok {
-		return s
+	if k.s != "" {
+		return k.s
 	}
-	if i, ok := k.v.(int); ok {
-		return strconv.Itoa(i)
-	}
-	return ""
+	return strconv.Itoa(k.i)
 }
 
 // IsString tells if current key is a string, which indicates a child of an object.
 //
 // IsString 判断当前的键是不是一个 string 类型，如果是的话，那么它是一个 object JSON 的子成员。
 func (k *Key) IsString() bool {
-	_, ok := k.v.(string)
-	return ok
+	return k.s != ""
 }
 
 // Int returns int value of a key.
 //
 // Int 返回当前键值对的 int 值。
 func (k *Key) Int() int {
-	if i, ok := k.v.(int); ok {
-		return i
+	if k.s == "" {
+		return k.i
 	}
 	return 0
 }
@@ -127,8 +124,7 @@ func (k *Key) Int() int {
 //
 // IsInt 判断当前的键是不是一个整型类型，如果是的话，那么它是一个 array JSON 的子成员。
 func (k *Key) IsInt() bool {
-	_, ok := k.v.(int)
-	return ok
+	return k.s == ""
 }
 
 // KeyPath identifies a full path of keys of object in jsonvalue.

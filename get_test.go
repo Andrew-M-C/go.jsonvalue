@@ -215,6 +215,12 @@ func TestMiscError(t *testing.T) {
 		shouldError(err)
 		err = v.GetNull("not exist")
 		shouldError(err)
+
+		// GetBytes
+		_, err = v.GetBytes("string")
+		shouldError(err)
+		_, err = v.GetBytes("array")
+		shouldError(err)
 	}
 
 }

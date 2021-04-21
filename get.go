@@ -88,6 +88,20 @@ func (v *V) getInCurrValue(param interface{}) (*V, error) {
 	}
 }
 
+// GetBytes is similar with v, err := Get(...); v.Bytes(). But if error occurs or Base64 decode error, returns error.
+//
+// GetBytes 类似于 v, err := Get(...); v.Bytes()，但如果查询中发生错误，或者 base64 解码错误，则返回错误。
+func (v *V) GetBytes(firstParam interface{}, otherParams ...interface{}) ([]byte, error) {
+	ret, err := v.Get(firstParam, otherParams...)
+	if err != nil {
+		return nil, err
+	}
+	if ret.valueType != jsonparser.String {
+		return nil, ErrTypeNotMatch
+	}
+	return b64.DecodeString(ret.valueStr)
+}
+
 // GetString is equalivent to v, err := Get(...); v.String(). If error occurs, returns "".
 //
 // GetString 等效于 v, err := Get(...); v.String()。如果发生错误，则返回 ""。

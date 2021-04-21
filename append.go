@@ -127,9 +127,6 @@ func (apd *Append) InTheBeginning(params ...interface{}) (*V, error) {
 	if nil == v || v.valueType == jsonparser.NotExist {
 		return nil, ErrValueUninitialized
 	}
-	if nil == c || c.valueType == jsonparser.NotExist {
-		return nil, ErrValueUninitialized
-	}
 
 	// this is the last iteration
 	paramCount := len(params)

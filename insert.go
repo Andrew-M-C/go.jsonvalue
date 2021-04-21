@@ -190,9 +190,6 @@ func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V
 	if nil == v || v.valueType == jsonparser.NotExist {
 		return nil, ErrValueUninitialized
 	}
-	if nil == c || c.valueType == jsonparser.NotExist {
-		return nil, ErrValueUninitialized
-	}
 
 	// this is the last iteration
 	paramCount := len(otherParams)
