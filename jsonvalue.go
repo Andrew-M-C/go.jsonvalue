@@ -130,9 +130,9 @@ func (v *V) delCaselessKey(k string) {
 	}
 }
 
-// UnmarshalString is equavilent to Unmarshal(string(b)), but much more efficient.
+// UnmarshalString is equavilent to Unmarshal(unsafeBtoS(b)), but much more efficient.
 //
-// UnmarshalString 等效于 Unmarshal(string(b))，但效率更高。
+// UnmarshalString 等效于 Unmarshal(unsafeBtoS(b))，但效率更高。
 func UnmarshalString(s string) (*V, error) {
 	// reference: https://stackoverflow.com/questions/41591097/slice-bounds-out-of-range-when-using-unsafe-pointer
 	// sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
@@ -199,6 +199,8 @@ func Unmarshal(b []byte) (ret *V, err error) {
 	return nil, ErrRawBytesUnrecignized
 }
 
+var dot = []byte{'.'}
+
 func (v *V) parseNumber() (err error) {
 	b := v.valueBytes
 
@@ -206,7 +208,7 @@ func (v *V) parseNumber() (err error) {
 	// 	v.num = &num{}
 	// }
 
-	if bytes.Contains(b, []byte(".")) {
+	if bytes.Contains(b, dot) {
 		v.num.floated = true
 		v.num.f64, err = parseFloat(b)
 		if err != nil {
@@ -259,7 +261,7 @@ func newFromNumber(b []byte) (ret *V, err error) {
 // }
 
 func newFromTrue(b []byte) (ret *V, err error) {
-	if len(b) != 4 || string(b) != "true" {
+	if len(b) != 4 || unsafeBtoS(b) != "true" {
 		return nil, ErrNotValidBoolValue
 	}
 	v := new(jsonparser.Boolean)
@@ -270,7 +272,7 @@ func newFromTrue(b []byte) (ret *V, err error) {
 }
 
 func newFromFalse(b []byte) (ret *V, err error) {
-	if len(b) != 5 || string(b) != "false" {
+	if len(b) != 5 || unsafeBtoS(b) != "false" {
 		return nil, ErrNotValidBoolValue
 	}
 	v := new(jsonparser.Boolean)
@@ -283,7 +285,7 @@ func newFromFalse(b []byte) (ret *V, err error) {
 func newFromBool(b []byte) (ret *V, err error) {
 	v := new(jsonparser.Boolean)
 
-	switch string(b) {
+	switch unsafeBtoS(b) {
 	case "true":
 		v.parsed = true
 		v.valueBytes = []byte{'t', 'r', 'u', 'e'}
@@ -300,7 +302,7 @@ func newFromBool(b []byte) (ret *V, err error) {
 }
 
 func newFromNull(b []byte) (ret *V, err error) {
-	if len(b) != 4 || string(b) != "null" {
+	if len(b) != 4 || unsafeBtoS(b) != "null" {
 		return nil, ErrNotValidBoolValue
 	}
 	v := new(jsonparser.Null)
@@ -682,7 +684,7 @@ func (v *V) String() string {
 	case jsonparser.Null:
 		return "null"
 	case jsonparser.Number:
-		return string(v.valueBytes)
+		return unsafeBtoS(v.valueBytes)
 	case jsonparser.String:
 		if !v.parsed {
 			var e error

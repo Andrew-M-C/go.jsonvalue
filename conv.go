@@ -8,19 +8,18 @@ import (
 	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
-	"unsafe"
 )
 
 func parseUint(b []byte) (uint64, error) {
-	return strconv.ParseUint(string(b), 10, 64)
+	return strconv.ParseUint(unsafeBtoS(b), 10, 64)
 }
 
 func parseInt(b []byte) (int64, error) {
-	return strconv.ParseInt(string(b), 10, 64)
+	return strconv.ParseInt(unsafeBtoS(b), 10, 64)
 }
 
 func parseFloat(b []byte) (float64, error) {
-	return strconv.ParseFloat(string(b), 64)
+	return strconv.ParseFloat(unsafeBtoS(b), 64)
 }
 
 // reference: https://golang.org/src/encoding/json/decode.go, func unquote()
@@ -35,17 +34,19 @@ func parseString(b []byte) (string, []byte, error) {
 
 	t, ok := unquoteBytes(b)
 	if !ok {
-		return "", nil, fmt.Errorf("invalid string '%s'", string(b))
+		return "", nil, fmt.Errorf("invalid string '%s'", unsafeBtoS(b))
 	}
-	return string(t), b, nil
+	return unsafeBtoS(t), b, nil
 }
 
 func unquoteBytes(s []byte) (t []byte, ok bool) {
 	if len(s) < 2 || s[0] != '"' || s[len(s)-1] != '"' {
 		return
 	}
-	s = s[1 : len(s)-1]
+	return parseStrText(s[1 : len(s)-1])
+}
 
+func parseStrText(s []byte) (t []byte, ok bool) {
 	// Check for unusual characters. If there are none,
 	// then no unquoting is needed, so return a slice of the
 	// original bytes.
@@ -176,19 +177,25 @@ func getu4(s []byte) rune {
 }
 
 func parseStringNoQuote(b []byte) (string, error) {
-	if len(b) == 0 {
-		return "", nil
+	// if len(b) == 0 {
+	// 	return "", nil
+	// }
+	// s := unsafe.Sizeof(b[0])
+	// sh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+	// bh := &reflect.SliceHeader{
+	// 	Data: sh.Data - s,
+	// 	Len:  sh.Len + int(s+s),
+	// 	Cap:  sh.Len + int(s+s),
+	// }
+	// b = *(*[]byte)(unsafe.Pointer(bh))
+	// str, _, err := parseString(b)
+	// return str, err
+
+	t, ok := parseStrText(b)
+	if !ok {
+		return "", fmt.Errorf("invalid string '%s'", string(b))
 	}
-	s := unsafe.Sizeof(b[0])
-	sh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-	bh := reflect.SliceHeader{
-		Data: sh.Data - s,
-		Len:  sh.Len + int(s+s),
-		Cap:  sh.Len + int(s+s),
-	}
-	b = *(*[]byte)(unsafe.Pointer(&bh))
-	str, _, err := parseString(b)
-	return str, err
+	return unsafeBtoS(t), nil
 }
 
 func formatBool(b bool) string {
