@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	jsonparser "github.com/buger/jsonparser"
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -55,6 +56,39 @@ func BenchmarkJsoniterrUnmarshal(b *testing.B) {
 // 		j.ToString()
 // 	}
 // }
+
+func BenchmarkJsonparsrUnmarshal(b *testing.B) {
+	var objEach func([]byte, []byte, jsonparser.ValueType, int) error
+	var arrEach func([]byte, jsonparser.ValueType, int, error)
+
+	objEach = func(k, v []byte, t jsonparser.ValueType, _ int) (noErr error) {
+		switch t {
+		default:
+			// do nothing
+		case jsonparser.Array:
+			jsonparser.ArrayEach(v, arrEach)
+		case jsonparser.Object:
+			jsonparser.ObjectEach(v, objEach)
+		}
+		return
+	}
+
+	arrEach = func(v []byte, t jsonparser.ValueType, _ int, _ error) {
+		switch t {
+		default:
+			// do nothing
+		case jsonparser.Array:
+			jsonparser.ArrayEach(v, arrEach)
+		case jsonparser.Object:
+			jsonparser.ObjectEach(v, objEach)
+		}
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		jsonparser.ObjectEach(unmarshalText, objEach)
+	}
+}
 
 func BenchmarkJsonvalueUnmarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
