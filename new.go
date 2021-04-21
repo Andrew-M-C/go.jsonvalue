@@ -11,10 +11,9 @@ import (
 //
 // NewString 用给定的 string 返回一个初始化好的字符串类型的 jsonvalue 值
 func NewString(s string) *V {
-	v := new()
-	v.valueType = jsonparser.String
-	v.value.str = s
-	v.status.parsed = true
+	v := new(jsonparser.String)
+	v.valueStr = s
+	v.parsed = true
 	return v
 }
 
@@ -22,16 +21,16 @@ func NewString(s string) *V {
 //
 // NewInt64 用给定的 int64 返回一个初始化好的数字类型的 jsonvalue 值
 func NewInt64(i int64) *V {
-	v := new()
-	v.valueType = jsonparser.Number
-	v.status.floated = false
-	v.status.negative = i < 0
-	v.value.f64 = float64(i)
-	v.value.i64 = i
-	v.value.u64 = uint64(i)
-	s := strconv.FormatInt(v.value.i64, 10)
+	v := new(jsonparser.Number)
+	// v.num = &num{}
+	v.num.floated = false
+	v.num.negative = i < 0
+	v.num.f64 = float64(i)
+	v.num.i64 = i
+	v.num.u64 = uint64(i)
+	s := strconv.FormatInt(v.num.i64, 10)
 	v.valueBytes = []byte(s)
-	v.status.parsed = true
+	v.parsed = true
 	return v
 }
 
@@ -39,16 +38,16 @@ func NewInt64(i int64) *V {
 //
 // NewUint64 用给定的 uint64 返回一个初始化好的数字类型的 jsonvalue 值
 func NewUint64(u uint64) *V {
-	v := new()
-	v.valueType = jsonparser.Number
-	v.status.floated = false
-	v.status.negative = false
-	v.value.f64 = float64(u)
-	v.value.i64 = int64(u)
-	v.value.u64 = u
-	s := strconv.FormatUint(v.value.u64, 10)
+	v := new(jsonparser.Number)
+	// v.num = &num{}
+	v.num.floated = false
+	v.num.negative = false
+	v.num.f64 = float64(u)
+	v.num.i64 = int64(u)
+	v.num.u64 = u
+	s := strconv.FormatUint(v.num.u64, 10)
 	v.valueBytes = []byte(s)
-	v.status.parsed = true
+	v.parsed = true
 	return v
 }
 
@@ -84,10 +83,9 @@ func NewUint32(u uint32) *V {
 //
 // NewBool 用给定的 bool 返回一个初始化好的布尔类型的 jsonvalue 值
 func NewBool(b bool) *V {
-	v := new()
-	v.valueType = jsonparser.Boolean
-	v.value.boolean = b
-	v.status.parsed = true
+	v := new(jsonparser.Boolean)
+	v.valueBool = b
+	v.parsed = true
 	return v
 }
 
@@ -95,9 +93,8 @@ func NewBool(b bool) *V {
 //
 // NewNull 返回一个初始化好的 null 类型的 jsonvalue 值
 func NewNull() *V {
-	v := new()
-	v.valueType = jsonparser.Null
-	v.status.parsed = true
+	v := new(jsonparser.Null)
+	v.parsed = true
 	return v
 }
 
@@ -109,7 +106,7 @@ func NewNull() *V {
 // 不过目前只支持基础类型，也就是: int/uint, int/int8/int16/int32/int64, uint/uint8/uint16/uint32/uint64, string, bool, nil。
 func NewObject(keyValues ...map[string]interface{}) *V {
 	v := newObject()
-	v.status.parsed = true
+	v.parsed = true
 
 	if len(keyValues) > 0 {
 		kv := keyValues[0]
@@ -165,7 +162,7 @@ func (v *V) parseNewObjectKV(kv map[string]interface{}) {
 // NewArray 返回一个初始化好的 array 类型的 jsonvalue 值。
 func NewArray() *V {
 	v := newArray()
-	v.status.parsed = true
+	v.parsed = true
 	return v
 }
 
@@ -175,12 +172,12 @@ func NewArray() *V {
 // NewFloat64 根据指定的 flout64 类型返回一个初始化好的数字类型的 jsonvalue 值。
 // 参数 precision prec 指定需要编码的小数点后的位数。使用 -1 则交给编译器自行判断。
 func NewFloat64(f float64, prec int) *V {
-	v := new()
-	v.valueType = jsonparser.Number
-	v.status.negative = f < 0
-	v.value.f64 = f
-	v.value.i64 = int64(f)
-	v.value.u64 = uint64(f)
+	v := new(jsonparser.Number)
+	// v.num = &num{}
+	v.num.negative = f < 0
+	v.num.f64 = f
+	v.num.i64 = int64(f)
+	v.num.u64 = uint64(f)
 	if prec >= 0 {
 		s := strconv.FormatFloat(f, 'f', prec, 64)
 		v.valueBytes = []byte(s)
@@ -188,7 +185,7 @@ func NewFloat64(f float64, prec int) *V {
 		b, _ := json.Marshal(&f)
 		v.valueBytes = b
 	}
-	v.status.parsed = true
+	v.parsed = true
 	return v
 }
 
@@ -198,19 +195,19 @@ func NewFloat64(f float64, prec int) *V {
 // NewFloat32 根据指定的 float32 类型返回一个初始化好的数字类型的 jsonvalue 值。
 // 参数 precision prec 指定需要编码的小数点后的位数。使用 -1 则交给编译器自行判断。
 func NewFloat32(f float32, prec int) *V {
-	v := new()
-	v.valueType = jsonparser.Number
-	v.status.negative = f < 0
-	v.value.f64 = float64(f)
-	v.value.i64 = int64(f)
-	v.value.u64 = uint64(f)
+	v := new(jsonparser.Number)
+	// v.num = &num{}
+	v.num.negative = f < 0
+	v.num.f64 = float64(f)
+	v.num.i64 = int64(f)
+	v.num.u64 = uint64(f)
 	if prec >= 0 {
-		s := strconv.FormatFloat(v.value.f64, 'f', prec, 32)
+		s := strconv.FormatFloat(v.num.f64, 'f', prec, 32)
 		v.valueBytes = []byte(s)
 	} else {
 		b, _ := json.Marshal(&f)
 		v.valueBytes = b
 	}
-	v.status.parsed = true
+	v.parsed = true
 	return v
 }

@@ -180,8 +180,7 @@ func parseStringNoQuote(b []byte) (string, error) {
 		return "", nil
 	}
 	s := unsafe.Sizeof(b[0])
-	p := unsafe.Pointer(unsafe.Pointer(&b))
-	sh := (*reflect.SliceHeader)(p)
+	sh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
 	bh := reflect.SliceHeader{
 		Data: sh.Data - s,
 		Len:  sh.Len + int(s+s),

@@ -135,13 +135,13 @@ func (v *V) marshalString(buf *bytes.Buffer) {
 		buf.Write(v.valueBytes)
 	} else {
 		buf.WriteByte('"')
-		escapeStringToBuff(v.value.str, buf)
+		escapeStringToBuff(v.valueStr, buf)
 		buf.WriteByte('"')
 	}
 }
 
 func (v *V) marshalBoolean(buf *bytes.Buffer) {
-	buf.WriteString(formatBool(v.value.boolean))
+	buf.WriteString(formatBool(v.valueBool))
 }
 
 func (v *V) marshalNumber(buf *bytes.Buffer) {
