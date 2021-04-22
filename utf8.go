@@ -14,10 +14,9 @@ type utf8Iter struct {
 	b []byte
 }
 
-// parseStrFromBytes
-func (it *utf8Iter) parseStrFromBytes(offset, length int) (resLen int, err error) {
-	i := offset
-	end := i + length
+// parseStrFromBytesBackward
+func (it *utf8Iter) parseStrFromBytesBackward(offset, length int) (resLen int, err error) {
+	end := offset + length
 	sectEnd := offset
 
 	shift := func(i *int, le int) {
@@ -37,8 +36,12 @@ func (it *utf8Iter) parseStrFromBytes(offset, length int) (resLen int, err error
 		// ACSII?
 		if chr <= 0x7F {
 			if chr == '\\' {
-				err = it.handleEscapeStart(&i, end, &sectEnd)
+				err = it.handleEscapeStartWithEnd(&i, end, &sectEnd)
+			} else if chr == '"' {
+				err = fmt.Errorf("unexpected double quote at position %d", i)
 			} else {
+				// shift(&i, 1)
+				it.b[sectEnd] = it.b[i]
 				i++
 				sectEnd++
 			}
@@ -60,7 +63,97 @@ func (it *utf8Iter) parseStrFromBytes(offset, length int) (resLen int, err error
 	return sectEnd - offset, nil
 }
 
-func (it utf8Iter) handleEscapeStart(i *int, end int, sectEnd *int) error {
+func (it *utf8Iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuote int, sectEnd int, err error) {
+	offset++ // skip "
+	end := len(it.b)
+	sectEnd = offset
+
+	shift := func(i *int, le int) {
+		if end-*i < le {
+			err = errors.New("illegal UTF8 string")
+			return
+		}
+		it.memcpy(sectEnd, *i, le)
+		sectEnd += le
+		*i += le
+	}
+
+	// iterate every byte
+	for i := offset; i < end; {
+		chr := it.b[i]
+
+		// ACSII?
+		if chr <= 0x7F {
+			if chr == '\\' {
+				err = it.handleEscapeStart(&i, &sectEnd)
+			} else if chr == '"' {
+				// found end quote
+				return sectEnd - offset, i + 1, nil
+			} else {
+				// shift(&i, 1)
+				it.b[sectEnd] = it.b[i]
+				i++
+				sectEnd++
+			}
+		} else if runeIdentifyingBytes2(chr) {
+			shift(&i, 2)
+		} else if runeIdentifyingBytes3(chr) {
+			shift(&i, 3)
+		} else if runeIdentifyingBytes4(chr) {
+			shift(&i, 4)
+		} else {
+			err = errors.New("illegal UTF8 string")
+		}
+
+		if err != nil {
+			return -1, -1, err
+		}
+	}
+
+	err = errors.New("ending double quote of a string is not found")
+	return
+}
+
+func (it utf8Iter) handleEscapeStart(i *int, sectEnd *int) error {
+	if len(it.b)-1-*i < 1 {
+		return errors.New("escape symbol not followed by another character")
+	}
+
+	chr := it.b[*i+1]
+	switch chr {
+	default:
+		return fmt.Errorf("unreconized character 0x%02X after escape symbol", chr)
+	case '"', '\'', '/', '\\':
+		it.b[*sectEnd] = chr
+		*sectEnd++
+		*i += 2
+	case 'b':
+		it.b[*sectEnd] = '\b'
+		*sectEnd++
+		*i += 2
+	case 'f':
+		it.b[*sectEnd] = '\f'
+		*sectEnd++
+		*i += 2
+	case 'r':
+		it.b[*sectEnd] = '\r'
+		*sectEnd++
+		*i += 2
+	case 'n':
+		it.b[*sectEnd] = '\n'
+		*sectEnd++
+		*i += 2
+	case 't':
+		it.b[*sectEnd] = '\t'
+		*sectEnd++
+		*i += 2
+	case 'u':
+		return it.handleEscapeUnicodeStartWithEnd(i, len(it.b)-1, sectEnd)
+	}
+	return nil
+}
+
+func (it utf8Iter) handleEscapeStartWithEnd(i *int, end int, sectEnd *int) error {
 	if end-*i < 1 {
 		return errors.New("escape symbol not followed by another character")
 	}
@@ -93,12 +186,12 @@ func (it utf8Iter) handleEscapeStart(i *int, end int, sectEnd *int) error {
 		*sectEnd++
 		*i += 2
 	case 'u':
-		return it.handleEscapeUnicodeStart(i, end, sectEnd)
+		return it.handleEscapeUnicodeStartWithEnd(i, end, sectEnd)
 	}
 	return nil
 }
 
-func (it *utf8Iter) handleEscapeUnicodeStart(i *int, end int, sectEnd *int) (err error) {
+func (it *utf8Iter) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (err error) {
 	if end-*i <= 5 {
 		return errors.New("escape symbol not followed by another character")
 	}
@@ -224,4 +317,18 @@ func runeIdentifyingBytes3(chr byte) bool {
 
 func runeIdentifyingBytes4(chr byte) bool {
 	return (chr & 0xF8) == 0xF8
+}
+
+func newUTF8IterWithByte(b []byte) *utf8Iter {
+	le := len(b)
+	it := &utf8Iter{
+		b: make([]byte, le),
+	}
+
+	if le > 0 {
+		src := unsafe.Pointer(&b[0])
+		dst := unsafe.Pointer(&it.b[0])
+		C.memcpy(dst, src, C.size_t(le))
+	}
+	return it
 }

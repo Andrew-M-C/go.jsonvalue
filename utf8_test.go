@@ -21,7 +21,7 @@ func test(t *testing.T, scene string, f func(*testing.T)) {
 func TestUtf8Iter(t *testing.T) {
 	test(t, "utf8Iter.memcpy", testUtf8Iter_memcpy)
 	test(t, "utf8Iter.assignWideRune", testUtf8Iter_assignWideRune)
-	test(t, "utf8Iter.parseStrFromBytes", testUtf8Iter_parseStrFromBytes)
+	test(t, "utf8Iter.parseStrFromBytesForward/Backward", testUtf8Iter_parseStrFromBytesBackwardForward)
 }
 
 func testUtf8Iter_memcpy(t *testing.T) {
@@ -67,7 +67,7 @@ func testUtf8Iter_assignWideRune(t *testing.T) {
 	So(string(b), ShouldEqual, "您好世界!")
 }
 
-func testUtf8Iter_parseStrFromBytes(t *testing.T) {
+func testUtf8Iter_parseStrFromBytesBackwardForward(t *testing.T) {
 	// orig := "你👨‍👩‍👧‍👧你"
 	orig := fmt.Sprintf(
 		"%c%c%c%c%c%c%c%c%c",
@@ -75,25 +75,55 @@ func testUtf8Iter_parseStrFromBytes(t *testing.T) {
 	)
 	v := NewString(orig)
 
-	raw := v.MustMarshal()
-	t.Logf("raw data: %s", raw)
+	Convey("backward", func() {
+		raw := v.MustMarshal()
+		t.Logf("raw data: %s", raw)
 
-	it := utf8Iter{
-		b: raw[1 : len(raw)-1],
-	}
-	t.Logf("raw string: %s", it.b)
-	le, err := it.parseStrFromBytes(0, len(it.b))
-	So(err, ShouldBeNil)
-	So(le, ShouldNotBeZeroValue)
+		it := utf8Iter{
+			b: raw[1 : len(raw)-1],
+		}
 
-	s := string(it.b[:le])
-	t.Logf("got string: %s", s)
+		t.Logf("raw string: %s", it.b)
+		le, err := it.parseStrFromBytesBackward(0, len(it.b))
+		So(err, ShouldBeNil)
+		So(le, ShouldBeGreaterThan, 0)
 
-	buff := bytes.Buffer{}
-	for _, r := range s {
-		buff.WriteString(fmt.Sprintf("0x%04x ", r))
-	}
-	t.Logf(buff.String())
+		s := string(it.b[:le])
+		t.Logf("Got len: %d", le)
+		t.Logf("got string: %s", s)
 
-	So(s, ShouldEqual, orig)
+		buff := bytes.Buffer{}
+		for _, r := range s {
+			buff.WriteString(fmt.Sprintf("0x%04x ", r))
+		}
+		t.Logf(buff.String())
+
+		So(s, ShouldEqual, orig)
+	})
+
+	Convey("forward", func() {
+		raw := v.MustMarshal()
+		t.Logf("raw data: %s", raw)
+
+		it := utf8Iter{
+			b: raw,
+		}
+
+		le, end, err := it.parseStrFromBytesForwardWithQuote(0)
+		So(err, ShouldBeNil)
+		So(le, ShouldBeGreaterThan, 0)
+
+		t.Logf("Got len: %d, end: %d", le, end)
+
+		s := string(it.b[1 : 1+le])
+		t.Logf("got string: %s", s)
+
+		buff := bytes.Buffer{}
+		for _, r := range s {
+			buff.WriteString(fmt.Sprintf("0x%04x ", r))
+		}
+		t.Logf(buff.String())
+
+		So(s, ShouldEqual, orig)
+	})
 }
