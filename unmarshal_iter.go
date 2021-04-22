@@ -9,13 +9,13 @@ import (
 	"unsafe"
 )
 
-// utf8Iter is used to iterate []byte text
-type utf8Iter struct {
+// iter is used to iterate []byte text
+type iter struct {
 	b []byte
 }
 
 // parseStrFromBytesBackward
-func (it *utf8Iter) parseStrFromBytesBackward(offset, length int) (resLen int, err error) {
+func (it *iter) parseStrFromBytesBackward(offset, length int) (resLen int, err error) {
 	end := offset + length
 	sectEnd := offset
 
@@ -63,7 +63,7 @@ func (it *utf8Iter) parseStrFromBytesBackward(offset, length int) (resLen int, e
 	return sectEnd - offset, nil
 }
 
-func (it *utf8Iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuote int, sectEnd int, err error) {
+func (it *iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuote int, sectEnd int, err error) {
 	offset++ // skip "
 	end := len(it.b)
 	sectEnd = offset
@@ -114,7 +114,7 @@ func (it *utf8Iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithou
 	return
 }
 
-func (it utf8Iter) handleEscapeStart(i *int, sectEnd *int) error {
+func (it iter) handleEscapeStart(i *int, sectEnd *int) error {
 	if len(it.b)-1-*i < 1 {
 		return errors.New("escape symbol not followed by another character")
 	}
@@ -153,7 +153,7 @@ func (it utf8Iter) handleEscapeStart(i *int, sectEnd *int) error {
 	return nil
 }
 
-func (it utf8Iter) handleEscapeStartWithEnd(i *int, end int, sectEnd *int) error {
+func (it iter) handleEscapeStartWithEnd(i *int, end int, sectEnd *int) error {
 	if end-*i < 1 {
 		return errors.New("escape symbol not followed by another character")
 	}
@@ -191,7 +191,7 @@ func (it utf8Iter) handleEscapeStartWithEnd(i *int, end int, sectEnd *int) error
 	return nil
 }
 
-func (it *utf8Iter) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (err error) {
+func (it *iter) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (err error) {
 	if end-*i <= 5 {
 		return errors.New("escape symbol not followed by another character")
 	}
@@ -259,7 +259,7 @@ func chrToHex(chr byte, errOut *error) byte {
 	return 0
 }
 
-func (it *utf8Iter) memcpy(dst, src, length int) {
+func (it *iter) memcpy(dst, src, length int) {
 	if dst == src {
 		return
 	}
@@ -271,7 +271,7 @@ func (it *utf8Iter) memcpy(dst, src, length int) {
 	)
 }
 
-func (it *utf8Iter) assignWideRune(dst int, r rune) (offset int) {
+func (it *iter) assignWideRune(dst int, r rune) (offset int) {
 	// 00000yyy yyzzzzzz ==>
 	// 110yyyyy 10zzzzzz
 	if r <= 0x7FF {
@@ -319,9 +319,9 @@ func runeIdentifyingBytes4(chr byte) bool {
 	return (chr & 0xF8) == 0xF8
 }
 
-func newUTF8IterWithByte(b []byte) *utf8Iter {
+func newUTF8IterWithByte(b []byte) *iter {
 	le := len(b)
-	it := &utf8Iter{
+	it := &iter{
 		b: make([]byte, le),
 	}
 
@@ -331,4 +331,50 @@ func newUTF8IterWithByte(b []byte) *utf8Iter {
 		C.memcpy(dst, src, C.size_t(le))
 	}
 	return it
+}
+
+// searchObjEnd search for ending } with the object. input offset should be the position of {
+func (it *iter) searchObjEnd(offset int, right int) (end int, err error) {
+	return it.searchChrFromRight(offset, right, '}')
+}
+
+// searchArrEnd search for ending ] with the object. input offset should be the position of [
+func (it *iter) searchArrEnd(offset int, right int) (end int, err error) {
+	return it.searchChrFromRight(offset, right, ']')
+}
+
+func (it *iter) searchChrFromRight(offset int, right int, tgt byte) (end int, err error) {
+	offset++
+	end = right
+
+	for offset < end {
+		chr := it.b[end-1]
+		switch chr {
+		case ' ', '\r', '\n', '\t', '\b':
+			end--
+		case tgt:
+			return end, nil
+		default:
+			return -1, fmt.Errorf("expecting } but character 0x%02X got", chr)
+		}
+	}
+
+	return -1, fmt.Errorf("right } for start { at Position %d is not found", offset)
+}
+
+// skipBlanks skip blank characters until end or reaching a non-blank characher
+func (it *iter) skipBlanks(offset int) (newOffset int, reachEnd bool) {
+	end := len(it.b)
+
+	for offset < end {
+		chr := it.b[offset]
+		switch chr {
+		case ' ', '\r', '\n', '\t', '\b':
+			offset++ // continue
+		default:
+			return offset, false
+		}
+	}
+
+	return end, true
 }

@@ -18,18 +18,17 @@ func test(t *testing.T, scene string, f func(*testing.T)) {
 	})
 }
 
-func TestUtf8Iter(t *testing.T) {
-	test(t, "utf8Iter.memcpy", testUtf8Iter_memcpy)
-	test(t, "utf8Iter.assignWideRune", testUtf8Iter_assignWideRune)
-	test(t, "utf8Iter.parseStrFromBytesForward/Backward", testUtf8Iter_parseStrFromBytesBackwardForward)
+func TestIter(t *testing.T) {
+	test(t, "iter.memcpy", testIter_memcpy)
+	test(t, "iter.assignWideRune", testIter_assignWideRune)
+	test(t, "iter.parseStrFromBytesForward and Backward", testIter_parseStrFromBytesBackwardForward)
+	test(t, "iter.character searching", testIter_chrSearching)
 }
 
-func testUtf8Iter_memcpy(t *testing.T) {
+func testIter_memcpy(t *testing.T) {
 	b := []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA}
 
-	it := utf8Iter{
-		b: b,
-	}
+	it := iter{b: b}
 
 	origByte := b[4]
 
@@ -40,10 +39,10 @@ func testUtf8Iter_memcpy(t *testing.T) {
 	So(b[0], ShouldEqual, origByte)
 }
 
-func testUtf8Iter_assignWideRune(t *testing.T) {
+func testIter_assignWideRune(t *testing.T) {
 	b := make([]byte, 32)
 
-	it := utf8Iter{
+	it := iter{
 		b: b,
 	}
 
@@ -67,7 +66,7 @@ func testUtf8Iter_assignWideRune(t *testing.T) {
 	So(string(b), ShouldEqual, "您好世界!")
 }
 
-func testUtf8Iter_parseStrFromBytesBackwardForward(t *testing.T) {
+func testIter_parseStrFromBytesBackwardForward(t *testing.T) {
 	// orig := "你👨‍👩‍👧‍👧你"
 	orig := fmt.Sprintf(
 		"%c%c%c%c%c%c%c%c%c",
@@ -79,7 +78,7 @@ func testUtf8Iter_parseStrFromBytesBackwardForward(t *testing.T) {
 		raw := v.MustMarshal()
 		t.Logf("raw data: %s", raw)
 
-		it := utf8Iter{
+		it := iter{
 			b: raw[1 : len(raw)-1],
 		}
 
@@ -105,9 +104,7 @@ func testUtf8Iter_parseStrFromBytesBackwardForward(t *testing.T) {
 		raw := v.MustMarshal()
 		t.Logf("raw data: %s", raw)
 
-		it := utf8Iter{
-			b: raw,
-		}
+		it := iter{b: raw}
 
 		le, end, err := it.parseStrFromBytesForwardWithQuote(0)
 		So(err, ShouldBeNil)
@@ -126,4 +123,47 @@ func testUtf8Iter_parseStrFromBytesBackwardForward(t *testing.T) {
 
 		So(s, ShouldEqual, orig)
 	})
+}
+
+func testIter_chrSearching(t *testing.T) {
+	raw := []byte("   {  [ {  } ]  }  ")
+	t.Logf("")
+	t.Logf(string(raw))
+	t.Logf("01234567890123456789")
+
+	it := iter{b: raw}
+
+	offset, reachEnd := it.skipBlanks(0)
+	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
+	So(offset, ShouldNotBeZeroValue)
+	So(reachEnd, ShouldBeFalse)
+	So(raw[offset], ShouldEqual, '{')
+
+	end := len(raw)
+	end, err := it.searchObjEnd(offset, end)
+	t.Logf("end %d, err %v", end, err)
+	So(err, ShouldBeNil)
+	So(raw[end-1], ShouldEqual, '}')
+
+	offset, reachEnd = it.skipBlanks(offset + 1)
+	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
+	So(offset, ShouldNotBeZeroValue)
+	So(reachEnd, ShouldBeFalse)
+	So(raw[offset], ShouldEqual, '[')
+
+	end, err = it.searchArrEnd(offset, end-1)
+	t.Logf("end %d, err %v", end, err)
+	So(err, ShouldBeNil)
+	So(raw[end-1], ShouldEqual, ']')
+
+	offset, reachEnd = it.skipBlanks(offset + 1)
+	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
+	So(offset, ShouldNotBeZeroValue)
+	So(reachEnd, ShouldBeFalse)
+	So(raw[offset], ShouldEqual, '{')
+
+	end, err = it.searchObjEnd(offset, end-1)
+	t.Logf("end %d, err %v", end, err)
+	So(err, ShouldBeNil)
+	So(raw[end-1], ShouldEqual, '}')
 }
