@@ -151,6 +151,41 @@ func UnmarshalString(s string) (*V, error) {
 	return Unmarshal(trueB)
 }
 
+// TODO:
+func unmarshalWithIter(it *iter, offset, end int) (*V, error) {
+	offset, reachEnd := it.skipBlanks(offset, end)
+	if reachEnd {
+		return nil, fmt.Errorf("%w, cannot find any symbol characters found", ErrRawBytesUnrecignized)
+	}
+
+	chr := it.b[offset]
+	switch chr {
+	case '{':
+		// TODO: object
+	case '[':
+		// TODO: array
+	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
+		// TODO: number
+	case '"':
+		sectLenWithoutQuote, _, err := it.parseStrFromBytesForwardWithQuote(offset)
+		if err != nil {
+			return nil, err
+		}
+		v := NewString(unsafeBtoS(it.b[offset+1 : offset+1+sectLenWithoutQuote]))
+		return v, nil
+		// TODO: string
+	case 't':
+		// TODO: true
+	case 'f':
+		// TODO: false
+	case 'n':
+		// TODO: null
+	default:
+		return nil, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+	}
+	return nil, ErrRawBytesUnrecignized // TODO: 后续去掉
+}
+
 // Unmarshal parse raw bytes(encoded in UTF-8 or pure AscII) and returns a *V instance.
 //
 // Unmarshal 解析原始的字节类型数据（以 UTF-8 或纯 AscII 编码），并返回一个 *V 对象。

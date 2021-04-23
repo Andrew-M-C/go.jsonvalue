@@ -363,8 +363,13 @@ func (it *iter) searchChrFromRight(offset int, right int, tgt byte) (end int, er
 }
 
 // skipBlanks skip blank characters until end or reaching a non-blank characher
-func (it *iter) skipBlanks(offset int) (newOffset int, reachEnd bool) {
-	end := len(it.b)
+func (it *iter) skipBlanks(offset int, endPos ...int) (newOffset int, reachEnd bool) {
+	end := 0
+	if len(endPos) > 0 {
+		end = endPos[0]
+	} else {
+		end = len(it.b)
+	}
 
 	for offset < end {
 		chr := it.b[offset]

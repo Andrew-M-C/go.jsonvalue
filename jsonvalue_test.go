@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // go test -v -failfast -cover -coverprofile xxx.prof && go tool cover -html xxx.prof
@@ -163,4 +165,17 @@ func TestMiscInt(t *testing.T) {
 
 	_, err = v.GetInt(uint8(2))
 	checkInt(i, 3)
+}
+
+func TestJsonvalue(t *testing.T) {
+	test(t, "unmarshalWithIter", test_unmarshalWithIter)
+}
+
+func test_unmarshalWithIter(t *testing.T) {
+	raw := []byte("hello, 世界")
+	rawWithQuote := []byte(fmt.Sprintf("\"%s\"", raw))
+
+	v, err := unmarshalWithIter(&iter{b: rawWithQuote}, 0, len(rawWithQuote))
+	So(err, ShouldBeNil)
+	So(v.String(), ShouldEqual, string(raw))
 }
