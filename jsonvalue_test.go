@@ -196,4 +196,11 @@ func test_unmarshalWithIter(t *testing.T) {
 		So(v.Bool(), ShouldBeFalse)
 		So(v.IsBoolean(), ShouldBeTrue)
 	})
+
+	Convey("null", func() {
+		raw := []byte("\r\t\n  null \r\t\b  ")
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.IsNull(), ShouldBeTrue)
+	})
 }

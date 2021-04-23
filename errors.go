@@ -24,15 +24,20 @@ const (
 	// ErrRawBytesUnrecignized 表示无法识别的序列文本
 	ErrRawBytesUnrecignized = Error("unrecognized raw text")
 
+	// ErrNotValidNumberValue shows that a value starts with number or '-' is not eventually a number value
+	//
+	// ErrNotValidNumberValue 表示当前值不是一个合法的数值值
+	ErrNotValidNumberValue = Error("not a valid number value")
+
 	// ErrNotValidBoolValue shows that a value starts with 't' or 'f' is not eventually a bool value
 	//
 	// ErrNotValidBoolValue 表示当前值不是一个合法的布尔值
-	ErrNotValidBoolValue = Error("not a valid bool object")
+	ErrNotValidBoolValue = Error("not a valid bool value")
 
 	// ErrNotValidNulllValue shows that a value starts with 'n' is not eventually a bool value
 	//
 	// ErrNotValidNulllValue 表示当前不是一个 null 值类型的 JSON
-	ErrNotValidNulllValue = Error("not a valid null object")
+	ErrNotValidNulllValue = Error("not a valid null value")
 
 	// ErrOutOfRange identifies that given position for a JSON array is out of range
 	//

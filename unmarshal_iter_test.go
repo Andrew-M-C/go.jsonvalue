@@ -25,6 +25,7 @@ func TestIter(t *testing.T) {
 	test(t, "iter.parseStrFromBytesBackward", testIter_generalStringUnmarshal)
 	test(t, "iter.parseStrFromBytesForward and Backward", testIter_parseStrFromBytesBackwardForward)
 	test(t, "iter.character searching", testIter_chrSearching)
+	test(t, "iter.testIter_parseNumber", testIter_parseNumber)
 }
 
 func testIter_memcpy(t *testing.T) {
@@ -201,4 +202,32 @@ func testIter_chrSearching(t *testing.T) {
 	So(offset, ShouldNotBeZeroValue)
 	So(reachEnd, ShouldBeFalse)
 	So(raw[offset], ShouldEqual, '}')
+}
+
+func testIter_parseNumber(t *testing.T) {
+	b := []byte("-12345.6789  ")
+
+	Convey("reachEnd == true", func() {
+		it := &iter{b: b[:11]}
+
+		res, end, reachEnd, err := it.parseNumber(0)
+		t.Logf("res: %+v", res)
+		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
+		t.Logf(string(b[:end]))
+		So(err, ShouldBeNil)
+		So(res.f64, ShouldEqual, -12345.6789)
+		So(reachEnd, ShouldBeTrue)
+	})
+
+	Convey("reachEnd == false", func() {
+		it := &iter{b: b}
+
+		res, end, reachEnd, err := it.parseNumber(0)
+		t.Logf("res: %+v", res)
+		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
+		t.Logf(string(b[:end]))
+		So(err, ShouldBeNil)
+		So(res.f64, ShouldEqual, -12345.6789)
+		So(reachEnd, ShouldBeFalse)
+	})
 }

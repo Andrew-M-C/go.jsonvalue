@@ -6,6 +6,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"unsafe"
 )
 
@@ -391,6 +392,154 @@ func (it *iter) parseFalse(offset int) (end int, err error) {
 	}
 
 	return -1, fmt.Errorf("%w, not 'false' at Position %d", ErrNotValidBoolValue, offset)
+}
+
+func (it *iter) parseNull(offset int) (end int, err error) {
+	if len(it.b)-offset < 5 {
+		return -1, fmt.Errorf("%w, insufficient character from Position %d", ErrNotValidBoolValue, offset)
+	}
+
+	if it.b[offset] == 'n' &&
+		it.b[offset+1] == 'u' &&
+		it.b[offset+2] == 'l' &&
+		it.b[offset+3] == 'l' {
+		return offset + 4, nil
+	}
+
+	return -1, fmt.Errorf("%w, not 'null' at Position %d", ErrNotValidBoolValue, offset)
+}
+
+type parseNumResult struct {
+	i64      int64
+	u64      uint64
+	f64      float64
+	floated  bool
+	negative bool
+}
+
+func (it *iter) parseNumber(offset int) (res *parseNumResult, end int, reachEnd bool, err error) {
+	negative := false
+	if it.b[offset] == '-' {
+		negative = true
+		offset++
+	}
+
+	end = offset
+
+	gotInterger := false
+	fin := len(it.b)
+	fractionalOffset := -1
+	integerPart := uint64(0)
+
+	var iterate func(int) bool
+
+	iterFractionalPart := func(offset int) (shouldBreak bool) {
+		chr := it.b[offset]
+
+		if chr == '.' {
+			err = fmt.Errorf("%w, illegal dot at Position %d", ErrNotValidNumberValue, offset)
+			return true
+		}
+
+		n := chr - byte('0')
+		if n > 9 {
+			return true
+		}
+
+		// continue
+		return
+	}
+
+	iterIntegerPart := func(offset int) (shouldBreak bool) {
+		chr := it.b[offset]
+
+		if chr == '.' {
+			if !gotInterger {
+				err = fmt.Errorf("%w, missing digits of integer part at Position %d", ErrNotValidNumberValue, offset)
+				return true
+			}
+			fractionalOffset = offset
+			iterate = iterFractionalPart
+			return
+		}
+
+		n := chr - byte('0')
+		if n > 9 {
+			if !gotInterger {
+				err = fmt.Errorf("%w, missing digits of number at Position %d", ErrNotValidNumberValue, offset)
+				return true
+			}
+			// number ends
+			return true
+		}
+
+		prevI := integerPart
+		integerPart = integerPart<<3 + integerPart + integerPart + uint64(n)
+		if integerPart < prevI {
+			// overflow
+			err = fmt.Errorf("%w, JSON does not support integers greater than 0xFFFFFFFF", ErrNotValidNumberValue)
+			return true
+		}
+
+		gotInterger = true
+		return false
+	}
+
+	iterate = iterIntegerPart
+
+	for ; offset < fin; offset++ {
+		if shouldBreak := iterate(offset); shouldBreak {
+			break
+		}
+	}
+
+	if err != nil {
+		return
+	}
+	if offset >= fin {
+		reachEnd = true
+	}
+
+	if fractionalOffset > 0 && fractionalOffset < offset-1 {
+		s := unsafeBtoS(it.b[fractionalOffset:offset])
+		f, _ := strconv.ParseFloat(s, 64)
+
+		if negative {
+			return &parseNumResult{
+				i64:      int64(integerPart) * -1,
+				u64:      uint64(int64(integerPart) * -1),
+				f64:      (float64(integerPart) + f) * -1,
+				floated:  true,
+				negative: true,
+			}, offset + 1, reachEnd, nil
+		}
+
+		return &parseNumResult{
+			i64:      int64(integerPart),
+			u64:      uint64(integerPart),
+			f64:      float64(integerPart) + f,
+			floated:  true,
+			negative: false,
+		}, offset + 1, reachEnd, nil
+	}
+
+	if negative {
+		return &parseNumResult{
+			i64:      int64(integerPart) * -1,
+			u64:      uint64(int64(integerPart) * -1),
+			f64:      float64(integerPart) * -1,
+			floated:  false,
+			negative: true,
+		}, offset + 1, reachEnd, nil
+	}
+
+	return &parseNumResult{
+		i64:      int64(integerPart),
+		u64:      integerPart,
+		f64:      float64(integerPart),
+		floated:  false,
+		negative: false,
+	}, offset + 1, reachEnd, nil
 }
 
 // skipBlanks skip blank characters until end or reaching a non-blank characher
