@@ -172,10 +172,28 @@ func TestJsonvalue(t *testing.T) {
 }
 
 func test_unmarshalWithIter(t *testing.T) {
-	raw := []byte("hello, 世界")
-	rawWithQuote := []byte(fmt.Sprintf("\"%s\"", raw))
+	Convey("string", func() {
+		raw := []byte("hello, 世界")
+		rawWithQuote := []byte(fmt.Sprintf("\"%s\"", raw))
 
-	v, err := unmarshalWithIter(&iter{b: rawWithQuote}, 0, len(rawWithQuote))
-	So(err, ShouldBeNil)
-	So(v.String(), ShouldEqual, string(raw))
+		v, err := unmarshalWithIter(&iter{b: rawWithQuote}, 0, len(rawWithQuote))
+		So(err, ShouldBeNil)
+		So(v.String(), ShouldEqual, string(raw))
+	})
+
+	Convey("true", func() {
+		raw := []byte("  true  ")
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.Bool(), ShouldBeTrue)
+		So(v.IsBoolean(), ShouldBeTrue)
+	})
+
+	Convey("false", func() {
+		raw := []byte("  false  ")
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.Bool(), ShouldBeFalse)
+		So(v.IsBoolean(), ShouldBeTrue)
+	})
 }

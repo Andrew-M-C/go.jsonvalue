@@ -171,13 +171,22 @@ func unmarshalWithIter(it *iter, offset, end int) (*V, error) {
 		if err != nil {
 			return nil, err
 		}
-		v := NewString(unsafeBtoS(it.b[offset+1 : offset+1+sectLenWithoutQuote]))
-		return v, nil
-		// TODO: string
+		return NewString(unsafeBtoS(it.b[offset+1 : offset+1+sectLenWithoutQuote])), nil
+
 	case 't':
-		// TODO: true
+		_, err := it.parseTrue(offset)
+		if err != nil {
+			return nil, err
+		}
+		return newTrue(), nil
+
 	case 'f':
-		// TODO: false
+		_, err := it.parseFalse(offset)
+		if err != nil {
+			return nil, err
+		}
+		return newFalse(), nil
+
 	case 'n':
 		// TODO: null
 	default:
@@ -297,6 +306,27 @@ func newFromNumber(b []byte) (ret *V, err error) {
 // 	v.valueBytes = b
 // 	return v, nil
 // }
+
+var (
+	trueBytes  = []byte{'t', 'r', 'u', 'e'}
+	falseBytes = []byte{'f', 'a', 'l', 's', 'e'}
+)
+
+func newTrue() *V {
+	v := new(jsonparser.Boolean)
+	v.parsed = true
+	v.valueBytes = trueBytes
+	v.valueBool = true
+	return v
+}
+
+func newFalse() *V {
+	v := new(jsonparser.Boolean)
+	v.parsed = true
+	v.valueBytes = falseBytes
+	v.valueBool = false
+	return v
+}
 
 func newFromTrue(b []byte) (ret *V, err error) {
 	if len(b) != 4 || unsafeBtoS(b) != "true" {

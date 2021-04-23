@@ -362,6 +362,37 @@ func (it *iter) searchChrFromRight(offset int, right int, tgt byte) (end int, er
 	return -1, fmt.Errorf("right } for start { at Position %d is not found", offset)
 }
 
+func (it *iter) parseTrue(offset int) (end int, err error) {
+	if len(it.b)-offset < 4 {
+		return -1, fmt.Errorf("%w, insufficient character from Position %d", ErrNotValidBoolValue, offset)
+	}
+
+	if it.b[offset] == 't' &&
+		it.b[offset+1] == 'r' &&
+		it.b[offset+2] == 'u' &&
+		it.b[offset+3] == 'e' {
+		return offset + 4, nil
+	}
+
+	return -1, fmt.Errorf("%w, not 'true' at Position %d", ErrNotValidBoolValue, offset)
+}
+
+func (it *iter) parseFalse(offset int) (end int, err error) {
+	if len(it.b)-offset < 5 {
+		return -1, fmt.Errorf("%w, insufficient character from Position %d", ErrNotValidBoolValue, offset)
+	}
+
+	if it.b[offset] == 'f' &&
+		it.b[offset+1] == 'a' &&
+		it.b[offset+2] == 'l' &&
+		it.b[offset+3] == 's' &&
+		it.b[offset+4] == 'e' {
+		return offset + 5, nil
+	}
+
+	return -1, fmt.Errorf("%w, not 'false' at Position %d", ErrNotValidBoolValue, offset)
+}
+
 // skipBlanks skip blank characters until end or reaching a non-blank characher
 func (it *iter) skipBlanks(offset int, endPos ...int) (newOffset int, reachEnd bool) {
 	end := 0
