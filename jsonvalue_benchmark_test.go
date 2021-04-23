@@ -21,16 +21,79 @@ type object struct {
 	Array  []*object `json:"array,omitempty"`
 }
 
-func BenchmarkMapInterfUnmarshal(b *testing.B) {
+func BenchmarkGoStdJsonStructUnmarshal(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		o := object{}
+		json.Unmarshal(unmarshalText, &o)
+	}
+}
+
+func BenchmarkGoStdJsonStructMarshal(b *testing.B) {
+	o := object{}
+	json.Unmarshal(unmarshalText, &o)
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := json.Marshal(&o)
+		if err != nil {
+			b.Errorf("marshal error: %v", err)
+			return
+		}
+	}
+}
+
+func BenchmarkGoStdJsonMapItfUnmarshal(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		m := map[string]interface{}{}
 		json.Unmarshal(unmarshalText, &m)
 	}
 }
 
-func BenchmarkMapInterfMarshal(b *testing.B) {
+func BenchmarkGoStdJsonMapItfMarshal(b *testing.B) {
 	m := map[string]interface{}{}
 	json.Unmarshal(unmarshalText, &m)
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := json.Marshal(&m)
+		if err != nil {
+			b.Errorf("marshal error: %v", err)
+			return
+		}
+	}
+}
+
+func BenchmarkJsoniterrStructUnmarshal(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		o := object{}
+		jsonit.Unmarshal(unmarshalText, &o)
+	}
+}
+
+func BenchmarkJsoniterrStructMarshal(b *testing.B) {
+	o := object{}
+	jsonit.Unmarshal(unmarshalText, &o)
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := json.Marshal(&o)
+		if err != nil {
+			b.Errorf("marshal error: %v", err)
+			return
+		}
+	}
+}
+
+func BenchmarkJsoniterrMapItfUnmarshal(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		m := map[string]interface{}{}
+		jsonit.Unmarshal(unmarshalText, &m)
+	}
+}
+
+func BenchmarkJsoniterrMapItfMarshal(b *testing.B) {
+	m := map[string]interface{}{}
+	jsonit.Unmarshal(unmarshalText, &m)
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
@@ -102,48 +165,6 @@ func BenchmarkJsonvalueMarshal(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		_, err := j.Marshal()
-		if err != nil {
-			b.Errorf("marshal error: %v", err)
-			return
-		}
-	}
-}
-
-func BenchmarkGoStdJsonStructUnmarshal(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		o := object{}
-		json.Unmarshal(unmarshalText, &o)
-	}
-}
-
-func BenchmarkGoStdJsonStructMarshal(b *testing.B) {
-	o := object{}
-	json.Unmarshal(unmarshalText, &o)
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		_, err := json.Marshal(&o)
-		if err != nil {
-			b.Errorf("marshal error: %v", err)
-			return
-		}
-	}
-}
-
-func BenchmarkJsoniternStructUnmarshal(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		o := object{}
-		jsonit.Unmarshal(unmarshalText, &o)
-	}
-}
-
-func BenchmarkJsoniternStructMarshal(b *testing.B) {
-	o := object{}
-	jsonit.Unmarshal(unmarshalText, &o)
-	b.ResetTimer()
-
-	for i := 0; i < b.N; i++ {
-		_, err := json.Marshal(&o)
 		if err != nil {
 			b.Errorf("marshal error: %v", err)
 			return
