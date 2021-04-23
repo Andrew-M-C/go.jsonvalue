@@ -154,7 +154,7 @@ func (it iter) handleEscapeStart(i *int, sectEnd *int) error {
 }
 
 func (it iter) handleEscapeStartWithEnd(i *int, end int, sectEnd *int) error {
-	if end-*i < 1 {
+	if end-*i <= 1 {
 		return errors.New("escape symbol not followed by another character")
 	}
 	chr := it.b[*i+1]
