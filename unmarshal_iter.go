@@ -417,129 +417,72 @@ type parseNumResult struct {
 	negative bool
 }
 
-func (it *iter) parseNumber(offset int) (res *parseNumResult, end int, reachEnd bool, err error) {
-	negative := false
+func (it *iter) parseNumber(
+	offset int,
+) (i64 int64, u64 uint64, f64 float64, floated bool, negative bool, end int, reachEnd bool, err error) {
+	sectStart := offset
+	negative = false
 	if it.b[offset] == '-' {
 		negative = true
 		offset++
 	}
 
-	end = offset
-
-	gotInterger := false
+	numStart := offset
 	fin := len(it.b)
-	fractionalOffset := -1
-	integerPart := uint64(0)
-
-	var iterate func(int) bool
-
-	iterFractionalPart := func(offset int) (shouldBreak bool) {
-		chr := it.b[offset]
-
-		if chr == '.' {
-			err = fmt.Errorf("%w, illegal dot at Position %d", ErrNotValidNumberValue, offset)
-			return true
-		}
-
-		n := chr - byte('0')
-		if n > 9 {
-			return true
-		}
-
-		// continue
-		return
-	}
-
-	iterIntegerPart := func(offset int) (shouldBreak bool) {
-		chr := it.b[offset]
-
-		if chr == '.' {
-			if !gotInterger {
-				err = fmt.Errorf("%w, missing digits of integer part at Position %d", ErrNotValidNumberValue, offset)
-				return true
-			}
-			fractionalOffset = offset
-			iterate = iterFractionalPart
-			return
-		}
-
-		n := chr - byte('0')
-		if n > 9 {
-			if !gotInterger {
-				err = fmt.Errorf("%w, missing digits of number at Position %d", ErrNotValidNumberValue, offset)
-				return true
-			}
-			// number ends
-			return true
-		}
-
-		prevI := integerPart
-		integerPart = integerPart<<3 + integerPart + integerPart + uint64(n)
-		if integerPart < prevI {
-			// overflow
-			err = fmt.Errorf("%w, JSON does not support integers greater than 0xFFFFFFFF", ErrNotValidNumberValue)
-			return true
-		}
-
-		gotInterger = true
-		return false
-	}
-
-	iterate = iterIntegerPart
+	floated = false
 
 	for ; offset < fin; offset++ {
-		if shouldBreak := iterate(offset); shouldBreak {
+		chr := it.b[offset]
+		if chr-'0' <= 9 {
+			// continue
+		} else if chr == '.' {
+			floated = true
+		} else {
+			end = offset
 			break
 		}
 	}
 
-	if err != nil {
-		return
-	}
 	if offset >= fin {
 		reachEnd = true
+		end = fin
 	}
 
-	if fractionalOffset > 0 && fractionalOffset < offset-1 {
-		s := unsafeBtoS(it.b[fractionalOffset:offset])
-		f, _ := strconv.ParseFloat(s, 64)
-
-		if negative {
-			return &parseNumResult{
-				i64:      int64(integerPart) * -1,
-				u64:      uint64(int64(integerPart) * -1),
-				f64:      (float64(integerPart) + f) * -1,
-				floated:  true,
-				negative: true,
-			}, offset + 1, reachEnd, nil
+	if !floated {
+		b := it.b[numStart:end]
+		u64, err = strconv.ParseUint(unsafeBtoS(b), 10, 64)
+		if err != nil {
+			err = fmt.Errorf("%w, %v", ErrNotValidNumberValue, err)
+			return
 		}
 
-		return &parseNumResult{
-			i64:      int64(integerPart),
-			u64:      uint64(integerPart),
-			f64:      float64(integerPart) + f,
-			floated:  true,
-			negative: false,
-		}, offset + 1, reachEnd, nil
+		if negative {
+			if u64 > 0x7FFFFFFF {
+				err = fmt.Errorf("%w, negative integer should not smaller than -0x80000000", ErrNotValidNumberValue)
+				return
+			}
+			i64 = -i64
+			u64 = uint64(i64)
+		} else {
+			i64 = int64(u64)
+		}
+
+		return i64, u64, float64(i64), floated, negative, end, reachEnd, nil
+
+	}
+
+	f64, err = strconv.ParseFloat(unsafeBtoS(it.b[sectStart:end]), 64)
+	if err != nil {
+		err = fmt.Errorf("%w, %v", ErrNotValidNumberValue, err)
+		return
 	}
 
 	if negative {
-		return &parseNumResult{
-			i64:      int64(integerPart) * -1,
-			u64:      uint64(int64(integerPart) * -1),
-			f64:      float64(integerPart) * -1,
-			floated:  false,
-			negative: true,
-		}, offset + 1, reachEnd, nil
+		return int64(f64), uint64(f64), f64, false, false, end, reachEnd, nil
 	}
 
-	return &parseNumResult{
-		i64:      int64(integerPart),
-		u64:      integerPart,
-		f64:      float64(integerPart),
-		floated:  false,
-		negative: false,
-	}, offset + 1, reachEnd, nil
+	u64 = uint64(f64)
+	return int64(u64), u64, f64, true, false, end, reachEnd, nil
 }
 
 // skipBlanks skip blank characters until end or reaching a non-blank characher

@@ -16,10 +16,10 @@ func BenchmarkGoStdParseFloat(b *testing.B) {
 }
 
 func BenchmarkGoStdParseInt(b *testing.B) {
-	s := "-1234567890"
+	s := "1234567890"
 
 	for i := 0; i < b.N; i++ {
-		strconv.ParseInt(s, 10, 64)
+		strconv.ParseUint(s, 10, 64)
 	}
 }
 
