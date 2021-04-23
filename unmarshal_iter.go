@@ -21,7 +21,7 @@ func (it *iter) parseStrFromBytesBackward(offset, length int) (resLen int, err e
 
 	shift := func(i *int, le int) {
 		if end-*i < le {
-			err = errors.New("illegal UTF8 string")
+			err = fmt.Errorf("insuffient remaing data to copy, expect %d, but got %d", le, end-*i)
 			return
 		}
 		it.memcpy(sectEnd, *i, le)
@@ -52,7 +52,7 @@ func (it *iter) parseStrFromBytesBackward(offset, length int) (resLen int, err e
 		} else if runeIdentifyingBytes4(chr) {
 			shift(&i, 4)
 		} else {
-			err = errors.New("illegal UTF8 string")
+			err = fmt.Errorf("illegal byte 0x%02X at Position %d", chr, i)
 		}
 
 		if err != nil {
@@ -308,11 +308,11 @@ func (it *iter) assignWideRune(dst int, r rune) (offset int) {
 }
 
 func runeIdentifyingBytes2(chr byte) bool {
-	return (chr & 0xC0) == 0xC0
+	return (chr & 0xE0) == 0xC0
 }
 
 func runeIdentifyingBytes3(chr byte) bool {
-	return (chr & 0xE0) == 0xE0
+	return (chr & 0xF0) == 0xE0
 }
 
 func runeIdentifyingBytes4(chr byte) bool {

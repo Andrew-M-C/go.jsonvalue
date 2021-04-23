@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"fmt"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -21,6 +22,7 @@ func test(t *testing.T, scene string, f func(*testing.T)) {
 func TestIter(t *testing.T) {
 	test(t, "iter.memcpy", testIter_memcpy)
 	test(t, "iter.assignWideRune", testIter_assignWideRune)
+	test(t, "iter.parseStrFromBytesBackward", testIter_generalStringUnmarshal)
 	test(t, "iter.parseStrFromBytesForward and Backward", testIter_parseStrFromBytesBackwardForward)
 	test(t, "iter.character searching", testIter_chrSearching)
 }
@@ -66,6 +68,29 @@ func testIter_assignWideRune(t *testing.T) {
 	So(string(b), ShouldEqual, "您好世界!")
 }
 
+func printBytes(t *testing.T, b []byte) {
+	if len(b) == 0 {
+		t.Log("nil bytes")
+		return
+	}
+	repeat := (len(b)-1)/10 + 1
+	s := strings.Repeat(" 0 1 2 3 4 5 6 7 8 9", repeat)
+	t.Log("")
+	t.Log(s[:len(b)*2])
+	t.Log(hex.EncodeToString(b))
+}
+
+func testIter_generalStringUnmarshal(t *testing.T) {
+	b := []byte("hello, 世界")
+	it := iter{b: b}
+
+	printBytes(t, b)
+
+	le, err := it.parseStrFromBytesBackward(0, len(b))
+	t.Logf("le = %d, err = %v", le, nil)
+	So(err, ShouldBeNil)
+}
+
 func testIter_parseStrFromBytesBackwardForward(t *testing.T) {
 	// orig := "你👨‍👩‍👧‍👧你"
 	orig := fmt.Sprintf(
@@ -76,13 +101,15 @@ func testIter_parseStrFromBytesBackwardForward(t *testing.T) {
 
 	Convey("backward", func() {
 		raw := v.MustMarshal()
-		t.Logf("raw data: %s", raw)
+		t.Log("raw data:")
+		printBytes(t, raw)
 
 		it := iter{
 			b: raw[1 : len(raw)-1],
 		}
 
-		t.Logf("raw string: %s", it.b)
+		t.Log("raw string:")
+		printBytes(t, it.b)
 		le, err := it.parseStrFromBytesBackward(0, len(it.b))
 		So(err, ShouldBeNil)
 		So(le, ShouldBeGreaterThan, 0)
@@ -102,7 +129,8 @@ func testIter_parseStrFromBytesBackwardForward(t *testing.T) {
 
 	Convey("forward", func() {
 		raw := v.MustMarshal()
-		t.Logf("raw data: %s", raw)
+		t.Log("raw data:")
+		printBytes(t, raw)
 
 		it := iter{b: raw}
 
@@ -166,4 +194,10 @@ func testIter_chrSearching(t *testing.T) {
 	t.Logf("end %d, err %v", end, err)
 	So(err, ShouldBeNil)
 	So(raw[end-1], ShouldEqual, '}')
+
+	offset, reachEnd = it.skipBlanks(offset + 1)
+	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
+	So(offset, ShouldNotBeZeroValue)
+	So(reachEnd, ShouldBeFalse)
+	So(raw[offset], ShouldEqual, '}')
 }

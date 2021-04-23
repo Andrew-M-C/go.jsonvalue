@@ -3,6 +3,7 @@ package jsonvalue
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"reflect"
 	"strconv"
 	"unicode"
@@ -44,6 +45,17 @@ func unquoteBytes(s []byte) (t []byte, ok bool) {
 		return
 	}
 	return parseStrText(s[1 : len(s)-1])
+}
+
+func _parseStrText(s []byte) (t []byte, ok bool) {
+	it := &iter{b: s}
+	le, err := it.parseStrFromBytesBackward(0, len(it.b))
+	if err != nil {
+		log.Printf("it.parseStrFromBytesBackward error: %v", err)
+		return nil, false
+	}
+
+	return s[:le], true
 }
 
 func parseStrText(s []byte) (t []byte, ok bool) {

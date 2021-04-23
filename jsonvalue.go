@@ -145,7 +145,10 @@ func UnmarshalString(s string) (*V, error) {
 	sh := (*reflect.SliceHeader)(unsafe.Pointer(&s))
 	sh.Cap = sh.Len
 	b := *(*[]byte)(unsafe.Pointer(sh))
-	return Unmarshal(b)
+
+	trueB := make([]byte, len(b))
+	copy(trueB, b)
+	return Unmarshal(trueB)
 }
 
 // Unmarshal parse raw bytes(encoded in UTF-8 or pure AscII) and returns a *V instance.
