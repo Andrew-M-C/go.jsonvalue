@@ -25,7 +25,9 @@ func (it *iter) parseStrFromBytesBackward(offset, length int) (resLen int, err e
 			err = fmt.Errorf("insuffient remaing data to copy, expect %d, but got %d", le, end-*i)
 			return
 		}
-		it.memcpy(sectEnd, *i, le)
+		if sectEnd != *i {
+			it.memcpy(sectEnd, *i, le)
+		}
 		sectEnd += le
 		*i += le
 	}
