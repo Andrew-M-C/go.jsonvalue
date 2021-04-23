@@ -47,7 +47,7 @@ func unquoteBytes(s []byte) (t []byte, ok bool) {
 	return parseStrText(s[1 : len(s)-1])
 }
 
-func _parseStrText(s []byte) (t []byte, ok bool) {
+func parseStrText(s []byte) (t []byte, ok bool) {
 	it := &iter{b: s}
 	le, err := it.parseStrFromBytesBackward(0, len(it.b))
 	if err != nil {
@@ -58,7 +58,7 @@ func _parseStrText(s []byte) (t []byte, ok bool) {
 	return s[:le], true
 }
 
-func parseStrText(s []byte) (t []byte, ok bool) {
+func _parseStrText(s []byte) (t []byte, ok bool) {
 	// Check for unusual characters. If there are none,
 	// then no unquoting is needed, so return a slice of the
 	// original bytes.

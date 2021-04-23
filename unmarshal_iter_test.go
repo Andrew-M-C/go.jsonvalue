@@ -89,6 +89,7 @@ func testIter_generalStringUnmarshal(t *testing.T) {
 	le, err := it.parseStrFromBytesBackward(0, len(b))
 	t.Logf("le = %d, err = %v", le, nil)
 	So(err, ShouldBeNil)
+	So(le, ShouldEqual, len(b))
 }
 
 func testIter_parseStrFromBytesBackwardForward(t *testing.T) {
