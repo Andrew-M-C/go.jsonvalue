@@ -59,6 +59,11 @@ const (
 	// ErrNotArrayValue 表示当前不是一个数组类型 JSON
 	ErrNotArrayValue = Error("not an array typed value")
 
+	// ErrNotObjectValue shows that operation target value is not an valie object
+	//
+	// ErrNotObjectValue 表示当前不是一个合法的对象类型 JSON
+	ErrNotObjectValue = Error("not an object typed value")
+
 	// ErrIllegalString shows that it is not a legal JSON string typed value
 	//
 	// ErrIllegalString 表示字符串不合法

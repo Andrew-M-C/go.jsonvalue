@@ -219,4 +219,26 @@ func test_unmarshalWithIter(t *testing.T) {
 
 		t.Logf("res: %v", v)
 	})
+
+	Convey("object with basic type", func() {
+		raw := []byte(`  {"message": "Hello, world!"}	`)
+		printBytes(t, raw)
+
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		t.Logf("res: %v", v)
+
+		for kv := range v.IterObjects() {
+			t.Logf("key: %s", kv.K)
+			t.Logf("val: %v", kv.V)
+		}
+
+		s, err := v.Get("message")
+		So(err, ShouldBeNil)
+		So(v, ShouldNotBeNil)
+		So(s.IsString(), ShouldBeTrue)
+		So(s.String(), ShouldEqual, "Hello, world!")
+	})
 }
