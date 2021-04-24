@@ -218,6 +218,99 @@ func unmarshalWithIter(it *iter, offset, end int) (*V, error) {
 	return nil, ErrRawBytesUnrecignized // TODO: 后续去掉
 }
 
+// unmarshalArrayWithIterUnknownEnd is similar with unmarshalArrayWithIter, though should start with '[',
+// but it does known where its ']' is
+func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end int, err error) {
+	offset++
+	right--
+	arr := newArray()
+
+	reachEnd := false
+
+	for offset < right {
+		// 检查结束字符
+		offset, reachEnd = it.skipBlanks(offset, right)
+		if reachEnd {
+			// ']' not found
+			return nil, -1, fmt.Errorf("%w, cannot find ']'", ErrNotArrayValue)
+		}
+
+		chr := it.b[offset]
+		switch chr {
+		case ']':
+			return arr, offset + 1, nil
+
+		case ',':
+			offset++
+
+		case '{':
+			// TODO: object
+
+		case '[':
+			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(it, offset, right)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.children.array.PushBack(v)
+			offset = sectEnd
+
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
+			i64, u64, f64, floated, negative, sectEnd, _, err := it.parseNumber(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			v := new(jsonparser.Number)
+			v.valueBytes = it.b[offset:sectEnd]
+			v.parsed = true
+			v.num.floated = floated
+			v.num.negative = negative
+			v.num.i64 = i64
+			v.num.u64 = u64
+			v.num.f64 = f64
+			arr.children.array.PushBack(v)
+			offset = sectEnd
+
+		case '"':
+			sectLenWithoutQuote, sectEnd, err := it.parseStrFromBytesForwardWithQuote(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			v := NewString(unsafeBtoS(it.b[offset+1 : offset+1+sectLenWithoutQuote]))
+			arr.children.array.PushBack(v)
+			offset = sectEnd
+
+		case 't':
+			sectEnd, err := it.parseTrue(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.children.array.PushBack(NewBool(true))
+			offset = sectEnd
+
+		case 'f':
+			sectEnd, err := it.parseFalse(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.children.array.PushBack(NewBool(false))
+			offset = sectEnd
+
+		case 'n':
+			sectEnd, err := it.parseNull(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.children.array.PushBack(NewNull())
+			offset = sectEnd
+
+		default:
+			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+		}
+	}
+
+	return nil, -1, fmt.Errorf("%w, cannot find ']'", ErrNotArrayValue)
+}
+
 // unmarshalArrayWithIter unmarshal array from raw bytes. it.b[offset] must be '[' and it.b[end-1] ']'
 func unmarshalArrayWithIter(it *iter, offset, end int) (_ *V, err error) {
 	offset++
@@ -242,7 +335,12 @@ func unmarshalArrayWithIter(it *iter, offset, end int) (_ *V, err error) {
 			// TODO: object
 
 		case '[':
-			// TODO: array
+			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(it, offset, end)
+			if err != nil {
+				return nil, err
+			}
+			arr.children.array.PushBack(v)
+			offset = sectEnd
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
 			i64, u64, f64, floated, negative, sectEnd, _, err := it.parseNumber(offset)

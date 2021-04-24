@@ -212,7 +212,7 @@ func test_unmarshalWithIter(t *testing.T) {
 	})
 
 	Convey("array with basic type", func() {
-		raw := []byte(" [123, true, false, null, \"Hello, world!\" ] ")
+		raw := []byte(" [123, true, false, null, [\"array in array\"], \"Hello, world!\" ] ")
 		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
 		So(err, ShouldBeNil)
 		So(v.IsArray(), ShouldBeTrue)
