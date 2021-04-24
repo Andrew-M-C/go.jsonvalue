@@ -58,7 +58,7 @@ var (
 // V 是 jsonvalue 的主类型，表示一个 JSON 值。
 type V struct {
 	valueType  jsonparser.ValueType
-	valueBytes []byte
+	valueBytes []byte // TODO: 后续去掉，减少一次 alloc
 	parsed     bool
 
 	num       num
@@ -67,7 +67,7 @@ type V struct {
 	children  children
 }
 
-type num struct {
+type num struct { // TODO: 后续去掉，减少一次 alloc
 	negative bool
 	floated  bool
 	i64      int64
@@ -163,9 +163,27 @@ func unmarshalWithIter(it *iter, offset, end int) (*V, error) {
 	case '{':
 		// TODO: object
 	case '[':
-		// TODO: array
+		end, err := it.searchArrEnd(offset, end)
+		if err != nil {
+			return nil, err
+		}
+		return unmarshalArrayWithIter(it, offset, end)
+
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-		// TODO: number
+		i64, u64, f64, floated, negative, end, _, err := it.parseNumber(offset)
+		if err != nil {
+			return nil, err
+		}
+		v := new(jsonparser.Number)
+		v.valueBytes = it.b[offset:end]
+		v.parsed = true
+		v.num.floated = floated
+		v.num.negative = negative
+		v.num.i64 = i64
+		v.num.u64 = u64
+		v.num.f64 = f64
+		return v, nil
+
 	case '"':
 		sectLenWithoutQuote, _, err := it.parseStrFromBytesForwardWithQuote(offset)
 		if err != nil {
@@ -198,6 +216,90 @@ func unmarshalWithIter(it *iter, offset, end int) (*V, error) {
 		return nil, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
 	}
 	return nil, ErrRawBytesUnrecignized // TODO: 后续去掉
+}
+
+// unmarshalArrayWithIter unmarshal array from raw bytes. it.b[offset] must be '[' and it.b[end-1] ']'
+func unmarshalArrayWithIter(it *iter, offset, end int) (_ *V, err error) {
+	offset++
+	end--
+	arr := newArray()
+	reachEnd := false
+
+	for offset < end {
+		// 检查结束字符
+		offset, reachEnd = it.skipBlanks(offset, end)
+		if reachEnd {
+			return arr, nil
+		}
+
+		chr := it.b[offset]
+		switch chr {
+		case ',':
+			offset++
+			// continue
+
+		case '{':
+			// TODO: object
+
+		case '[':
+			// TODO: array
+
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
+			i64, u64, f64, floated, negative, sectEnd, _, err := it.parseNumber(offset)
+			if err != nil {
+				return nil, err
+			}
+			v := new(jsonparser.Number)
+			v.valueBytes = it.b[offset:sectEnd]
+			v.parsed = true
+			v.num.floated = floated
+			v.num.negative = negative
+			v.num.i64 = i64
+			v.num.u64 = u64
+			v.num.f64 = f64
+			arr.children.array.PushBack(v)
+			offset = sectEnd
+
+		case '"':
+			sectLenWithoutQuote, sectEnd, err := it.parseStrFromBytesForwardWithQuote(offset)
+			if err != nil {
+				return nil, err
+			}
+			v := NewString(unsafeBtoS(it.b[offset+1 : offset+1+sectLenWithoutQuote]))
+			arr.children.array.PushBack(v)
+			offset = sectEnd
+
+		case 't':
+			sectEnd, err := it.parseTrue(offset)
+			if err != nil {
+				return nil, err
+			}
+			arr.children.array.PushBack(NewBool(true))
+			offset = sectEnd
+
+		case 'f':
+			sectEnd, err := it.parseFalse(offset)
+			if err != nil {
+				return nil, err
+			}
+			arr.children.array.PushBack(NewBool(false))
+			offset = sectEnd
+
+		case 'n':
+			sectEnd, err := it.parseNull(offset)
+			if err != nil {
+				return nil, err
+			}
+			arr.children.array.PushBack(NewNull())
+			offset = sectEnd
+
+		default:
+			return nil, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+		}
+
+	}
+
+	return arr, nil
 }
 
 // Unmarshal parse raw bytes(encoded in UTF-8 or pure AscII) and returns a *V instance.

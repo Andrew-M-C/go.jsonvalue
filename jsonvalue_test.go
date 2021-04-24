@@ -203,4 +203,20 @@ func test_unmarshalWithIter(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(v.IsNull(), ShouldBeTrue)
 	})
+
+	Convey("int number", func() {
+		raw := []byte(" 1234567890 ")
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.Int64(), ShouldEqual, 1234567890)
+	})
+
+	Convey("array with basic type", func() {
+		raw := []byte(" [123, true, false, null, \"Hello, world!\" ] ")
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.IsArray(), ShouldBeTrue)
+
+		t.Logf("res: %v", v)
+	})
 }
