@@ -162,3 +162,45 @@ func BenchmarkIterParseSimpleString(b *testing.B) {
 		it.parseStrFromBytesBackward(0, len(it.b))
 	}
 }
+
+func BenchmarkJsitParseObject(b *testing.B) {
+	raw := unmarshalText
+
+	data := struct {
+		String string `json:"string"`
+	}{}
+
+	jsonit := jsoniter.ConfigCompatibleWithStandardLibrary
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		// err := jsonit.Unmarshal(raw, &s)
+		jsonit.Unmarshal(raw, &data)
+	}
+}
+
+func BenchmarkIterParseObject(b *testing.B) {
+	origB := unmarshalText
+
+	itLst := make([]*iter, b.N)
+	for i := 0; i < b.N; i++ {
+		bytes := make([]byte, len(origB))
+		copy(bytes, origB)
+		itLst[i] = &iter{b: bytes}
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		// err := jsonit.Unmarshal(raw, &s)
+		it := itLst[0]
+		unmarshalWithIter(it, 0, len(it.b))
+	}
+}
+
+func BenchmarkJsvlParseObject(b *testing.B) {
+	raw := unmarshalText
+	for i := 0; i < b.N; i++ {
+		Unmarshal(raw)
+	}
+}
