@@ -782,6 +782,19 @@ func Unmarshal(b []byte) (ret *V, err error) {
 	return unmarshalWithIter(it, 0, le)
 }
 
+// UnmarshalNoCopy is same as Unmarshal, but it does not copy another []byte instance for saving CPU time.
+// But pay attention that the input []byte may be used as buffer by jsonvalue and mey be modified.
+//
+// UnmarshalNoCopy 与 Unmarshal 相同，但是这个函数在解析过程中不会重新复制一个 []byte，对于大 json 的解析而言能够大大节省时间。
+// 但请注意传入的 []byte 变量肯能会被 jsonvalue 用作缓冲区，并进行修改
+func UnmarshalNoCopy(b []byte) (ret *V, err error) {
+	le := len(b)
+	if le == 0 {
+		return nil, ErrNilParameter
+	}
+	return unmarshalWithIter(&iter{b: b}, 0, le)
+}
+
 var dot = []byte{'.'}
 
 func (v *V) parseNumber() (err error) {
@@ -834,159 +847,6 @@ func newFromNumber(b []byte) (ret *V, err error) {
 	v := new(jsonparser.Number)
 	v.valueBytes = b
 	return v, nil
-}
-
-// func newFromString(b []byte) (ret *V, err error) {
-// 	v := new()
-// 	v.valueType = jsonparser.String
-// 	v.valueBytes = b
-// 	return v, nil
-// }
-
-func newFromTrue(b []byte) (ret *V, err error) {
-	if len(b) != 4 || unsafeBtoS(b) != "true" {
-		return nil, ErrNotValidBoolValue
-	}
-	v := new(jsonparser.Boolean)
-	v.parsed = true
-	v.valueBytes = []byte{'t', 'r', 'u', 'e'}
-	v.valueBool = true
-	return v, nil
-}
-
-func newFromFalse(b []byte) (ret *V, err error) {
-	if len(b) != 5 || unsafeBtoS(b) != "false" {
-		return nil, ErrNotValidBoolValue
-	}
-	v := new(jsonparser.Boolean)
-	v.parsed = true
-	v.valueBytes = []byte{'f', 'a', 'l', 's', 'e'}
-	v.valueBool = false
-	return v, nil
-}
-
-func newFromBool(b []byte) (ret *V, err error) {
-	v := new(jsonparser.Boolean)
-
-	switch unsafeBtoS(b) {
-	case "true":
-		v.parsed = true
-		v.valueBytes = []byte{'t', 'r', 'u', 'e'}
-		v.valueBool = true
-	case "false":
-		v.parsed = true
-		v.valueBytes = []byte{'f', 'a', 'l', 's', 'e'}
-		v.valueBool = false
-	default:
-		return nil, ErrNotValidBoolValue
-	}
-
-	return v, nil
-}
-
-func newFromNull(b []byte) (ret *V, err error) {
-	if len(b) != 4 || unsafeBtoS(b) != "null" {
-		return nil, ErrNotValidBoolValue
-	}
-	v := new(jsonparser.Null)
-	v.parsed = true
-	return v, nil
-}
-
-// ====
-func newFromArray(b []byte) (ret *V, err error) {
-	o := newArray()
-
-	jsonparser.ArrayEach(b, func(v []byte, t jsonparser.ValueType, _ int, _ error) {
-		if err != nil {
-			return
-		}
-
-		var child *V
-
-		switch t {
-		default:
-			err = fmt.Errorf("invalid value type: %v", t)
-		case jsonparser.Object:
-			child, err = newFromObject(v)
-		case jsonparser.Array:
-			child, err = newFromArray(v)
-		case jsonparser.Number:
-			child, err = newFromNumber(v)
-		case jsonparser.Boolean:
-			child, err = newFromBool(v)
-		case jsonparser.Null:
-			child, err = newFromNull(v)
-		case jsonparser.String:
-			s, err := parseStringNoQuote(v)
-			if err != nil {
-				return
-			}
-			child = new(jsonparser.String)
-			child.parsed = true
-			child.valueStr = s
-		}
-
-		if err != nil {
-			return
-		}
-		o.children.array.PushBack(child)
-	})
-
-	// done
-	if err != nil {
-		return
-	}
-	return o, nil
-}
-
-// ==== object parsing ====
-func newFromObject(b []byte) (ret *V, err error) {
-	o := newObject()
-
-	err = jsonparser.ObjectEach(b, func(k, v []byte, t jsonparser.ValueType, _ int) error {
-		// key
-		var child *V
-		key, err := parseStringNoQuote(k)
-		if err != nil {
-			return err
-		}
-
-		switch t {
-		default:
-			return fmt.Errorf("invalid value type: %v", t)
-		case jsonparser.Object:
-			child, err = newFromObject(v)
-		case jsonparser.Array:
-			child, err = newFromArray(v)
-		case jsonparser.Number:
-			child, err = newFromNumber(v)
-		case jsonparser.Boolean:
-			child, err = newFromBool(v)
-		case jsonparser.Null:
-			child, err = newFromNull(v)
-		case jsonparser.String:
-			s, err := parseStringNoQuote(v)
-			if err != nil {
-				return err
-			}
-			child = new(jsonparser.String)
-			child.parsed = true
-			child.valueStr = s
-		}
-
-		if err != nil {
-			return err
-		}
-		o.setToObjectChildren(key, child)
-		return nil
-	})
-
-	// done
-	if err != nil {
-		return
-	}
-	return o, nil
 }
 
 // ==== type access ====

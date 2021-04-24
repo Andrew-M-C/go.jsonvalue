@@ -193,7 +193,7 @@ func BenchmarkIterParseObject(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		// err := jsonit.Unmarshal(raw, &s)
-		it := itLst[0]
+		it := itLst[i]
 		unmarshalWithIter(it, 0, len(it.b))
 	}
 }

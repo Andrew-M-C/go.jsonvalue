@@ -55,28 +55,6 @@ func parseStrText(s []byte) (t []byte, ok bool) {
 	return s[:le], true
 }
 
-func parseStringNoQuote(b []byte) (string, error) {
-	// if len(b) == 0 {
-	// 	return "", nil
-	// }
-	// s := unsafe.Sizeof(b[0])
-	// sh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
-	// bh := &reflect.SliceHeader{
-	// 	Data: sh.Data - s,
-	// 	Len:  sh.Len + int(s+s),
-	// 	Cap:  sh.Len + int(s+s),
-	// }
-	// b = *(*[]byte)(unsafe.Pointer(bh))
-	// str, _, err := parseString(b)
-	// return str, err
-
-	t, ok := parseStrText(b)
-	if !ok {
-		return "", fmt.Errorf("invalid string '%s'", string(b))
-	}
-	return unsafeBtoS(t), nil
-}
-
 func formatBool(b bool) string {
 	if b {
 		return "true"
