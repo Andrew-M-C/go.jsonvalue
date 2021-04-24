@@ -397,8 +397,8 @@ func (it *iter) parseFalse(offset int) (end int, err error) {
 }
 
 func (it *iter) parseNull(offset int) (end int, err error) {
-	if len(it.b)-offset < 5 {
-		return -1, fmt.Errorf("%w, insufficient character from Position %d", ErrNotValidBoolValue, offset)
+	if len(it.b)-offset < 4 {
+		return -1, fmt.Errorf("%w, insufficient character from Position %d", ErrNotValidNulllValue, offset)
 	}
 
 	if it.b[offset] == 'n' &&
@@ -463,7 +463,7 @@ func (it *iter) parseNumber(
 				err = fmt.Errorf("%w, negative integer should not smaller than -0x80000000", ErrNotValidNumberValue)
 				return
 			}
-			i64 = -i64
+			i64 = -int64(u64)
 			u64 = uint64(i64)
 		} else {
 			i64 = int64(u64)
@@ -480,11 +480,11 @@ func (it *iter) parseNumber(
 	}
 
 	if negative {
-		return int64(f64), uint64(f64), f64, false, false, end, reachEnd, nil
+		return int64(f64), uint64(f64), f64, floated, negative, end, reachEnd, nil
 	}
 
 	u64 = uint64(f64)
-	return int64(u64), u64, f64, true, false, end, reachEnd, nil
+	return int64(u64), u64, f64, floated, negative, end, reachEnd, nil
 }
 
 // skipBlanks skip blank characters until end or reaching a non-blank characher

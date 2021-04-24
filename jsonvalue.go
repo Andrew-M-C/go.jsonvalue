@@ -39,9 +39,7 @@ import (
 	"container/list"
 	"encoding/base64"
 	"fmt"
-	"reflect"
 	"strings"
-	"unsafe"
 
 	"github.com/buger/jsonparser"
 )
@@ -142,13 +140,8 @@ func UnmarshalString(s string) (*V, error) {
 	// 	Cap:  sh.Len,
 	// }
 	// b := *(*[]byte)(unsafe.Pointer(&bh))
-	sh := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-	sh.Cap = sh.Len
-	b := *(*[]byte)(unsafe.Pointer(sh))
-
-	trueB := make([]byte, len(b))
-	copy(trueB, b)
-	return Unmarshal(trueB)
+	b := []byte(s)
+	return unmarshalWithIter(&iter{b: b}, 0, len(b))
 }
 
 // unmarshalWithIter parse bytes with unknown value type.
@@ -223,7 +216,7 @@ func unmarshalWithIter(it *iter, offset, end int) (*V, error) {
 }
 
 // unmarshalArrayWithIterUnknownEnd is similar with unmarshalArrayWithIter, though should start with '[',
-// but it does known where its ']' is
+// but it does not known where its ']' is
 func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end int, err error) {
 	offset++
 	arr := newArray()
@@ -580,7 +573,7 @@ func unmarshalObjectWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end i
 			if err = keyNotFoundErr(); err != nil {
 				return nil, -1, err
 			}
-			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(it, offset, end)
+			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(it, offset, right)
 			if err != nil {
 				return nil, -1, err
 			}
@@ -778,51 +771,15 @@ func unmarshalArrayWithIter(it *iter, offset, end int) (_ *V, err error) {
 //
 // Unmarshal 解析原始的字节类型数据（以 UTF-8 或纯 AscII 编码），并返回一个 *V 对象。
 func Unmarshal(b []byte) (ret *V, err error) {
-	if nil == b || len(b) == 0 {
+	le := len(b)
+	if le == 0 {
 		return nil, ErrNilParameter
 	}
 
-	for i, c := range b {
-		switch c {
-		case ' ', '\r', '\n', '\t', '\b':
-			// continue
-		case '{':
-			// object start
-			return newFromObject(b[i:])
-		case '[':
-			return newFromArray(b[i:])
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-			ret, err = newFromNumber(b[i:])
-			if err != nil {
-				return
-			}
-			err = ret.parseNumber()
-			if err != nil {
-				return nil, err
-			}
-			return ret, nil
-
-		case '"':
-			ret = new(jsonparser.String)
-			ret.valueStr, ret.valueBytes, err = parseString(b[i:])
-			if err != nil {
-				return nil, err
-			}
-			ret.parsed = true
-			return ret, nil
-
-		case 't':
-			return newFromTrue(b[i:])
-		case 'f':
-			return newFromFalse(b[i:])
-		case 'n':
-			return newFromNull(b[i:])
-		default:
-			return nil, ErrRawBytesUnrecignized
-		}
-	}
-
-	return nil, ErrRawBytesUnrecignized
+	trueB := make([]byte, len(b))
+	copy(trueB, b)
+	it := &iter{b: trueB}
+	return unmarshalWithIter(it, 0, le)
 }
 
 var dot = []byte{'.'}

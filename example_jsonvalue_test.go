@@ -55,7 +55,10 @@ func ExampleOpt() {
 
 func ExampleAppend_InTheBeginning() {
 	s := `{"obj":{"arr":[1,2,3,4,5]}}`
-	v, _ := jsonvalue.UnmarshalString(s)
+	v, err := jsonvalue.UnmarshalString(s)
+	if err != nil {
+		panic(err)
+	}
 
 	// append a zero in the bebinning of v.obj.arr
 	v.AppendInt(0).InTheBeginning("obj", "arr")
