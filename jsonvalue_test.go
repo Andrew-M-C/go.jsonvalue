@@ -241,4 +241,21 @@ func test_unmarshalWithIter(t *testing.T) {
 		So(s.IsString(), ShouldBeTrue)
 		So(s.String(), ShouldEqual, "Hello, world!")
 	})
+
+	Convey("object with complex type", func() {
+		raw := []byte(` {"arr": [1234, true , null, false, {"obj":"empty object"}]}  `)
+		printBytes(t, raw)
+
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		t.Logf("res: %v", v)
+
+		child, err := v.Get("arr", 4, "obj")
+		So(err, ShouldBeNil)
+		So(child.IsString(), ShouldBeTrue)
+		So(child.String(), ShouldEqual, "empty object")
+	})
+
 }
