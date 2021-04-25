@@ -76,14 +76,21 @@ func (v *V) deleteInCurrValue(param interface{}) error {
 			return err
 		}
 
-		e := v.elementAtIndex(pos)
-		if nil == e {
+		pos = v.posAtIndexForRead(pos)
+		if pos < 0 {
 			return ErrOutOfRange
 		}
-		v.children.array.Remove(e)
+		v.deleteInArr(pos)
 		return nil
 	}
 
 	// else, this is an object value
 	return fmt.Errorf("%v type does not supports Delete()", v.valueType)
+}
+
+func (v *V) deleteInArr(pos int) {
+	le := len(v.children.array)
+	v.children.array[pos] = nil
+	copy(v.children.array[pos:], v.children.array[pos+1:])
+	v.children.array = v.children.array[:le-1]
 }

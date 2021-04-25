@@ -36,7 +36,6 @@ package jsonvalue
 
 import (
 	"bytes"
-	"container/list"
 	"encoding/base64"
 	"fmt"
 	"strings"
@@ -74,8 +73,8 @@ type num struct { // TODO: 后续去掉，减少一次 alloc
 }
 
 type children struct {
+	array  []*V
 	object map[string]*V
-	array  *list.List
 
 	// As official json package supports caseless key accessing, I decide to di it as well
 	lowerCaseKeys map[string]map[string]struct{}
@@ -98,9 +97,7 @@ func newObject() *V {
 
 func newArray() *V {
 	v := new(jsonparser.Array)
-	v.children = children{
-		array: list.New(),
-	}
+	v.children.array = []*V{}
 	return v
 }
 
@@ -244,7 +241,7 @@ func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array.PushBack(v)
+			arr.children.array = append(arr.children.array, v)
 			offset = sectEnd
 
 		case '[':
@@ -252,7 +249,7 @@ func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array.PushBack(v)
+			arr.children.array = append(arr.children.array, v)
 			offset = sectEnd
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
@@ -268,7 +265,7 @@ func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end in
 			v.num.i64 = i64
 			v.num.u64 = u64
 			v.num.f64 = f64
-			arr.children.array.PushBack(v)
+			arr.children.array = append(arr.children.array, v)
 			offset = sectEnd
 
 		case '"':
@@ -277,7 +274,7 @@ func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end in
 				return nil, -1, err
 			}
 			v := NewString(unsafeBtoS(it.b[offset+1 : offset+1+sectLenWithoutQuote]))
-			arr.children.array.PushBack(v)
+			arr.children.array = append(arr.children.array, v)
 			offset = sectEnd
 
 		case 't':
@@ -285,7 +282,7 @@ func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array.PushBack(NewBool(true))
+			arr.children.array = append(arr.children.array, NewBool(true))
 			offset = sectEnd
 
 		case 'f':
@@ -293,7 +290,7 @@ func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array.PushBack(NewBool(false))
+			arr.children.array = append(arr.children.array, NewBool(false))
 			offset = sectEnd
 
 		case 'n':
@@ -301,7 +298,7 @@ func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array.PushBack(NewNull())
+			arr.children.array = append(arr.children.array, NewNull())
 			offset = sectEnd
 
 		default:
@@ -698,7 +695,7 @@ func unmarshalArrayWithIter(it *iter, offset, end int) (_ *V, err error) {
 			if err != nil {
 				return nil, err
 			}
-			arr.children.array.PushBack(v)
+			arr.children.array = append(arr.children.array, v)
 			offset = sectEnd
 
 		case '[':
@@ -706,7 +703,7 @@ func unmarshalArrayWithIter(it *iter, offset, end int) (_ *V, err error) {
 			if err != nil {
 				return nil, err
 			}
-			arr.children.array.PushBack(v)
+			arr.children.array = append(arr.children.array, v)
 			offset = sectEnd
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
@@ -722,7 +719,7 @@ func unmarshalArrayWithIter(it *iter, offset, end int) (_ *V, err error) {
 			v.num.i64 = i64
 			v.num.u64 = u64
 			v.num.f64 = f64
-			arr.children.array.PushBack(v)
+			arr.children.array = append(arr.children.array, v)
 			offset = sectEnd
 
 		case '"':
@@ -731,7 +728,7 @@ func unmarshalArrayWithIter(it *iter, offset, end int) (_ *V, err error) {
 				return nil, err
 			}
 			v := NewString(unsafeBtoS(it.b[offset+1 : offset+1+sectLenWithoutQuote]))
-			arr.children.array.PushBack(v)
+			arr.children.array = append(arr.children.array, v)
 			offset = sectEnd
 
 		case 't':
@@ -739,7 +736,7 @@ func unmarshalArrayWithIter(it *iter, offset, end int) (_ *V, err error) {
 			if err != nil {
 				return nil, err
 			}
-			arr.children.array.PushBack(NewBool(true))
+			arr.children.array = append(arr.children.array, NewBool(true))
 			offset = sectEnd
 
 		case 'f':
@@ -747,7 +744,7 @@ func unmarshalArrayWithIter(it *iter, offset, end int) (_ *V, err error) {
 			if err != nil {
 				return nil, err
 			}
-			arr.children.array.PushBack(NewBool(false))
+			arr.children.array = append(arr.children.array, NewBool(false))
 			offset = sectEnd
 
 		case 'n':
@@ -755,7 +752,7 @@ func unmarshalArrayWithIter(it *iter, offset, end int) (_ *V, err error) {
 			if err != nil {
 				return nil, err
 			}
-			arr.children.array.PushBack(NewNull())
+			arr.children.array = append(arr.children.array, NewNull())
 			offset = sectEnd
 
 		default:

@@ -13,7 +13,7 @@ import (
 func (v *V) Len() int {
 	switch v.valueType {
 	case jsonparser.Array:
-		return v.children.array.Len()
+		return len(v.children.array)
 	case jsonparser.Object:
 		return len(v.children.object)
 	default:
