@@ -13,7 +13,8 @@ import (
 
 // brew install graphviz
 // go run .
-// go tool pprof -http=:6060 ./profile
+// go tool pprof -http=:6060 ./jsonvalue-unmarshal.profile
+// go tool pprof -http=:6061 ./jsoniter-get.profile
 
 const (
 	iteration = 200000
@@ -176,6 +177,23 @@ func structMarshalTest() {
 	printf("struct marshal done")
 }
 
+func jsoniterGetTest() {
+	f, err := os.OpenFile("jsoniter-get.profile", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer f.Close()
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+
+	for i := 0; i < iteration; i++ {
+		jsoniter.Get(unmarshalText)
+	}
+
+	printf("jsoniter get done")
+}
+
 func jsoniterUnmarshalTest() {
 	j := jsoniter.ConfigCompatibleWithStandardLibrary
 	f, err := os.OpenFile("jsoniter-unmarshal.profile", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
@@ -241,6 +259,7 @@ func main() {
 	run(structUnmarshalTest)
 	run(structMarshalTest)
 
+	run(jsoniterGetTest)
 	run(jsoniterUnmarshalTest)
 	run(jsoniterMarshalTest)
 }

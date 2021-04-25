@@ -54,9 +54,13 @@ var (
 //
 // V 是 jsonvalue 的主类型，表示一个 JSON 值。
 type V struct {
-	valueType  jsonparser.ValueType
-	valueBytes []byte // TODO: 后续去掉，减少一次 alloc
-	parsed     bool
+	valueType jsonparser.ValueType
+
+	srcByte   []byte
+	srcOffset int
+	srcEnd    int
+
+	parsed bool
 
 	num       num
 	valueStr  string
@@ -64,7 +68,7 @@ type V struct {
 	children  children
 }
 
-type num struct { // TODO: 后续去掉，减少一次 alloc
+type num struct {
 	negative bool
 	floated  bool
 	i64      int64
@@ -125,6 +129,13 @@ func (v *V) delCaselessKey(k string) {
 	}
 }
 
+func (v *V) valueBytes() []byte {
+	if v.srcOffset == 0 && v.srcEnd == len(v.srcByte) {
+		return v.srcByte
+	}
+	return v.srcByte[v.srcOffset:v.srcEnd]
+}
+
 // UnmarshalString is equavilent to Unmarshal(unsafeBtoS(b)), but much more efficient.
 //
 // UnmarshalString 等效于 Unmarshal(unsafeBtoS(b))，但效率更高。
@@ -160,7 +171,8 @@ func unmarshalWithIter(it *iter, offset, end int) (v *V, err error) {
 		n := new(jsonparser.Number)
 		n.num.i64, n.num.u64, n.num.f64, n.num.floated, n.num.negative, offset, _, err = it.parseNumber(offset)
 		if err == nil {
-			n.valueBytes = it.b[offset:end]
+			n.srcByte = it.b
+			n.srcOffset, n.srcEnd = offset, end
 			n.parsed = true
 			v = n
 		}
@@ -253,7 +265,8 @@ func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end in
 				return nil, -1, err
 			}
 			v := new(jsonparser.Number)
-			v.valueBytes = it.b[offset:sectEnd]
+			v.srcByte = it.b
+			v.srcOffset, v.srcEnd = offset, sectEnd
 			v.parsed = true
 			v.num.floated = floated
 			v.num.negative = negative
@@ -402,7 +415,8 @@ func unmarshalObjectWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end i
 				return nil, -1, err
 			}
 			v := new(jsonparser.Number)
-			v.valueBytes = it.b[offset:sectEnd]
+			v.srcByte = it.b
+			v.srcOffset, v.srcEnd = offset, sectEnd
 			v.parsed = true
 			v.num.floated = floated
 			v.num.negative = negative
@@ -516,7 +530,7 @@ func UnmarshalNoCopy(b []byte) (ret *V, err error) {
 var dot = []byte{'.'}
 
 func (v *V) parseNumber() (err error) {
-	b := v.valueBytes
+	b := v.srcByte[v.srcOffset:v.srcEnd]
 
 	// if v.num == nil {
 	// 	v.num = &num{}
@@ -563,7 +577,9 @@ func (v *V) parseNumber() (err error) {
 // ==== simple object parsing ====
 func newFromNumber(b []byte) (ret *V, err error) {
 	v := new(jsonparser.Number)
-	v.valueBytes = b
+	v.srcByte = b
+	v.srcOffset = 0
+	v.srcEnd = len(b)
 	return v, nil
 }
 
@@ -845,15 +861,8 @@ func (v *V) String() string {
 	case jsonparser.Null:
 		return "null"
 	case jsonparser.Number:
-		return unsafeBtoS(v.valueBytes)
+		return unsafeBtoS(v.valueBytes())
 	case jsonparser.String:
-		if !v.parsed {
-			var e error
-			v.valueStr, v.valueBytes, e = parseString(v.valueBytes)
-			if nil == e {
-				v.parsed = true
-			}
-		}
 		return v.valueStr
 	case jsonparser.Boolean:
 		return formatBool(v.valueBool)

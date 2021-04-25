@@ -29,7 +29,8 @@ func NewInt64(i int64) *V {
 	v.num.i64 = i
 	v.num.u64 = uint64(i)
 	s := strconv.FormatInt(v.num.i64, 10)
-	v.valueBytes = []byte(s)
+	v.srcByte = []byte(s)
+	v.srcOffset, v.srcEnd = 0, len(s)
 	v.parsed = true
 	return v
 }
@@ -46,7 +47,8 @@ func NewUint64(u uint64) *V {
 	v.num.i64 = int64(u)
 	v.num.u64 = u
 	s := strconv.FormatUint(v.num.u64, 10)
-	v.valueBytes = []byte(s)
+	v.srcByte = []byte(s)
+	v.srcOffset, v.srcEnd = 0, len(s)
 	v.parsed = true
 	return v
 }
@@ -180,10 +182,12 @@ func NewFloat64(f float64, prec int) *V {
 	v.num.u64 = uint64(f)
 	if prec >= 0 {
 		s := strconv.FormatFloat(f, 'f', prec, 64)
-		v.valueBytes = []byte(s)
+		v.srcByte = []byte(s)
+		v.srcOffset, v.srcEnd = 0, len(s)
 	} else {
 		b, _ := json.Marshal(&f)
-		v.valueBytes = b
+		v.srcByte = b
+		v.srcOffset, v.srcEnd = 0, len(b)
 	}
 	v.parsed = true
 	return v
@@ -203,10 +207,12 @@ func NewFloat32(f float32, prec int) *V {
 	v.num.u64 = uint64(f)
 	if prec >= 0 {
 		s := strconv.FormatFloat(v.num.f64, 'f', prec, 32)
-		v.valueBytes = []byte(s)
+		v.srcByte = []byte(s)
+		v.srcOffset, v.srcEnd = 0, len(s)
 	} else {
 		b, _ := json.Marshal(&f)
-		v.valueBytes = b
+		v.srcByte = b
+		v.srcOffset, v.srcEnd = 0, len(b)
 	}
 	v.parsed = true
 	return v

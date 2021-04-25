@@ -21,7 +21,7 @@ func parseFloat(b []byte) (float64, error) {
 }
 
 // reference: https://golang.org/src/encoding/json/decode.go, func unquote()
-func parseString(b []byte) (string, []byte, error) {
+func parseString(b []byte) (string, []byte, error) { // TODO:
 	firstQuote := bytes.Index(b, []byte{'"'})
 	lastQuote := bytes.LastIndex(b, []byte{'"'})
 	if firstQuote < 0 || firstQuote == lastQuote {
