@@ -151,7 +151,16 @@ func Benchmark__Marshal__JsoniterMapItf(b *testing.B) {
 	}
 }
 
-func Benchmark_Unmarshal_Jsoniter(b *testing.B) {
+func Benchmark____Get____Jsoniter(b *testing.B) {
+	raw := unmarshalText
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		jsoniter.Get(raw)
+	}
+}
+
+func Benchmark____Get____Jsoniter_blob(b *testing.B) {
 	raw := generateLongObject()
 	b.ResetTimer()
 
@@ -196,6 +205,13 @@ func Benchmark_Unmarshal_Jsonparser(b *testing.B) {
 	}
 }
 
+func Benchmark_Unmarshal_Jsonvalue(b *testing.B) {
+	origB := unmarshalText
+	for i := 0; i < b.N; i++ {
+		Unmarshal(origB)
+	}
+}
+
 func Benchmark_Unmarshal_Jsonvalue_blob(b *testing.B) {
 	// origB := unmarshalText
 	origB := generateLongObject()
@@ -206,31 +222,24 @@ func Benchmark_Unmarshal_Jsonvalue_blob(b *testing.B) {
 	}
 }
 
-func Benchmark_Unmarshal_Jsonvalue(b *testing.B) {
-	origB := unmarshalText
+func Benchmark_Unmarshal_JsonvalueNoCopy(b *testing.B) {
+	// origB := unmarshalText
+	origB := generateLongObject()
+
+	lst := make([][]byte, b.N)
 	for i := 0; i < b.N; i++ {
-		Unmarshal(origB)
+		bytes := make([]byte, len(origB))
+		copy(bytes, origB)
+		lst[i] = bytes
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		// err := jsonit.Unmarshal(raw, &s)
+		UnmarshalNoCopy(lst[i])
 	}
 }
-
-// func Benchmark_Unmarshal_JsonvalueNoCopy(b *testing.B) {
-// 	// origB := unmarshalText
-// 	origB := generateLongObject()
-
-// 	lst := make([][]byte, b.N)
-// 	for i := 0; i < b.N; i++ {
-// 		bytes := make([]byte, len(origB))
-// 		copy(bytes, origB)
-// 		lst[i] = bytes
-// 	}
-
-// 	b.ResetTimer()
-
-// 	for i := 0; i < b.N; i++ {
-// 		// err := jsonit.Unmarshal(raw, &s)
-// 		UnmarshalNoCopy(lst[i])
-// 	}
-// }
 
 func Benchmark__Marshal__Jsonvalue(b *testing.B) {
 	j, _ := Unmarshal(unmarshalText)
