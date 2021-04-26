@@ -3,7 +3,6 @@ package jsonvalue
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"reflect"
 	"strconv"
 )
@@ -18,41 +17,6 @@ func parseInt(b []byte) (int64, error) {
 
 func parseFloat(b []byte) (float64, error) {
 	return strconv.ParseFloat(unsafeBtoS(b), 64)
-}
-
-// reference: https://golang.org/src/encoding/json/decode.go, func unquote()
-func parseString(b []byte) (string, []byte, error) { // TODO:
-	firstQuote := bytes.Index(b, []byte{'"'})
-	lastQuote := bytes.LastIndex(b, []byte{'"'})
-	if firstQuote < 0 || firstQuote == lastQuote {
-		return "", nil, ErrIllegalString
-	}
-
-	b = b[firstQuote : lastQuote-firstQuote+1]
-
-	t, ok := unquoteBytes(b)
-	if !ok {
-		return "", nil, fmt.Errorf("invalid string '%s'", unsafeBtoS(b))
-	}
-	return unsafeBtoS(t), b, nil
-}
-
-func unquoteBytes(s []byte) (t []byte, ok bool) {
-	if len(s) < 2 || s[0] != '"' || s[len(s)-1] != '"' {
-		return
-	}
-	return parseStrText(s[1 : len(s)-1])
-}
-
-func parseStrText(s []byte) (t []byte, ok bool) {
-	it := &iter{b: s}
-	le, err := it.parseStrFromBytesBackward(0, len(it.b))
-	if err != nil {
-		log.Printf("it.parseStrFromBytesBackward error: %v", err)
-		return nil, false
-	}
-
-	return s[:le], true
 }
 
 func formatBool(b bool) string {

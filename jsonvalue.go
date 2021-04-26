@@ -136,9 +136,9 @@ func (v *V) valueBytes() []byte {
 	return v.srcByte[v.srcOffset:v.srcEnd]
 }
 
-// UnmarshalString is equavilent to Unmarshal(unsafeBtoS(b)), but much more efficient.
+// UnmarshalString is equavilent to Unmarshal([]byte(b)), but much more efficient.
 //
-// UnmarshalString 等效于 Unmarshal(unsafeBtoS(b))，但效率更高。
+// UnmarshalString 等效于 Unmarshal([]byte(b))，但效率更高。
 func UnmarshalString(s string) (*V, error) {
 	// reference: https://stackoverflow.com/questions/41591097/slice-bounds-out-of-range-when-using-unsafe-pointer
 	// sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
