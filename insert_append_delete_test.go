@@ -74,7 +74,7 @@ func TestDelete(t *testing.T) {
 		return
 	}
 
-	_, err = o.Get("object")
+	_, err = o.Caseless().Get("object")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 		return

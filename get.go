@@ -42,6 +42,10 @@ func (v *V) getFromObjectChildren(key string) (child *V, exist bool) {
 		return child, true
 	}
 
+	if v.children.lowerCaseKeys == nil {
+		return nil, false
+	}
+
 	lowerCaseKey := strings.ToLower(key)
 	keys, exist := v.children.lowerCaseKeys[lowerCaseKey]
 	if !exist {

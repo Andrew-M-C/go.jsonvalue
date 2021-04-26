@@ -82,6 +82,7 @@ type children struct {
 
 	// As official json package supports caseless key accessing, I decide to do it as well
 	lowerCaseKeys map[string]map[string]struct{}
+	caseless      bool
 }
 
 func new(t jsonparser.ValueType) *V {
@@ -92,10 +93,9 @@ func new(t jsonparser.ValueType) *V {
 
 func newObject() *V {
 	v := new(jsonparser.Object)
-	v.children = children{
-		object:        make(map[string]*V),
-		lowerCaseKeys: make(map[string]map[string]struct{}),
-	}
+	v.children.object = make(map[string]*V)
+	v.children.caseless = false
+	v.children.lowerCaseKeys = nil
 	return v
 }
 
@@ -106,6 +106,9 @@ func newArray() *V {
 }
 
 func (v *V) addCaselessKey(k string) {
+	if v.children.lowerCaseKeys == nil {
+		return
+	}
 	lowerK := strings.ToLower(k)
 	keys, exist := v.children.lowerCaseKeys[lowerK]
 	if !exist {
@@ -116,6 +119,9 @@ func (v *V) addCaselessKey(k string) {
 }
 
 func (v *V) delCaselessKey(k string) {
+	if v.children.lowerCaseKeys == nil {
+		return
+	}
 	lowerK := strings.ToLower(k)
 	keys, exist := v.children.lowerCaseKeys[lowerK]
 	if !exist {
@@ -911,4 +917,35 @@ func (v *V) bufArrChildren(buf *bytes.Buffer) {
 		return true
 	})
 	buf.WriteByte(']')
+}
+
+// Caseless mark current value to be caseless mode
+func (v *V) Caseless() *V {
+	if v.children.caseless {
+		return v
+	}
+
+	v.children.caseless = true
+
+	switch v.valueType {
+	default:
+		return v
+
+	case jsonparser.Array:
+		for _, child := range v.children.array {
+			child.Caseless()
+		}
+		return v
+
+	case jsonparser.Object:
+		if v.children.lowerCaseKeys == nil {
+			v.children.lowerCaseKeys = make(map[string]map[string]struct{}, len(v.children.object))
+			for k, child := range v.children.object {
+				child.Caseless()
+				v.addCaselessKey(k)
+			}
+		}
+	}
+
+	return v
 }
