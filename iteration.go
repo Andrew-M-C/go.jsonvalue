@@ -72,14 +72,10 @@ func (v *V) RangeArray(callback func(i int, v *V) bool) {
 		return
 	}
 
-	i := 0
-	for e := v.children.array.Front(); e != nil; e = e.Next() {
-		v := e.Value.(*V)
-		ok := callback(i, v)
-		if !ok {
+	for i, child := range v.children.array {
+		if ok := callback(i, child); !ok {
 			break
 		}
-		i++
 	}
 }
 
@@ -87,17 +83,14 @@ func (v *V) RangeArray(callback func(i int, v *V) bool) {
 //
 // 当当前 JSON 值是一个 array 类型时，IterArray 返回一个可用于 range 操作符的 channel。
 func (v *V) IterArray() <-chan *ArrayIter {
-	c := make(chan *ArrayIter, v.children.array.Len())
+	c := make(chan *ArrayIter, len(v.children.array))
 
 	go func() {
-		i := 0
-		for e := v.children.array.Front(); e != nil; e = e.Next() {
-			v := e.Value.(*V)
+		for i, child := range v.children.array {
 			c <- &ArrayIter{
 				I: i,
-				V: v,
+				V: child,
 			}
-			i++
 		}
 		close(c)
 	}()

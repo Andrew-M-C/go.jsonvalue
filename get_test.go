@@ -51,7 +51,7 @@ func TestGet(t *testing.T) {
 		check(t, err, "GetInt32", i == -1234)
 	}
 	{
-		i, err := o.GetInt32("data", "negATive") // caseless
+		i, err := o.Caseless().GetInt32("data", "negATive") // caseless
 		check(t, err, "GetInt32_caseless", i == -1234)
 	}
 	{

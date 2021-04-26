@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"runtime/pprof"
+	"runtime/trace"
 	"time"
 
 	jsonvalue "github.com/Andrew-M-C/go.jsonvalue"
@@ -13,7 +14,8 @@ import (
 
 // brew install graphviz
 // go run .
-// go tool pprof -http=:6060 ./profile
+// go tool pprof -http=:6060 ./jsonvalue-unmarshal.profile
+// go tool trace jsonvalue-unmarshal-trace.profile
 
 const (
 	iteration = 200000
@@ -24,12 +26,29 @@ var (
 	printf        = log.Printf
 )
 
+func jsonvalueUnmarshalTraceTest() {
+	ft, err := os.OpenFile("jsonvalue-unmarshal-trace.profile", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer ft.Close()
+	trace.Start(ft)
+	defer trace.Stop()
+
+	_, err = jsonvalue.Unmarshal(unmarshalText)
+	if err != nil {
+		printf("unmarshal error: %v", err)
+		return
+	}
+
+	printf("jsonvalue unmarshal trace done")
+}
+
 func jsonvalueUnmarshalTest() {
 	f, err := os.OpenFile("jsonvalue-unmarshal.profile", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	defer f.Close()
 	pprof.StartCPUProfile(f)
 	defer pprof.StopCPUProfile()
@@ -42,7 +61,6 @@ func jsonvalueUnmarshalTest() {
 		}
 	}
 
-	printf("jsonvalue unmarshal done")
 }
 
 func jsonvalueMarshalTest() {
@@ -176,6 +194,23 @@ func structMarshalTest() {
 	printf("struct marshal done")
 }
 
+func jsoniterGetTest() {
+	f, err := os.OpenFile("jsoniter-get.profile", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer f.Close()
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+
+	for i := 0; i < iteration; i++ {
+		jsoniter.Get(unmarshalText)
+	}
+
+	printf("jsoniter get done")
+}
+
 func jsoniterUnmarshalTest() {
 	j := jsoniter.ConfigCompatibleWithStandardLibrary
 	f, err := os.OpenFile("jsoniter-unmarshal.profile", os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0644)
@@ -232,6 +267,8 @@ func main() {
 		printf("done, elapsed %v", time.Since(start))
 	}
 
+	run(jsonvalueUnmarshalTraceTest)
+
 	run(jsonvalueUnmarshalTest)
 	run(jsonvalueMarshalTest)
 
@@ -241,6 +278,7 @@ func main() {
 	run(structUnmarshalTest)
 	run(structMarshalTest)
 
+	run(jsoniterGetTest)
 	run(jsoniterUnmarshalTest)
 	run(jsoniterMarshalTest)
 }

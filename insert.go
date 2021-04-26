@@ -150,11 +150,15 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 			return nil, err
 		}
 
-		e := v.elementAtIndex(pos)
-		if nil == e {
+		pos, appendToEnd := v.posAtIndexForInsertBefore(pos)
+		if pos < 0 {
 			return nil, ErrOutOfRange
 		}
-		v.children.array.InsertBefore(c, e)
+		if appendToEnd {
+			v.children.array = append(v.children.array, c)
+		} else {
+			v.insertToArr(pos, c)
+		}
 		return c, nil
 	}
 
@@ -203,11 +207,15 @@ func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V
 			return nil, err
 		}
 
-		e := v.elementAtIndex(pos)
-		if nil == e {
+		pos, appendToEnd := v.posAtIndexForInsertAfter(pos)
+		if pos < 0 {
 			return nil, ErrOutOfRange
 		}
-		v.children.array.InsertAfter(c, e)
+		if appendToEnd {
+			v.children.array = append(v.children.array, c)
+		} else {
+			v.insertToArr(pos, c)
+		}
 		return c, nil
 	}
 
@@ -222,4 +230,10 @@ func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V
 		c: c,
 	}
 	return childIns.After(otherParams[paramCount-1])
+}
+
+func (v *V) insertToArr(pos int, child *V) {
+	v.children.array = append(v.children.array, nil)
+	copy(v.children.array[pos+1:], v.children.array[pos:])
+	v.children.array[pos] = child
 }

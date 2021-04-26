@@ -1,7 +1,6 @@
 package jsonvalue
 
 import (
-	"container/list"
 	"fmt"
 	"reflect"
 
@@ -248,7 +247,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 		}
 		// OK to add this object
 		if isNewChild {
-			v.children.array.PushBack(child)
+			v.children.array = append(v.children.array, child)
 		}
 		return c, nil
 	}
@@ -257,60 +256,102 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 	return nil, fmt.Errorf("%v type does not supports Set()", v.valueType)
 }
 
-func (v *V) elementAtIndex(pos int) *list.Element {
-	l := v.children.array.Len()
-	if l == 0 {
-		return nil
+func (v *V) posAtIndexForSet(pos int) (newPos int, appendToEnd bool) {
+	if pos == len(v.children.array) {
+		return pos, true
 	}
-	if pos < 0 {
-		pos = l + pos
-		if pos < 0 {
-			return nil
-		}
-	} else if pos >= l {
-		return nil
+	pos = v.posAtIndexForRead(pos)
+	return pos, false
+}
+
+func (v *V) posAtIndexForInsertBefore(pos int) (newPos int, appendToEnd bool) {
+	le := len(v.children.array)
+	if le == 0 {
+		return -1, false
 	}
 
-	// find element at pos
-	var e *list.Element
-	i := 0
-	for e = v.children.array.Front(); e != nil && i < pos; e = e.Next() {
-		i++
+	if pos == 0 {
+		return 0, false
 	}
-	return e
+
+	if pos < 0 {
+		pos += le
+		if pos < 0 {
+			return -1, false
+		}
+		return pos, false
+	}
+
+	if pos >= le {
+		return -1, false
+	}
+
+	return pos, false
+}
+
+func (v *V) posAtIndexForInsertAfter(pos int) (newPos int, appendToEnd bool) {
+	le := len(v.children.array)
+	if le == 0 {
+		return -1, false
+	}
+
+	if pos == -1 {
+		return le, true
+	}
+
+	if pos < 0 {
+		pos += le
+		if pos < 0 {
+			return -1, false
+		}
+		return pos + 1, false
+	}
+
+	if pos >= le {
+		return -1, false
+	}
+
+	return pos + 1, false
+}
+
+func (v *V) posAtIndexForRead(pos int) int {
+	le := len(v.children.array)
+	if le == 0 {
+		return -1
+	}
+
+	if pos < 0 {
+		pos += le
+		if pos < 0 {
+			return -1
+		}
+		return pos
+	}
+
+	if pos >= le {
+		return -1
+	}
+
+	return pos
 }
 
 func (v *V) childAtIndex(pos int) (*V, bool) { // if nil returned, means that just push
-	// find element at pos
-	e := v.elementAtIndex(pos)
-	if nil == e {
-		return nil, true
+	pos = v.posAtIndexForRead(pos)
+	if pos < 0 {
+		return nil, false
 	}
-	return e.Value.(*V), false
+	return v.children.array[pos], true
 }
 
 func (v *V) setAtIndex(child *V, pos int) error {
-	if v.children.array.Len() == 0 {
-		if pos == 0 {
-			v.children.array.PushBack(child)
-			return nil
-		}
+	pos, appendToEnd := v.posAtIndexForSet(pos)
+	if pos < 0 {
 		return ErrOutOfRange
 	}
-
-	if pos == v.children.array.Len() {
-		v.children.array.PushBack(child)
-		return nil
+	if appendToEnd {
+		v.children.array = append(v.children.array, child)
+	} else {
+		v.children.array[pos] = child
 	}
-
-	if -1 == pos {
-		pos = v.children.array.Len() - 1
-	}
-	e := v.elementAtIndex(pos)
-	if nil == e {
-		return ErrOutOfRange
-	}
-	v.children.array.InsertBefore(child, e)
-	v.children.array.Remove(e)
 	return nil
 }

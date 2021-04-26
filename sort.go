@@ -34,45 +34,32 @@ func (v *V) SortArray(lessFunc ArrayLessFunc) {
 type sortArrayV struct {
 	v        *V
 	lessFunc ArrayLessFunc
-	children []*V
 }
 
 func newSortV(v *V, lessFunc ArrayLessFunc) *sortArrayV {
 	sav := sortArrayV{
 		v:        v,
 		lessFunc: lessFunc,
-		children: make([]*V, 0, v.Len()),
-	}
-
-	for e := v.children.array.Front(); e != nil; e = e.Next() {
-		sav.children = append(sav.children, e.Value.(*V))
 	}
 	return &sav
 }
 
 func (v *sortArrayV) Sort() {
-	// sort
 	sort.Sort(v)
-
-	// re-arrange children
-	v.v.children.array.Init()
-	for _, child := range v.children {
-		v.v.children.array.PushBack(child)
-	}
 }
 
 func (v *sortArrayV) Len() int {
-	return len(v.children)
+	return len(v.v.children.array)
 }
 
 func (v *sortArrayV) Less(i, j int) bool {
-	v1 := v.children[i]
-	v2 := v.children[j]
+	v1 := v.v.children.array[i]
+	v2 := v.v.children.array[j]
 	return v.lessFunc(v1, v2)
 }
 
 func (v *sortArrayV) Swap(i, j int) {
-	v.children[i], v.children[j] = v.children[j], v.children[i]
+	v.v.children.array[i], v.v.children.array[j] = v.v.children.array[j], v.v.children.array[i]
 }
 
 // ---------------- marshal sorting ----------------

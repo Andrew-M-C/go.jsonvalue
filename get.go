@@ -13,7 +13,7 @@ import (
 func (v *V) Len() int {
 	switch v.valueType {
 	case jsonparser.Array:
-		return v.children.array.Len()
+		return len(v.children.array)
 	case jsonparser.Object:
 		return len(v.children.object)
 	default:
@@ -40,6 +40,10 @@ func (v *V) getFromObjectChildren(key string) (child *V, exist bool) {
 	child, exist = v.children.object[key]
 	if exist {
 		return child, true
+	}
+
+	if v.children.lowerCaseKeys == nil {
+		return nil, false
 	}
 
 	lowerCaseKey := strings.ToLower(key)

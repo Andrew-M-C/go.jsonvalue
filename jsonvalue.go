@@ -36,12 +36,9 @@ package jsonvalue
 
 import (
 	"bytes"
-	"container/list"
 	"encoding/base64"
 	"fmt"
-	"reflect"
 	"strings"
-	"unsafe"
 
 	"github.com/buger/jsonparser"
 )
@@ -57,9 +54,13 @@ var (
 //
 // V 是 jsonvalue 的主类型，表示一个 JSON 值。
 type V struct {
-	valueType  jsonparser.ValueType
-	valueBytes []byte
-	parsed     bool
+	valueType jsonparser.ValueType
+
+	srcByte   []byte
+	srcOffset int
+	srcEnd    int
+
+	parsed bool
 
 	num       num
 	valueStr  string
@@ -76,11 +77,12 @@ type num struct {
 }
 
 type children struct {
+	array  []*V
 	object map[string]*V
-	array  *list.List
 
-	// As official json package supports caseless key accessing, I decide to di it as well
+	// As official json package supports caseless key accessing, I decide to do it as well
 	lowerCaseKeys map[string]map[string]struct{}
+	caseless      bool
 }
 
 func new(t jsonparser.ValueType) *V {
@@ -91,22 +93,22 @@ func new(t jsonparser.ValueType) *V {
 
 func newObject() *V {
 	v := new(jsonparser.Object)
-	v.children = children{
-		object:        make(map[string]*V),
-		lowerCaseKeys: make(map[string]map[string]struct{}),
-	}
+	v.children.object = make(map[string]*V)
+	v.children.caseless = false
+	v.children.lowerCaseKeys = nil
 	return v
 }
 
 func newArray() *V {
 	v := new(jsonparser.Array)
-	v.children = children{
-		array: list.New(),
-	}
+	v.children.array = []*V{}
 	return v
 }
 
 func (v *V) addCaselessKey(k string) {
+	if v.children.lowerCaseKeys == nil {
+		return
+	}
 	lowerK := strings.ToLower(k)
 	keys, exist := v.children.lowerCaseKeys[lowerK]
 	if !exist {
@@ -117,6 +119,9 @@ func (v *V) addCaselessKey(k string) {
 }
 
 func (v *V) delCaselessKey(k string) {
+	if v.children.lowerCaseKeys == nil {
+		return
+	}
 	lowerK := strings.ToLower(k)
 	keys, exist := v.children.lowerCaseKeys[lowerK]
 	if !exist {
@@ -130,9 +135,16 @@ func (v *V) delCaselessKey(k string) {
 	}
 }
 
-// UnmarshalString is equavilent to Unmarshal(unsafeBtoS(b)), but much more efficient.
+func (v *V) valueBytes() []byte {
+	if v.srcOffset == 0 && v.srcEnd == len(v.srcByte) {
+		return v.srcByte
+	}
+	return v.srcByte[v.srcOffset:v.srcEnd]
+}
+
+// UnmarshalString is equavilent to Unmarshal([]byte(b)), but much more efficient.
 //
-// UnmarshalString 等效于 Unmarshal(unsafeBtoS(b))，但效率更高。
+// UnmarshalString 等效于 Unmarshal([]byte(b))，但效率更高。
 func UnmarshalString(s string) (*V, error) {
 	// reference: https://stackoverflow.com/questions/41591097/slice-bounds-out-of-range-when-using-unsafe-pointer
 	// sh := (*reflect.StringHeader)(unsafe.Pointer(&s))
@@ -142,67 +154,389 @@ func UnmarshalString(s string) (*V, error) {
 	// 	Cap:  sh.Len,
 	// }
 	// b := *(*[]byte)(unsafe.Pointer(&bh))
-	sh := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-	sh.Cap = sh.Len
-	b := *(*[]byte)(unsafe.Pointer(sh))
-	return Unmarshal(b)
+	b := []byte(s)
+	return unmarshalWithIter(&iter{b: b}, 0, len(b))
+}
+
+// unmarshalWithIter parse bytes with unknown value type.
+func unmarshalWithIter(it *iter, offset, end int) (v *V, err error) {
+	offset, reachEnd := it.skipBlanks(offset, end)
+	if reachEnd {
+		return nil, fmt.Errorf("%w, cannot find any symbol characters found", ErrRawBytesUnrecignized)
+	}
+
+	chr := it.b[offset]
+	switch chr {
+	case '{':
+		v, offset, err = unmarshalObjectWithIterUnknownEnd(it, offset, end)
+
+	case '[':
+		v, offset, err = unmarshalArrayWithIterUnknownEnd(it, offset, end)
+
+	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
+		n := new(jsonparser.Number)
+		n.num.i64, n.num.u64, n.num.f64, n.num.floated, n.num.negative, offset, _, err = it.parseNumber(offset)
+		if err == nil {
+			n.srcByte = it.b
+			n.srcOffset, n.srcEnd = offset, end
+			n.parsed = true
+			v = n
+		}
+
+	case '"':
+		var sectLenWithoutQuote int
+		var sectEnd int
+		sectLenWithoutQuote, sectEnd, err = it.parseStrFromBytesForwardWithQuote(offset)
+		if err == nil {
+			v, err = NewString(unsafeBtoS(it.b[offset+1:offset+1+sectLenWithoutQuote])), nil
+			offset = sectEnd
+		}
+
+	case 't':
+		offset, err = it.parseTrue(offset)
+		if err == nil {
+			v = NewBool(true)
+		}
+
+	case 'f':
+		offset, err = it.parseFalse(offset)
+		if err == nil {
+			v = NewBool(false)
+		}
+
+	case 'n':
+		offset, err = it.parseNull(offset)
+		if err == nil {
+			v = NewNull()
+		}
+
+	default:
+		return nil, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+	}
+
+	if err != nil {
+		return
+	}
+
+	if offset, reachEnd = it.skipBlanks(offset, end); !reachEnd {
+		return nil, fmt.Errorf("%w, unnecessary trailing data remains at Position %d", ErrRawBytesUnrecignized, offset)
+	}
+
+	return v, nil
+}
+
+// unmarshalArrayWithIterUnknownEnd is similar with unmarshalArrayWithIter, though should start with '[',
+// but it does not known where its ']' is
+func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end int, err error) {
+	offset++
+	arr := newArray()
+
+	reachEnd := false
+
+	for offset < right {
+		// 检查结束字符
+		offset, reachEnd = it.skipBlanks(offset, right)
+		if reachEnd {
+			// ']' not found
+			return nil, -1, fmt.Errorf("%w, cannot find ']'", ErrNotArrayValue)
+		}
+
+		chr := it.b[offset]
+		switch chr {
+		case ']':
+			return arr, offset + 1, nil
+
+		case ',':
+			offset++
+
+		case '{':
+			v, sectEnd, err := unmarshalObjectWithIterUnknownEnd(it, offset, right)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.children.array = append(arr.children.array, v)
+			offset = sectEnd
+
+		case '[':
+			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(it, offset, right)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.children.array = append(arr.children.array, v)
+			offset = sectEnd
+
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
+			i64, u64, f64, floated, negative, sectEnd, _, err := it.parseNumber(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			v := new(jsonparser.Number)
+			v.srcByte = it.b
+			v.srcOffset, v.srcEnd = offset, sectEnd
+			v.parsed = true
+			v.num.floated = floated
+			v.num.negative = negative
+			v.num.i64 = i64
+			v.num.u64 = u64
+			v.num.f64 = f64
+			arr.children.array = append(arr.children.array, v)
+			offset = sectEnd
+
+		case '"':
+			sectLenWithoutQuote, sectEnd, err := it.parseStrFromBytesForwardWithQuote(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			v := NewString(unsafeBtoS(it.b[offset+1 : offset+1+sectLenWithoutQuote]))
+			arr.children.array = append(arr.children.array, v)
+			offset = sectEnd
+
+		case 't':
+			sectEnd, err := it.parseTrue(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.children.array = append(arr.children.array, NewBool(true))
+			offset = sectEnd
+
+		case 'f':
+			sectEnd, err := it.parseFalse(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.children.array = append(arr.children.array, NewBool(false))
+			offset = sectEnd
+
+		case 'n':
+			sectEnd, err := it.parseNull(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.children.array = append(arr.children.array, NewNull())
+			offset = sectEnd
+
+		default:
+			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+		}
+	}
+
+	return nil, -1, fmt.Errorf("%w, cannot find ']'", ErrNotArrayValue)
+}
+
+// unmarshalObjectWithIterUnknownEnd unmarshal object from raw bytes. it.b[offset] must be '{'
+func unmarshalObjectWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end int, err error) {
+	offset++
+	obj := newObject()
+
+	keyStart, keyEnd := 0, 0
+	colonFound := false
+
+	reachEnd := false
+
+	keyNotFoundErr := func() error {
+		if keyEnd == 0 {
+			return fmt.Errorf(
+				"%w, missing key for another value at Position %d", ErrNotObjectValue, offset,
+			)
+		}
+		if !colonFound {
+			return fmt.Errorf(
+				"%w, missing colon for key at Position %d", ErrNotObjectValue, offset,
+			)
+		}
+		return nil
+	}
+
+	valNotFoundErr := func() error {
+		if keyEnd > 0 {
+			return fmt.Errorf(
+				"%w, missing value for key '%s' at Position %d",
+				ErrNotObjectValue, unsafeBtoS(it.b[keyStart:keyEnd]), keyStart,
+			)
+		}
+		return nil
+	}
+
+	for offset < right {
+		// 检查结束字符
+		offset, reachEnd = it.skipBlanks(offset, right)
+		if reachEnd {
+			// ']' not found
+			return nil, -1, fmt.Errorf("%w, cannot find '}'", ErrNotObjectValue)
+		}
+
+		chr := it.b[offset]
+		switch chr {
+		case '}':
+			return obj, offset + 1, nil
+
+		case ',':
+			if err = valNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			offset++
+			// continue
+
+		case ':':
+			if colonFound {
+				return nil, -1, fmt.Errorf("%w, duplicate colon at Position %d", ErrNotObjectValue, keyStart)
+			}
+			colonFound = true
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			offset++
+			// continue
+
+		case '{':
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			v, sectEnd, err := unmarshalObjectWithIterUnknownEnd(it, offset, right)
+			if err != nil {
+				return nil, -1, err
+			}
+			obj.setToObjectChildren(unsafeBtoS(it.b[keyStart:keyEnd]), v)
+			keyEnd, colonFound = 0, false
+			offset = sectEnd
+
+		case '[':
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(it, offset, right)
+			if err != nil {
+				return nil, -1, err
+			}
+			obj.setToObjectChildren(unsafeBtoS(it.b[keyStart:keyEnd]), v)
+			keyEnd, colonFound = 0, false
+			offset = sectEnd
+
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			i64, u64, f64, floated, negative, sectEnd, _, err := it.parseNumber(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			v := new(jsonparser.Number)
+			v.srcByte = it.b
+			v.srcOffset, v.srcEnd = offset, sectEnd
+			v.parsed = true
+			v.num.floated = floated
+			v.num.negative = negative
+			v.num.i64 = i64
+			v.num.u64 = u64
+			v.num.f64 = f64
+			obj.setToObjectChildren(unsafeBtoS(it.b[keyStart:keyEnd]), v)
+			keyEnd, colonFound = 0, false
+			offset = sectEnd
+
+		case '"':
+			if keyEnd > 0 {
+				// string value
+				if !colonFound {
+					return nil, -1, fmt.Errorf("%w, missing value for key '%s' at Position %d",
+						ErrNotObjectValue, unsafeBtoS(it.b[keyStart:keyEnd]), keyStart,
+					)
+				}
+				sectLenWithoutQuote, sectEnd, err := it.parseStrFromBytesForwardWithQuote(offset)
+				if err != nil {
+					return nil, -1, err
+				}
+				v := NewString(unsafeBtoS(it.b[offset+1 : offset+1+sectLenWithoutQuote]))
+				obj.setToObjectChildren(unsafeBtoS(it.b[keyStart:keyEnd]), v)
+				keyEnd, colonFound = 0, false
+				offset = sectEnd
+
+			} else {
+				// string key
+				sectLenWithoutQuote, sectEnd, err := it.parseStrFromBytesForwardWithQuote(offset)
+				if err != nil {
+					return nil, -1, err
+				}
+				keyStart, keyEnd = offset+1, offset+1+sectLenWithoutQuote
+				offset = sectEnd
+			}
+
+		case 't':
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			sectEnd, err := it.parseTrue(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			obj.setToObjectChildren(unsafeBtoS(it.b[keyStart:keyEnd]), NewBool(true))
+			keyEnd, colonFound = 0, false
+			offset = sectEnd
+
+		case 'f':
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			sectEnd, err := it.parseFalse(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			obj.setToObjectChildren(unsafeBtoS(it.b[keyStart:keyEnd]), NewBool(false))
+			keyEnd, colonFound = 0, false
+			offset = sectEnd
+
+		case 'n':
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			sectEnd, err := it.parseNull(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			obj.setToObjectChildren(unsafeBtoS(it.b[keyStart:keyEnd]), NewNull())
+			keyEnd, colonFound = 0, false
+			offset = sectEnd
+
+		default:
+			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+		}
+
+	}
+
+	return nil, -1, fmt.Errorf("%w, cannot find '}'", ErrNotObjectValue)
 }
 
 // Unmarshal parse raw bytes(encoded in UTF-8 or pure AscII) and returns a *V instance.
 //
 // Unmarshal 解析原始的字节类型数据（以 UTF-8 或纯 AscII 编码），并返回一个 *V 对象。
 func Unmarshal(b []byte) (ret *V, err error) {
-	if nil == b || len(b) == 0 {
+	le := len(b)
+	if le == 0 {
 		return nil, ErrNilParameter
 	}
 
-	for i, c := range b {
-		switch c {
-		case ' ', '\r', '\n', '\t', '\b':
-			// continue
-		case '{':
-			// object start
-			return newFromObject(b[i:])
-		case '[':
-			return newFromArray(b[i:])
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-			ret, err = newFromNumber(b[i:])
-			if err != nil {
-				return
-			}
-			err = ret.parseNumber()
-			if err != nil {
-				return nil, err
-			}
-			return ret, nil
+	trueB := make([]byte, len(b))
+	copy(trueB, b)
+	it := &iter{b: trueB}
+	return unmarshalWithIter(it, 0, le)
+}
 
-		case '"':
-			ret = new(jsonparser.String)
-			ret.valueStr, ret.valueBytes, err = parseString(b[i:])
-			if err != nil {
-				return nil, err
-			}
-			ret.parsed = true
-			return ret, nil
-
-		case 't':
-			return newFromTrue(b[i:])
-		case 'f':
-			return newFromFalse(b[i:])
-		case 'n':
-			return newFromNull(b[i:])
-		default:
-			return nil, ErrRawBytesUnrecignized
-		}
+// UnmarshalNoCopy is same as Unmarshal, but it does not copy another []byte instance for saving CPU time.
+// But pay attention that the input []byte may be used as buffer by jsonvalue and mey be modified.
+//
+// UnmarshalNoCopy 与 Unmarshal 相同，但是这个函数在解析过程中不会重新复制一个 []byte，对于大 json 的解析而言能够大大节省时间。
+// 但请注意传入的 []byte 变量肯能会被 jsonvalue 用作缓冲区，并进行修改
+func UnmarshalNoCopy(b []byte) (ret *V, err error) {
+	le := len(b)
+	if le == 0 {
+		return nil, ErrNilParameter
 	}
-
-	return nil, ErrRawBytesUnrecignized
+	return unmarshalWithIter(&iter{b: b}, 0, le)
 }
 
 var dot = []byte{'.'}
 
 func (v *V) parseNumber() (err error) {
-	b := v.valueBytes
+	b := v.srcByte[v.srcOffset:v.srcEnd]
 
 	// if v.num == nil {
 	// 	v.num = &num{}
@@ -249,161 +583,10 @@ func (v *V) parseNumber() (err error) {
 // ==== simple object parsing ====
 func newFromNumber(b []byte) (ret *V, err error) {
 	v := new(jsonparser.Number)
-	v.valueBytes = b
+	v.srcByte = b
+	v.srcOffset = 0
+	v.srcEnd = len(b)
 	return v, nil
-}
-
-// func newFromString(b []byte) (ret *V, err error) {
-// 	v := new()
-// 	v.valueType = jsonparser.String
-// 	v.valueBytes = b
-// 	return v, nil
-// }
-
-func newFromTrue(b []byte) (ret *V, err error) {
-	if len(b) != 4 || unsafeBtoS(b) != "true" {
-		return nil, ErrNotValidBoolValue
-	}
-	v := new(jsonparser.Boolean)
-	v.parsed = true
-	v.valueBytes = []byte{'t', 'r', 'u', 'e'}
-	v.valueBool = true
-	return v, nil
-}
-
-func newFromFalse(b []byte) (ret *V, err error) {
-	if len(b) != 5 || unsafeBtoS(b) != "false" {
-		return nil, ErrNotValidBoolValue
-	}
-	v := new(jsonparser.Boolean)
-	v.parsed = true
-	v.valueBytes = []byte{'f', 'a', 'l', 's', 'e'}
-	v.valueBool = false
-	return v, nil
-}
-
-func newFromBool(b []byte) (ret *V, err error) {
-	v := new(jsonparser.Boolean)
-
-	switch unsafeBtoS(b) {
-	case "true":
-		v.parsed = true
-		v.valueBytes = []byte{'t', 'r', 'u', 'e'}
-		v.valueBool = true
-	case "false":
-		v.parsed = true
-		v.valueBytes = []byte{'f', 'a', 'l', 's', 'e'}
-		v.valueBool = false
-	default:
-		return nil, ErrNotValidBoolValue
-	}
-
-	return v, nil
-}
-
-func newFromNull(b []byte) (ret *V, err error) {
-	if len(b) != 4 || unsafeBtoS(b) != "null" {
-		return nil, ErrNotValidBoolValue
-	}
-	v := new(jsonparser.Null)
-	v.parsed = true
-	return v, nil
-}
-
-// ====
-func newFromArray(b []byte) (ret *V, err error) {
-	o := newArray()
-
-	jsonparser.ArrayEach(b, func(v []byte, t jsonparser.ValueType, _ int, _ error) {
-		if err != nil {
-			return
-		}
-
-		var child *V
-
-		switch t {
-		default:
-			err = fmt.Errorf("invalid value type: %v", t)
-		case jsonparser.Object:
-			child, err = newFromObject(v)
-		case jsonparser.Array:
-			child, err = newFromArray(v)
-		case jsonparser.Number:
-			child, err = newFromNumber(v)
-		case jsonparser.Boolean:
-			child, err = newFromBool(v)
-		case jsonparser.Null:
-			child, err = newFromNull(v)
-		case jsonparser.String:
-			s, err := parseStringNoQuote(v)
-			if err != nil {
-				return
-			}
-			child = new(jsonparser.String)
-			child.parsed = true
-			child.valueStr = s
-		}
-
-		if err != nil {
-			return
-		}
-		o.children.array.PushBack(child)
-	})
-
-	// done
-	if err != nil {
-		return
-	}
-	return o, nil
-}
-
-// ==== object parsing ====
-func newFromObject(b []byte) (ret *V, err error) {
-	o := newObject()
-
-	err = jsonparser.ObjectEach(b, func(k, v []byte, t jsonparser.ValueType, _ int) error {
-		// key
-		var child *V
-		key, err := parseStringNoQuote(k)
-		if err != nil {
-			return err
-		}
-
-		switch t {
-		default:
-			return fmt.Errorf("invalid value type: %v", t)
-		case jsonparser.Object:
-			child, err = newFromObject(v)
-		case jsonparser.Array:
-			child, err = newFromArray(v)
-		case jsonparser.Number:
-			child, err = newFromNumber(v)
-		case jsonparser.Boolean:
-			child, err = newFromBool(v)
-		case jsonparser.Null:
-			child, err = newFromNull(v)
-		case jsonparser.String:
-			s, err := parseStringNoQuote(v)
-			if err != nil {
-				return err
-			}
-			child = new(jsonparser.String)
-			child.parsed = true
-			child.valueStr = s
-		}
-
-		if err != nil {
-			return err
-		}
-		o.setToObjectChildren(key, child)
-		return nil
-	})
-
-	// done
-	if err != nil {
-		return
-	}
-	return o, nil
 }
 
 // ==== type access ====
@@ -684,15 +867,8 @@ func (v *V) String() string {
 	case jsonparser.Null:
 		return "null"
 	case jsonparser.Number:
-		return unsafeBtoS(v.valueBytes)
+		return unsafeBtoS(v.valueBytes())
 	case jsonparser.String:
-		if !v.parsed {
-			var e error
-			v.valueStr, v.valueBytes, e = parseString(v.valueBytes)
-			if nil == e {
-				v.parsed = true
-			}
-		}
 		return v.valueStr
 	case jsonparser.Boolean:
 		return formatBool(v.valueBool)
@@ -741,4 +917,35 @@ func (v *V) bufArrChildren(buf *bytes.Buffer) {
 		return true
 	})
 	buf.WriteByte(']')
+}
+
+// Caseless mark current value to be caseless mode
+func (v *V) Caseless() *V {
+	if v.children.caseless {
+		return v
+	}
+
+	v.children.caseless = true
+
+	switch v.valueType {
+	default:
+		return v
+
+	case jsonparser.Array:
+		for _, child := range v.children.array {
+			child.Caseless()
+		}
+		return v
+
+	case jsonparser.Object:
+		if v.children.lowerCaseKeys == nil {
+			v.children.lowerCaseKeys = make(map[string]map[string]struct{}, len(v.children.object))
+			for k, child := range v.children.object {
+				child.Caseless()
+				v.addCaselessKey(k)
+			}
+		}
+	}
+
+	return v
 }

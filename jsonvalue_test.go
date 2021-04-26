@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
 // go test -v -failfast -cover -coverprofile xxx.prof && go tool cover -html xxx.prof
@@ -163,4 +165,97 @@ func TestMiscInt(t *testing.T) {
 
 	_, err = v.GetInt(uint8(2))
 	checkInt(i, 3)
+}
+
+func TestJsonvalue(t *testing.T) {
+	test(t, "unmarshalWithIter", test_unmarshalWithIter)
+}
+
+func test_unmarshalWithIter(t *testing.T) {
+	Convey("string", func() {
+		raw := []byte("hello, 世界")
+		rawWithQuote := []byte(fmt.Sprintf("\"%s\"", raw))
+
+		v, err := unmarshalWithIter(&iter{b: rawWithQuote}, 0, len(rawWithQuote))
+		So(err, ShouldBeNil)
+		So(v.String(), ShouldEqual, string(raw))
+	})
+
+	Convey("true", func() {
+		raw := []byte("  true  ")
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.Bool(), ShouldBeTrue)
+		So(v.IsBoolean(), ShouldBeTrue)
+	})
+
+	Convey("false", func() {
+		raw := []byte("  false  ")
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.Bool(), ShouldBeFalse)
+		So(v.IsBoolean(), ShouldBeTrue)
+	})
+
+	Convey("null", func() {
+		raw := []byte("\r\t\n  null \r\t\b  ")
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.IsNull(), ShouldBeTrue)
+	})
+
+	Convey("int number", func() {
+		raw := []byte(" 1234567890 ")
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.Int64(), ShouldEqual, 1234567890)
+	})
+
+	Convey("array with basic type", func() {
+		raw := []byte(" [123, true, false, null, [\"array in array\"], \"Hello, world!\" ] ")
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.IsArray(), ShouldBeTrue)
+
+		t.Logf("res: %v", v)
+	})
+
+	Convey("object with basic type", func() {
+		raw := []byte(`  {"message": "Hello, world!"}	`)
+		printBytes(t, raw)
+
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		t.Logf("res: %v", v)
+
+		for kv := range v.IterObjects() {
+			t.Logf("key: %s", kv.K)
+			t.Logf("val: %v", kv.V)
+		}
+
+		s, err := v.Get("message")
+		So(err, ShouldBeNil)
+		So(v, ShouldNotBeNil)
+		So(s.IsString(), ShouldBeTrue)
+		So(s.String(), ShouldEqual, "Hello, world!")
+	})
+
+	Convey("object with complex type", func() {
+		raw := []byte(` {"arr": [1234, true , null, false, {"obj":"empty object"}]}  `)
+		printBytes(t, raw)
+
+		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		t.Logf("res: %v", v)
+
+		child, err := v.Get("arr", 4, "obj")
+		So(err, ShouldBeNil)
+		So(child.IsString(), ShouldBeTrue)
+		So(child.String(), ShouldEqual, "empty object")
+	})
+
 }

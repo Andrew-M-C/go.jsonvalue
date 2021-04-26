@@ -8,14 +8,23 @@ func TestInsertAppend(t *testing.T) {
 	a := NewArray()
 	expected := `[123456,"hello","world",1234.123456789,true,["12345"],null,null]`
 	a.AppendString("world").InTheBeginning()
+	t.Log(a.MustMarshalString())
 	a.AppendFloat64(1234.123456789, 9).InTheEnd()
+	t.Log(a.MustMarshalString())
 	a.InsertBool(true).After(-1)
+	t.Log(a.MustMarshalString())
 	a.AppendNull().InTheEnd()
+	t.Log(a.MustMarshalString())
 	a.InsertInt(123456).Before(0)
+	t.Log(a.MustMarshalString())
 	a.InsertString("hello").After(0)
+	t.Log(a.MustMarshalString())
 	a.InsertArray().After(-2)
+	t.Log(a.MustMarshalString())
 	a.AppendString("12345").InTheEnd(-2)
+	t.Log(a.MustMarshalString())
 	a.Append(nil).InTheEnd()
+	t.Log(a.MustMarshalString())
 
 	s, _ := a.MarshalString()
 	t.Logf("after SetXxx(): %v", s)
@@ -65,7 +74,7 @@ func TestDelete(t *testing.T) {
 		return
 	}
 
-	_, err = o.Get("object")
+	_, err = o.Caseless().Get("object")
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 		return
