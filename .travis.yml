@@ -11,6 +11,7 @@ install:
 
 before_script:
   - go get github.com/buger/jsonparser
+  - go get github.com/smartystreets/goconvey
 
 script:
   - go test -v -failfast -covermode=count -coverprofile=coverage.out && $HOME/gopath/bin/goveralls -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
