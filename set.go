@@ -189,7 +189,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 		if err != nil {
 			return nil, err
 		}
-		child, exist := v.getFromObjectChildren(k)
+		child, exist := v.getFromObjectChildren(false, k)
 		if !exist {
 			if _, err := intfToString(otherParams[0]); err == nil {
 				child = NewObject()

@@ -10,15 +10,6 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func test(t *testing.T, scene string, f func(*testing.T)) {
-	if t.Failed() {
-		return
-	}
-	Convey(scene, t, func() {
-		f(t)
-	})
-}
-
 func TestIter(t *testing.T) {
 	test(t, "iter.memcpy", testIter_memcpy)
 	test(t, "iter.assignWideRune", testIter_assignWideRune)
