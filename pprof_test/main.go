@@ -205,7 +205,8 @@ func jsoniterGetTest() {
 	defer pprof.StopCPUProfile()
 
 	for i := 0; i < iteration; i++ {
-		jsoniter.Get(unmarshalText)
+		any := jsoniter.Get(unmarshalText)
+		any.Get("object", "object", "object", "array", 1)
 	}
 
 	printf("jsoniter get done")
