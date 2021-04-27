@@ -160,16 +160,40 @@ func Benchmark____Get____Jsoniter(b *testing.B) {
 	}
 }
 
-func Benchmark____Get____Jsoniter_blob(b *testing.B) {
+func Benchmark____Get____Jsoniter_ReadOneChain(b *testing.B) {
+	raw := unmarshalText
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		any := jsoniter.Get(raw)
+		any.Get("object", "object", "object", "array", 1)
+	}
+}
+
+func Benchmark____Get____Jsoniter_ReadLevelOne(b *testing.B) {
+	raw := unmarshalText
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		any := jsoniter.Get(raw)
+		keys := any.Keys()
+		for _, k := range keys {
+			any.Get(k)
+		}
+	}
+}
+
+func Benchmark____Get____Jsoniter_blob_ReadOneChain(b *testing.B) {
 	raw := generateLongObject()
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		jsoniter.Get(raw)
+		any := jsoniter.Get(raw)
+		any.Get("object", "object", "object", "array", 1)
 	}
 }
 
-func Benchmark_Unmarshal_Jsonparser(b *testing.B) {
+func Benchmark_Unmarshal_Jsonparser_Full_Blob(b *testing.B) {
 	var objEach func([]byte, []byte, jsonparser.ValueType, int) error
 	var arrEach func([]byte, jsonparser.ValueType, int, error)
 
@@ -202,6 +226,28 @@ func Benchmark_Unmarshal_Jsonparser(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		jsonparser.ObjectEach(raw, objEach)
+	}
+}
+
+func Benchmark_Unmarshal_Jsonparser_ReadLevelOne_Blob(b *testing.B) {
+	objEach := func(k, v []byte, t jsonparser.ValueType, _ int) (noErr error) {
+		return
+	}
+
+	raw := generateLongObject()
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		jsonparser.ObjectEach(raw, objEach)
+	}
+}
+
+func Benchmark_Unmarshal_Jsonparser_ReadOneChain(b *testing.B) {
+	raw := unmarshalText
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		jsonparser.Get(raw, "object", "object", "object", "array", "[1]")
 	}
 }
 
