@@ -4,9 +4,18 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSortArray(t *testing.T) {
+func TestSort(t *testing.T) {
+	test(t, "sort array", testSortArray)
+	test(t, "sort array errors", testSortArrayError)
+	test(t, "sort marshal", testSortMarshal)
+	test(t, "sort by string slice", testSortByStringSlice)
+}
+
+func testSortArray(t *testing.T) {
 	arr := NewArray()
 
 	arr.AppendInt(0).InTheEnd()
@@ -30,13 +39,10 @@ func TestSortArray(t *testing.T) {
 	res := arr.MustMarshalString()
 	t.Logf("sorted res: '%s'", res)
 
-	if res != `[9,8,7,6,5,4,3,2,1,0]` {
-		t.Errorf("array sort failed")
-		return
-	}
+	So(res, ShouldEqual, `[9,8,7,6,5,4,3,2,1,0]`)
 }
 
-func TestSortArrayError(t *testing.T) {
+func testSortArrayError(t *testing.T) {
 	// simple test, should not panic
 	v := NewInt(1)
 	v.SortArray(func(v1, v2 *V) bool { return false })
@@ -45,7 +51,7 @@ func TestSortArrayError(t *testing.T) {
 	v.SortArray(nil)
 }
 
-func TestSortMarshal(t *testing.T) {
+func testSortMarshal(t *testing.T) {
 	// default sequence
 	expected := `{"0":0,"1":"1","2":2,"3":"3","4":4,"5":"5","6":6,"7":"7","8":8,"9":"9"}`
 	t.Logf("expected string: %s", expected)
@@ -62,10 +68,7 @@ func TestSortMarshal(t *testing.T) {
 		}
 
 		s := v.MustMarshalString(Opt{MarshalLessFunc: DefaultStringSequence})
-		if s != expected {
-			t.Errorf("unexpected string: %s", s)
-			return
-		}
+		So(s, ShouldEqual, expected)
 	}
 
 	// key path
@@ -86,10 +89,7 @@ func TestSortMarshal(t *testing.T) {
 	}`
 
 	v, err := UnmarshalString(orig)
-	if err != nil {
-		t.Errorf("unmarshal error: %v", err)
-		return
-	}
+	So(err, ShouldBeNil)
 
 	s := v.MustMarshalString(Opt{
 		OmitNull: true,
@@ -104,16 +104,13 @@ func TestSortMarshal(t *testing.T) {
 			return len(keyA) <= len(keyB)
 		},
 	})
-	t.Logf("marshaled string: %v", s)
 
 	expected = `{"object!":{"object!!":{"array!!!!":[1234,{"stringA":"a string","stringBB":"aa string"}]},"string!!!":"a string"}}`
-	if s != expected {
-		t.Errorf("unpxpected marshaled string")
-		return
-	}
+	t.Logf("marshaled string: %v", s)
+	So(s, ShouldEqual, expected)
 }
 
-func TestSortByStringSlice(t *testing.T) {
+func testSortByStringSlice(t *testing.T) {
 	seq := []string{
 		"grandpa",
 		"grandma",
@@ -138,11 +135,8 @@ func TestSortByStringSlice(t *testing.T) {
 		OmitNull:           true,
 		MarshalKeySequence: seq,
 	})
-	t.Logf("marshaled: '%s'", s)
 
 	expected := `{"grandpa":"Kentucky","grandma":"McDonald","father":"Hanberger","mother":"Chips","son":"Ketchup","daughter":"Mayonnaise","friendA":"Fish","friendB":"Beef"}`
-	if s != expected {
-		t.Errorf("unexpected marshal result")
-		return
-	}
+	t.Logf("marshaled: '%s'", s)
+	So(s, ShouldEqual, expected)
 }

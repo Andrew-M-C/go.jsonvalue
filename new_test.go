@@ -1,583 +1,541 @@
 package jsonvalue
 
 import (
-	"os"
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestNewString(t *testing.T) {
+func TestNewXxx(t *testing.T) {
+	test(t, "NewString", testNewString)
+	test(t, "NewBool", testNewBool)
+	test(t, "NewNull", testNewNull)
+	test(t, "NewIntXxx/UintXxx", testNewInteger)
+	test(t, "NewFloat64/32", testNewFloat)
+	test(t, "empty object/array", testEmptyObjectArray)
+	test(t, "misc value", testMiscValue)
+	test(t, "MustMarshal error", testMustMarshalError)
+	test(t, "MustMarshal error", testValueError)
+}
+
+func testNewString(t *testing.T) {
 	s := "你好，世界"
 	v := NewString(s)
-	if s != v.String() {
-		t.Errorf("test NewString Failed")
-	}
+	So(v.String(), ShouldEqual, s)
 }
 
-func TestNewBool(t *testing.T) {
+func testNewBool(t *testing.T) {
 	v := NewBool(true)
-	if v.Bool() != true {
-		t.Errorf("test NewBool - true failed")
-		return
-	}
+	So(v.Bool(), ShouldBeTrue)
+	So(v.IsBoolean(), ShouldBeTrue)
 
 	v = NewBool(false)
-	if v.Bool() != false {
-		t.Errorf("test NewBool - false failed")
-		return
-	}
+	So(v.Bool(), ShouldBeFalse)
+	So(v.IsBoolean(), ShouldBeTrue)
 }
 
-func TestNewNull(t *testing.T) {
+func testNewNull(t *testing.T) {
 	v := NewNull()
-	if false == v.IsNull() {
-		t.Errorf("test NewNull failed")
-		return
-	}
+	So(v.IsNull(), ShouldBeTrue)
 }
 
-func TestNewInteger(t *testing.T) {
+func testNewInteger(t *testing.T) {
 	i := int64(-1234567)
 
 	v := NewInt(int(i))
-	if v.Int() != int(i) {
-		t.Errorf("Test NewInt failed")
-		return
-	}
+	So(v.Int(), ShouldEqual, int(i))
 
 	v = NewUint(uint(i))
-	if v.Uint() != uint(i) {
-		t.Errorf("Test NewUint failed")
-		return
-	}
+	So(v.Uint(), ShouldEqual, uint(i))
 
 	v = NewInt32(int32(i))
-	if v.Int32() != int32(i) {
-		t.Errorf("Test NewInt32 failed")
-		return
-	}
+	So(v.Int32(), ShouldEqual, int32(i))
 
 	v = NewUint32(uint32(i))
-	if v.Uint32() != uint32(i) {
-		t.Errorf("Test NewUint32 failed")
-		return
-	}
+	So(v.Uint32(), ShouldEqual, uint32(i))
 
 	v = NewInt64(int64(i))
-	if v.Int64() != int64(i) {
-		t.Errorf("Test NewInt64 failed")
-		return
-	}
+	So(v.Int64(), ShouldEqual, int64(i))
 
 	v = NewUint64(uint64(i))
-	if v.Uint64() != uint64(i) {
-		t.Errorf("Test NewUint64 failed")
-		return
-	}
+	So(v.Uint64(), ShouldEqual, uint64(i))
 }
 
-func TestNewFloat(t *testing.T) {
+func testNewFloat(t *testing.T) {
 	s := "3.1415926535"
 	f := 3.1415926535
 
-	v := NewFloat64(f, -1)
-	if v.String() != s {
-		t.Errorf("Test NewFloat64 failed")
-		return
-	}
+	v := NewFloat64(f, 10)
+	So(v.String(), ShouldEqual, s)
 
 	v = NewFloat64(f, 2)
-	if v.String() != "3.14" {
-		t.Errorf("Test NewFloat64 failed")
-		return
-	}
+	So(v.String(), ShouldEqual, "3.14")
 
 	s = "3.1415927"
 	v = NewFloat32(float32(f), -1)
-	if v.String() != s {
-		t.Errorf("Test NewFloat32 failed: %s", v.String())
-		return
-	}
+	So(v.String(), ShouldEqual, s)
 
 	v = NewFloat32(float32(f), 5)
-	if v.String() != "3.14159" {
-		t.Errorf("Test NewFloat32 failed")
-		return
-	}
+	So(v.String(), ShouldEqual, "3.14159")
 }
 
-func TestEmptyObject(t *testing.T) {
+func testEmptyObjectArray(t *testing.T) {
 	v := NewObject()
 	b, _ := v.Marshal()
-	if string(b) != "{}" {
-		t.Errorf("Test NewObject failed")
-		return
-	}
+	So(string(b), ShouldEqual, "{}")
+
+	v = NewArray()
+	b = v.MustMarshal()
+	So(string(b), ShouldEqual, "[]")
 }
 
-func TestEmptyArray(t *testing.T) {
-	v := NewArray()
-	b := v.MustMarshal()
-	if string(b) != "[]" {
-		t.Errorf("TestNewObject failed")
-		return
-	}
-}
-
-func TestMiscValue(t *testing.T) {
-	var err error
-	var v *V
-	var c *V
-	checkErrMark := 0
-	raw := ""
-	topic := ""
-	checkErr := func() {
-		checkErrMark++
-		if err != nil {
-			t.Errorf("%02d - %s - error: %v", checkErrMark, topic, err)
-			os.Exit(-1)
-		}
-	}
-	checkCond := func(b bool) {
-		if false == b {
-			t.Errorf("%02d - %s - failed, object: %v", checkErrMark, topic, v)
-			os.Exit(-1)
-		}
-	}
-
-	topic = "parse array"
-	raw = "\r\n[1, 2, 3 ]\t\b"
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsArray())
-
-	topic = "parse object"
-	raw = `{ }`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsObject())
-
-	topic = "parse string"
-	raw = ` "hello, world"  `
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsString())
-	checkCond(v.Int() == 0)
-	checkCond(v.Uint() == 0)
-	checkCond(v.Int64() == 0)
-	checkCond(v.Uint64() == 0)
-	checkCond(v.Int32() == 0)
-	checkCond(v.Uint32() == 0)
-	checkCond(v.Float64() == 0)
-	checkCond(v.Float32() == 0)
-	checkCond(v.IsFloat() == false)
-	checkCond(v.IsInteger() == false)
-
-	topic = "parse string with special character"
-	raw = `"\"\\\/\f\t\r\n\b\u0030\uD87E\uDC04"`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsString())
-
-	topic = "parse null"
-	raw = `null`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsNull())
-
-	topic = "parse bool (true)"
-	raw = `true`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsBoolean())
-	checkCond(true == v.Bool())
-
-	topic = "parse bool (true)"
-	raw = `false`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsBoolean())
-	checkCond(false == v.Bool())
-
-	topic = "parse negative float"
-	raw = `-12345.12345`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsNumber())
-	checkCond(v.IsFloat())
-	checkCond(v.IsNegative())
-	checkCond(false == v.GreaterThanInt64Max())
-
-	topic = "parse positive float"
-	raw = `12345.12345`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsNumber())
-	checkCond(v.IsFloat())
-	checkCond(v.IsPositive())
-	checkCond(false == v.GreaterThanInt64Max())
-
-	topic = "parse negative integer"
-	raw = `-12345`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsNumber())
-	checkCond(v.IsInteger())
-	checkCond(v.IsNegative())
-	checkCond(false == v.GreaterThanInt64Max())
-
-	topic = "parse positive integer"
-	raw = `12345`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsNumber())
-	checkCond(v.IsInteger())
-	checkCond(v.IsPositive())
-	checkCond(false == v.GreaterThanInt64Max())
-
-	topic = "parse big uint64"
-	raw = `18446744073709551615` // 0xFFFFFFFFFFFFFFFF
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsNumber())
-	checkCond(v.IsInteger())
-	checkCond(v.IsPositive())
-	checkCond(v.GreaterThanInt64Max())
-
-	topic = "parse object in array"
-	raw = `[{}]`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsArray())
-	c, err = v.Get(0)
-	checkErr()
-	checkCond(c.IsObject())
-
-	topic = "parse array in object"
-	raw = `{"array":[]}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	checkCond(v.IsObject())
-	c, err = v.Get("array")
-	checkErr()
-	checkCond(c.IsArray())
-
-	topic = "parse float in object"
-	raw = `{"float":123.4567}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("float")
-	checkErr()
-	checkCond(v.IsFloat())
-
-	topic = "parse integer in object"
-	raw = `{"int":123}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("int")
-	checkErr()
-	checkCond(v.IsInteger())
-
-	topic = "parse int in object"
-	raw = `{"int":123}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("int")
-	checkErr()
-	checkCond(v.Int() == 123)
-
-	topic = "parse uint in object"
-	raw = `{"uint":123}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("uint")
-	checkErr()
-	checkCond(v.Uint() == 123)
-
-	topic = "parse int64 in object"
-	raw = `{"int":123}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("int")
-	checkErr()
-	checkCond(v.Int64() == 123)
-
-	topic = "parse uint64 in object"
-	raw = `{"uint":123}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("uint")
-	checkErr()
-	checkCond(v.Uint64() == 123)
-
-	topic = "parse int32 in object"
-	raw = `{"int":123}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("int")
-	checkErr()
-	checkCond(v.Int32() == 123)
-
-	topic = "parse uint32 in object"
-	raw = `{"uint":123}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("uint")
-	checkErr()
-	checkCond(v.Uint32() == 123)
-
-	topic = "parse float32 in object"
-	raw = `{"float":123.456}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("float")
-	checkErr()
-	checkCond(v.Float32() == 123.456)
-
-	topic = "parse float64 in object"
-	raw = `{"float":123.456}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("float")
-	checkErr()
-	checkCond(v.Float64() == 123.456)
-
-	topic = "parse negative in object"
-	raw = `{"negative":-123}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("negative")
-	checkErr()
-	checkCond(v.IsNegative())
-
-	topic = "parse positive in object"
-	raw = `{"positive":123}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("positive")
-	checkErr()
-	checkCond(v.IsPositive())
-
-	topic = "parse greater than int64 in object"
-	raw = `{"int":9223372036854775808}`
-	v, err = UnmarshalString(raw)
-	checkErr()
-	v, err = v.Get("int")
-	checkErr()
-	checkCond(v.GreaterThanInt64Max())
-
-	topic = "create an initialized JSON object"
-	v = NewObject(map[string]interface{}{
-		"null":    nil,
-		"string":  "string",
-		"true":    true,
-		"int":     int(-1),
-		"uint":    uint(1),
-		"int8":    int8(-2),
-		"uint8":   uint8(2),
-		"int16":   int16(-3),
-		"uint16":  uint16(3),
-		"int32":   int32(-4),
-		"uint32":  uint32(4),
-		"int64":   int64(-5),
-		"uint64":  uint64(5),
-		"float32": float32(-1.1),
-		"float64": float64(-2.2),
+func testMiscValue(t *testing.T) {
+	Convey("parse array", func() {
+		raw := "\r\n[1, 2, 3 ]\t\b"
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsArray(), ShouldBeTrue)
 	})
-	checkCond(v.GetNull("null") == nil)
-	str, err := v.GetString("string")
-	checkErr()
 
-	checkCond(str == "string")
-	bl, err := v.GetBool("true")
-	checkErr()
-	checkCond(bl == true)
+	Convey("parse object", func() {
+		raw := `{ }`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+	})
 
-	checkInt := func(k string, target int) {
-		var i int
-		i, err = v.GetInt(k)
-		checkErr()
-		checkCond(i == target)
-	}
-	checkInt("int", -1)
-	checkInt("uint", 1)
-	checkInt("int8", -2)
-	checkInt("uint8", 2)
-	checkInt("int16", -3)
-	checkInt("uint16", 3)
-	checkInt("int32", -4)
-	checkInt("uint32", 4)
-	checkInt("int64", -5)
-	checkInt("uint64", 5)
+	Convey("parse string", func() {
+		raw := ` "hello, world"  `
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsString(), ShouldBeTrue)
+		So(v.Int(), ShouldBeZeroValue)
+		So(v.Uint(), ShouldBeZeroValue)
+		So(v.Int64(), ShouldBeZeroValue)
+		So(v.Uint64(), ShouldBeZeroValue)
+		So(v.Int32(), ShouldBeZeroValue)
+		So(v.Uint32(), ShouldBeZeroValue)
+		So(v.Float64(), ShouldBeZeroValue)
+		So(v.Float32(), ShouldBeZeroValue)
+		So(v.IsFloat(), ShouldBeFalse)
+		So(v.IsInteger(), ShouldBeFalse)
+	})
 
-	f32, err := v.GetFloat32("float32")
-	checkErr()
-	checkCond(f32 == float32(-1.1))
+	Convey("parse string with special character", func() {
+		raw := `"\"\\\/\f\t\r\n\b\u0030\uD87E\uDC04"`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsString(), ShouldBeTrue)
+	})
 
-	f64, err := v.GetFloat64("float64")
-	checkErr()
-	checkCond(f64 == float64(-2.2))
-}
+	Convey("parse null", func() {
+		raw := `null`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsNull(), ShouldBeTrue)
+	})
 
-func TestMustMarshalError(t *testing.T) {
-	defer func() {
-		if err := recover(); err == nil {
-			t.Errorf("error expected but not caught")
+	Convey("parse bool (true)", func() {
+		raw := `true`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsBoolean(), ShouldBeTrue)
+		So(v.Bool(), ShouldBeTrue)
+	})
+
+	Convey("parse bool (false)", func() {
+		raw := `false`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsBoolean(), ShouldBeTrue)
+		So(v.Bool(), ShouldBeFalse)
+	})
+
+	Convey("parse negative float", func() {
+		raw := `-12345.12345`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsNumber(), ShouldBeTrue)
+		So(v.IsFloat(), ShouldBeTrue)
+		So(v.IsNegative(), ShouldBeTrue)
+		So(v.GreaterThanInt64Max(), ShouldBeFalse)
+	})
+
+	Convey("parse negative integer", func() {
+		raw := `-12345`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsNumber(), ShouldBeTrue)
+		So(v.IsFloat(), ShouldBeFalse)
+		So(v.IsNegative(), ShouldBeTrue)
+		So(v.GreaterThanInt64Max(), ShouldBeFalse)
+	})
+
+	Convey("parse positive integer", func() {
+		raw := `12345`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsNumber(), ShouldBeTrue)
+		So(v.IsFloat(), ShouldBeFalse)
+		So(v.IsPositive(), ShouldBeTrue)
+		So(v.GreaterThanInt64Max(), ShouldBeFalse)
+	})
+
+	Convey("parse big uint64", func() {
+		raw := `18446744073709551615` // 0xFFFFFFFFFFFFFFFF
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsNumber(), ShouldBeTrue)
+		So(v.IsFloat(), ShouldBeFalse)
+		So(v.IsPositive(), ShouldBeTrue)
+		So(v.GreaterThanInt64Max(), ShouldBeTrue)
+	})
+
+	Convey("parse object in array", func() {
+		raw := `[{}]`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsArray(), ShouldBeTrue)
+
+		c, err := v.Get(0)
+		So(err, ShouldBeNil)
+		So(c.IsObject(), ShouldBeTrue)
+	})
+
+	Convey("parse array in object", func() {
+		raw := `{"array":[]}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("array")
+		So(err, ShouldBeNil)
+		So(c.IsArray(), ShouldBeTrue)
+	})
+
+	Convey("parse float in object", func() {
+		raw := `{"float":123.4567}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("float")
+		So(err, ShouldBeNil)
+		So(c.IsFloat(), ShouldBeTrue)
+	})
+
+	Convey("parse integer in object", func() {
+		raw := `{"int":123}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("int")
+		So(err, ShouldBeNil)
+		So(c.IsInteger(), ShouldBeTrue)
+	})
+
+	Convey("parse int in object", func() {
+		raw := `{"int":123}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("int")
+		So(err, ShouldBeNil)
+		So(c.Int(), ShouldEqual, 123)
+	})
+
+	Convey("parse uint in object", func() {
+		raw := `{"uint":123}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("uint")
+		So(err, ShouldBeNil)
+		So(c.Uint(), ShouldEqual, 123)
+	})
+
+	Convey("parse int64 in object", func() {
+		raw := `{"uint":123}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("uint")
+		So(err, ShouldBeNil)
+		So(c.Int64(), ShouldEqual, 123)
+	})
+
+	Convey("parse uint64 in object", func() {
+		raw := `{"uint":123}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("uint")
+		So(err, ShouldBeNil)
+		So(c.Uint64(), ShouldEqual, 123)
+	})
+
+	Convey("parse int32 in object", func() {
+		raw := `{"int":123}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("int")
+		So(err, ShouldBeNil)
+		So(c.Int32(), ShouldEqual, 123)
+	})
+
+	Convey("parse uint32 in object", func() {
+		raw := `{"uint":123}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("uint")
+		So(err, ShouldBeNil)
+		So(c.Uint32(), ShouldEqual, 123)
+	})
+
+	Convey("parse float32 in object", func() {
+		raw := `{"float":123.456}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("float")
+		So(err, ShouldBeNil)
+		So(c.Float32(), ShouldEqual, 123.456)
+	})
+
+	Convey("parse float64 in object", func() {
+		raw := `{"float":123.456}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("float")
+		So(err, ShouldBeNil)
+		So(c.Float64(), ShouldEqual, 123.456)
+	})
+
+	Convey("parse negative in object", func() {
+		raw := `{"negative":-123}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("negative")
+		So(err, ShouldBeNil)
+		So(c.IsNegative(), ShouldBeTrue)
+	})
+
+	Convey("parse positive in object", func() {
+		raw := `{"positive":123}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("positive")
+		So(err, ShouldBeNil)
+		So(c.IsPositive(), ShouldBeTrue)
+	})
+
+	Convey("parse greater than int64 in object", func() {
+		raw := `{"int":9223372036854775808}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsObject(), ShouldBeTrue)
+
+		c, err := v.Get("int")
+		So(err, ShouldBeNil)
+		So(c.GreaterThanInt64Max(), ShouldBeTrue)
+	})
+
+	Convey("create an initialized JSON object", func() {
+		v := NewObject(map[string]interface{}{
+			"null":    nil,
+			"string":  "string",
+			"true":    true,
+			"int":     int(-1),
+			"uint":    uint(1),
+			"int8":    int8(-2),
+			"uint8":   uint8(2),
+			"int16":   int16(-3),
+			"uint16":  uint16(3),
+			"int32":   int32(-4),
+			"uint32":  uint32(4),
+			"int64":   int64(-5),
+			"uint64":  uint64(5),
+			"float32": float32(-1.1),
+			"float64": float64(-2.2),
+		})
+
+		So(v.GetNull("null"), ShouldBeNil)
+
+		str, err := v.GetString("string")
+		So(err, ShouldBeNil)
+		So(str, ShouldEqual, "string")
+
+		bl, err := v.GetBool("true")
+		So(err, ShouldBeNil)
+		So(bl, ShouldBeTrue)
+
+		checkInt := func(k string, target int) {
+			i, err := v.GetInt(k)
+			So(err, ShouldBeNil)
+			So(i, ShouldEqual, target)
 		}
-	}()
+		checkInt("int", -1)
+		checkInt("uint", 1)
+		checkInt("int8", -2)
+		checkInt("uint8", 2)
+		checkInt("int16", -3)
+		checkInt("uint16", 3)
+		checkInt("int32", -4)
+		checkInt("uint32", 4)
+		checkInt("int64", -5)
+		checkInt("uint64", 5)
 
-	v := &V{}
-	v.MustMarshal()
-	v.MustMarshalString()
+		f32, err := v.GetFloat32("float32")
+		So(err, ShouldBeNil)
+		So(f32, ShouldEqual, float32(-1.1))
+
+		f64, err := v.GetFloat64("float64")
+		So(err, ShouldBeNil)
+		So(f64, ShouldEqual, float64(-2.2))
+	})
 }
 
-func TestMustMarshalStringError(t *testing.T) {
-	defer func() {
-		if err := recover(); err == nil {
-			t.Errorf("error expected but not caught")
-		}
-	}()
+func testMustMarshalError(t *testing.T) {
+	ShouldPanic(func() {
+		v := &V{}
+		v.MustMarshal()
+	})
 
-	v := &V{}
-	v.MustMarshalString()
+	ShouldPanic(func() {
+		v := &V{}
+		v.MustMarshalString()
+	})
 }
 
-func TestValueError(t *testing.T) {
-	var checkCount int
-	var topic string
+func testValueError(t *testing.T) {
 	var err error
 	var raw string
 	var v *V
-	shouldError := func() {
-		checkCount++
-		if err == nil {
-			s, _ := v.MarshalString()
-			t.Errorf("%02d - %s - error expected but not caught, marshaled: %s", checkCount, topic, s)
-			return
-		}
-		t.Logf("%02d - %s - expected error string: %v", checkCount, topic, err)
-	}
 
-	topic = "invalid json"
-	v = &V{}
-	if v.String() != "" {
-		t.Errorf("uninitizlized object should be empty")
-		return
-	}
-
-	topic = "nil string input"
-	raw = ""
-	v, err = UnmarshalString(raw)
-	shouldError()
-
-	topic = "nil bytes input"
-	v, err = Unmarshal(nil)
-	shouldError()
-
-	topic = "illegal char"
-	raw = `\\`
-	v, err = UnmarshalString(raw)
-	shouldError()
-
-	topic = "no start chars"
-	raw = `     `
-	v, err = UnmarshalString(raw)
-	shouldError()
-
-	// TODO: 以下几个后面要加回来
-
-	// topic = "illegal float number"
-	// raw = `1.a`
-	// v, err = UnmarshalString(raw)
-	// shouldError()
-
-	// topic = "illegal negative interger"
-	// raw = `-1a`
-	// v, err = UnmarshalString(raw)
-	// shouldError()
-
-	// topic = "illegal positive interger"
-	// raw = `1a`
-	// v, err = UnmarshalString(raw)
-	// shouldError()
-
-	topic = "illegal true"
-	raw = `trUE`
-	v, err = UnmarshalString(raw)
-	shouldError()
-
-	topic = "illegal false"
-	raw = `fAlse`
-	v, err = UnmarshalString(raw)
-	shouldError()
-
-	topic = "illegal null"
-	raw = `nUll`
-	v, err = UnmarshalString(raw)
-	shouldError()
-
-	// TODO:
-
-	// topic = "illegal string"
-	// raw = `"too many quote""`
-	// v, err = UnmarshalString(raw)
-	// shouldError()
-
-	topic = "too short string"
-	raw = `"`
-	v, err = UnmarshalString(raw)
-	shouldError()
-
-	topic = "illegal escaping"
-	raw = `"\"`
-	v, err = UnmarshalString(raw)
-	shouldError()
-
-	// TODO:
-
-	// topic = "illegal bool in object"
-	// raw = `{"bool":tRue}`
-	// v, err = UnmarshalString(raw)
-	// shouldError()
-
-	// topic = "illegal bool in array"
-	// raw = `[tRue]`
-	// v, err = UnmarshalString(raw)
-	// shouldError()
-
-	// topic = "illegal array"
-	// raw = `["incompleteString]`
-	// v, err = UnmarshalString(raw)
-	// shouldError()
-
-	topic = "marshaling uninitialized value"
-	v = &V{}
-	_, err = v.MarshalString()
-	shouldError()
-	_, err = v.Marshal()
-	shouldError()
-
-	topic = "marshaling with option"
-	v = NewObject()
-	v.SetNull().At("null")
-	raw, _ = v.MarshalString()
-	if raw != `{"null":null}` {
-		t.Errorf("null object is omitted ('%s')", raw)
-		return
-	}
-	raw, _ = v.MarshalString(Opt{
-		OmitNull: true,
+	Convey("invalid json", func() {
+		v = &V{}
+		So(v.String(), ShouldEqual, "")
 	})
-	if raw != "{}" {
-		t.Errorf("null object is not omitted ('%s')", raw)
-		return
-	}
-	rawB, _ := v.Marshal(Opt{
-		OmitNull: true,
-	})
-	if string(rawB) != "{}" {
-		t.Errorf("null object is not omitted ('%s')", raw)
-		return
-	}
 
-	t.Logf("done")
+	Convey("nil string input", func() {
+		_, err = UnmarshalString("")
+		So(err, ShouldBeError)
+	})
+
+	Convey("nil bytes input", func() {
+		_, err = Unmarshal(nil)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal char", func() {
+		_, err = UnmarshalString(`\\`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("no start chars", func() {
+		_, err = UnmarshalString(`      `)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal float number", func() {
+		_, err = UnmarshalString(`1.a`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal negative interger", func() {
+		_, err = UnmarshalString(`-1a`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal positive interger", func() {
+		_, err = UnmarshalString(`11a`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal true", func() {
+		_, err = UnmarshalString(`trUE`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal false", func() {
+		_, err = UnmarshalString(`fAlse`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal null", func() {
+		_, err = UnmarshalString(`nUll`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal string", func() {
+		_, err = UnmarshalString(`"too many quote""`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("too short string", func() {
+		_, err = UnmarshalString(`"`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal escaping", func() {
+		_, err = UnmarshalString(`"\"`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal bool in object", func() {
+		_, err = UnmarshalString(`{"bool":tRue}`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal bool in array", func() {
+		_, err = UnmarshalString(`[tRue]`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal array", func() {
+		_, err = UnmarshalString(`["incompleteString]`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("marshaling uninitialized value", func() {
+		v = &V{}
+		_, err = v.MarshalString()
+		So(err, ShouldBeError)
+
+		_, err = v.Marshal()
+		So(err, ShouldBeError)
+	})
+
+	Convey("marshaling with option", func() {
+		v = NewObject()
+		v.SetNull().At("null")
+		raw, _ = v.MarshalString()
+		So(raw, ShouldEqual, `{"null":null}`)
+
+		raw, _ = v.MarshalString(Opt{
+			OmitNull: true,
+		})
+		So(raw, ShouldEqual, `{}`)
+
+		rawB, _ := v.Marshal(Opt{
+			OmitNull: true,
+		})
+		So(string(rawB), ShouldEqual, `{}`)
+	})
 }

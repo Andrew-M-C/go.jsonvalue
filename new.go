@@ -185,6 +185,8 @@ func NewFloat64(f float64, prec int) *V {
 		v.srcByte = []byte(s)
 		v.srcOffset, v.srcEnd = 0, len(s)
 	} else {
+		// s := fmt.Sprintf("%f", f)
+		// b := []byte(s)
 		b, _ := json.Marshal(&f)
 		v.srcByte = b
 		v.srcOffset, v.srcEnd = 0, len(b)
@@ -206,10 +208,12 @@ func NewFloat32(f float32, prec int) *V {
 	v.num.i64 = int64(f)
 	v.num.u64 = uint64(f)
 	if prec >= 0 {
-		s := strconv.FormatFloat(v.num.f64, 'f', prec, 32)
+		s := strconv.FormatFloat(v.num.f64, 'f', prec, 64)
 		v.srcByte = []byte(s)
 		v.srcOffset, v.srcEnd = 0, len(s)
 	} else {
+		// s := fmt.Sprintf("%f", f)
+		// b := []byte(s)
 		b, _ := json.Marshal(&f)
 		v.srcByte = b
 		v.srcOffset, v.srcEnd = 0, len(b)

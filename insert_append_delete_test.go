@@ -2,121 +2,112 @@ package jsonvalue
 
 import (
 	"testing"
+
+	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestInsertAppend(t *testing.T) {
-	a := NewArray()
+func TestInsertAppendDelete(t *testing.T) {
+	test(t, "insert/append", testInsertAppend)
+	test(t, "delete", testDelete)
+	test(t, "test misc append functions", testMiscAppend)
+	test(t, "test misc insert functions", testMiscInsert)
+	test(t, "test misc insert errors", testMiscInsertError)
+	test(t, "test misc append errors", testMiscAppendError)
+	test(t, "test misc delete errors", testMiscDeleteError)
+}
+
+func testInsertAppend(t *testing.T) {
 	expected := `[123456,"hello","world",1234.123456789,true,["12345"],null,null]`
+	a := NewArray()
+
 	a.AppendString("world").InTheBeginning()
+	So(a.MustMarshalString(), ShouldEqual, `["world"]`)
 	t.Log(a.MustMarshalString())
+
 	a.AppendFloat64(1234.123456789, 9).InTheEnd()
+	So(a.MustMarshalString(), ShouldEqual, `["world",1234.123456789]`)
 	t.Log(a.MustMarshalString())
+
 	a.InsertBool(true).After(-1)
+	So(a.MustMarshalString(), ShouldEqual, `["world",1234.123456789,true]`)
 	t.Log(a.MustMarshalString())
+
 	a.AppendNull().InTheEnd()
+	So(a.MustMarshalString(), ShouldEqual, `["world",1234.123456789,true,null]`)
 	t.Log(a.MustMarshalString())
+
 	a.InsertInt(123456).Before(0)
+	So(a.MustMarshalString(), ShouldEqual, `[123456,"world",1234.123456789,true,null]`)
 	t.Log(a.MustMarshalString())
+
 	a.InsertString("hello").After(0)
+	So(a.MustMarshalString(), ShouldEqual, `[123456,"hello","world",1234.123456789,true,null]`)
 	t.Log(a.MustMarshalString())
+
 	a.InsertArray().After(-2)
+	So(a.MustMarshalString(), ShouldEqual, `[123456,"hello","world",1234.123456789,true,[],null]`)
 	t.Log(a.MustMarshalString())
+
 	a.AppendString("12345").InTheEnd(-2)
+	So(a.MustMarshalString(), ShouldEqual, `[123456,"hello","world",1234.123456789,true,["12345"],null]`)
 	t.Log(a.MustMarshalString())
+
 	a.Append(nil).InTheEnd()
+	So(a.MustMarshalString(), ShouldEqual, `[123456,"hello","world",1234.123456789,true,["12345"],null,null]`)
 	t.Log(a.MustMarshalString())
 
 	s, _ := a.MarshalString()
 	t.Logf("after SetXxx(): %v", s)
-	if s != expected {
-		t.Errorf("series SetXxx failed")
-		return
-	}
+
+	So(s, ShouldEqual, expected)
 }
 
-func TestDelete(t *testing.T) {
-	raw := `{"array":[1,2,3,4,5,6],"string":"string to be deleted","object":{"number":12345},"Object":{}}`
+func testDelete(t *testing.T) {
+	raw := `{"array":[1,2,3,4,5,6],"string":"string to be deleted","object":{"number":12345},"OBJECT":{}}`
 	o, err := UnmarshalString(raw)
-	if err != nil {
-		t.Errorf("UnmarshalString failed: %v", err)
-		return
-	}
+	So(err, ShouldBeNil)
+
 	s, _ := o.MarshalString()
 	t.Logf("parsed object: %v", s)
 
 	err = o.Delete("object", "number")
-	if err != nil {
-		t.Errorf("Delete error: %v", err)
-		return
-	}
+	So(err, ShouldBeNil)
 
 	sub, err := o.Get("object")
-	if err != nil {
-		t.Errorf("Get object failed: %v", err)
-		return
-	}
+	So(err, ShouldBeNil)
 
 	s, _ = sub.MarshalString()
-	if s != "{}" {
-		t.Errorf("get sub mismatch: '%s'", s)
-		return
-	}
+	So(s, ShouldEqual, "{}")
 
 	err = o.Delete("object", "number")
-	if err != ErrNotFound {
-		t.Errorf("delete inexisted object, error should be raised (%v)", err)
-		return
-	}
+	So(err, ShouldBeError, ErrNotFound)
 
 	err = o.Delete("object")
-	if err != nil {
-		t.Errorf("Delete 'object' failed: %v", err)
-		return
-	}
+	So(err, ShouldBeNil)
 
 	_, err = o.Caseless().Get("object")
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-		return
-	}
+	So(err, ShouldBeNil)
 
-	err = o.Delete("object") // delete another "object", actually "Object"
-	if err != nil {
-		t.Errorf("Delete 'object' failed: %v", err)
-		return
-	}
+	err = o.Delete("object") // delete another "object", actually "OBJECT"
+	So(err, ShouldBeNil)
 
 	_, err = o.Get("object")
-	if err != ErrNotFound {
-		t.Errorf("unexpected error: %v", err)
-		return
-	}
+	So(err, ShouldBeError, ErrNotFound)
 
 	err = o.Delete("string")
-	if err != nil {
-		t.Errorf("Delete 'string' failed: %v", err)
-		return
-	}
+	So(err, ShouldBeNil)
 
 	s, _ = o.MarshalString()
-	if s != `{"array":[1,2,3,4,5,6]}` {
-		t.Errorf("Deleted result not expected: '%s'", s)
-		return
-	}
+	So(s, ShouldEqual, `{"array":[1,2,3,4,5,6]}`)
 
 	err = o.Delete("array", 1)
+	So(err, ShouldBeNil)
+
 	s, _ = o.MarshalString()
-	if err != nil {
-		t.Errorf("Delete array item 1 failed: %v", err)
-		return
-	}
-	if s != `{"array":[1,3,4,5,6]}` {
-		t.Errorf("Deleted result not expected: '%s'", s)
-		return
-	}
+	So(s, ShouldEqual, `{"array":[1,3,4,5,6]}`)
 }
 
-func TestMiscAppend(t *testing.T) {
+func testMiscAppend(t *testing.T) {
 	expected := `[true,-1,2,-3,4,-5,6,-7.7,8.8000,{},[[false],null]]`
 	a := NewArray()
 	a.AppendBool(true).InTheBeginning()
@@ -135,300 +126,221 @@ func TestMiscAppend(t *testing.T) {
 	a.AppendBool(false).InTheBeginning(-1, 0)
 
 	s, _ := a.MarshalString()
-	if s != expected {
-		t.Errorf("string not expected: '%s'", s)
-		return
-	}
+	So(s, ShouldEqual, expected)
 }
 
-func TestMiscInsert(t *testing.T) {
-	var checkCount int
+func testMiscInsert(t *testing.T) {
 	var err error
 	var c *V
 	v := NewArray()
 	expected := `[null,1,-2,3,-4,5,-6,7.7,-8.88888,true,false,null,null,{},[[null,-11,22]]]`
 
-	checkErr := func(err error) {
-		s, _ := v.MarshalString()
-		t.Logf("marshaled: '%s'", s)
-
-		if err != nil {
-			t.Errorf("%02d - unexpected error: %v", checkCount, err)
-		}
-	}
-	checkCond := func(b bool) {
-		if false {
-			t.Errorf("%02d - check failed", checkCount)
-		}
-		checkCount++
-	}
-
 	v.AppendNull().InTheBeginning()
 
 	c, err = v.InsertUint(1).After(-1)
-	checkErr(err)
-	checkCond(c.Int() == 1)
+	So(err, ShouldBeNil)
+	So(c.Int(), ShouldEqual, 1)
 
 	c, err = v.InsertInt(-2).After(-1)
-	checkErr(err)
-	checkCond(c.Int() == -2)
+	So(err, ShouldBeNil)
+	So(c.Int(), ShouldEqual, -2)
 
 	c, err = v.InsertUint64(3).After(-1)
-	checkErr(err)
-	checkCond(c.Int() == 3)
+	So(err, ShouldBeNil)
+	So(c.Int(), ShouldEqual, 3)
 
 	c, err = v.InsertInt64(-4).After(-1)
-	checkErr(err)
-	checkCond(c.Int() == -4)
+	So(err, ShouldBeNil)
+	So(c.Int(), ShouldEqual, -4)
 
 	c, err = v.InsertUint32(5).After(-1)
-	checkErr(err)
-	checkCond(c.Int() == 5)
+	So(err, ShouldBeNil)
+	So(c.Int(), ShouldEqual, 5)
 
 	c, err = v.InsertInt32(-6).After(-1)
-	checkErr(err)
-	checkCond(c.Int() == -6)
+	So(err, ShouldBeNil)
+	So(c.Int(), ShouldEqual, -6)
 
-	c, err = v.InsertFloat32(7.7, -1).After(-1)
-	checkErr(err)
-	checkCond(c.Float64() == 7.7)
+	c, err = v.InsertFloat32(7.7, 1).After(-1)
+	Print(v.MustMarshalString())
+	So(err, ShouldBeNil)
+	So(c.String(), ShouldEqual, "7.7")
 
 	c, err = v.InsertFloat64(-8.88888, 5).After(-1)
-	checkErr(err)
-	checkCond(c.Float64() == -8.8888)
+	So(err, ShouldBeNil)
+	So(c.Float64(), ShouldEqual, -8.88888)
 
 	c, err = v.InsertBool(true).After(-1)
-	checkErr(err)
-	checkCond(c.Bool() == true)
+	So(err, ShouldBeNil)
+	So(c.Bool(), ShouldBeTrue)
 
 	c, err = v.InsertBool(false).After(-1)
-	checkErr(err)
-	checkCond(c.Bool() == false && c.IsBoolean())
+	So(err, ShouldBeNil)
+	So(c.IsBoolean(), ShouldBeTrue)
+	So(c.Bool(), ShouldBeFalse)
 
 	c, err = v.Insert(nil).After(-1)
-	checkErr(err)
-	checkCond(c.IsNull())
+	So(err, ShouldBeNil)
+	So(c.IsNull(), ShouldBeTrue)
 
 	c, err = v.InsertNull().After(-1)
-	checkErr(err)
-	checkCond(c.IsNull())
+	So(err, ShouldBeNil)
+	So(c.IsNull(), ShouldBeTrue)
 
 	c, err = v.InsertObject().After(-1)
-	checkErr(err)
-	checkCond(c.IsObject())
+	So(err, ShouldBeNil)
+	So(c.IsObject(), ShouldBeTrue)
 
 	c, err = v.InsertArray().After(-1)
-	checkErr(err)
-	checkCond(c.IsArray())
+	So(err, ShouldBeNil)
+	So(c.IsArray(), ShouldBeTrue)
 
 	c, err = v.AppendArray().InTheBeginning(-1)
-	checkErr(err)
-	checkCond(c.IsArray())
+	So(err, ShouldBeNil)
+	So(c.IsArray(), ShouldBeTrue)
 
 	c, err = v.AppendInt(-11).InTheBeginning(-1, 0)
-	checkErr(err)
-	checkCond(c.Int() == -11)
+	So(err, ShouldBeNil)
+	So(c.Int(), ShouldEqual, -11)
 
 	c, err = v.InsertUint(22).After(-1, 0, 0)
-	checkErr(err)
-	checkCond(c.Int() == 22)
+	So(err, ShouldBeNil)
+	So(c.Int(), ShouldEqual, 22)
 
 	c, err = v.InsertNull().Before(-1, 0, 0)
-	checkErr(err)
-	checkCond(c.IsNull())
+	So(err, ShouldBeNil)
+	So(c.IsNull(), ShouldBeTrue)
 
 	s, _ := v.MarshalString()
-	if s != expected {
-		t.Errorf("marshaled string not expected: '%s'", s)
-		return
-	}
+	So(s, ShouldEqual, expected)
 }
 
-func TestMiscInsertError(t *testing.T) {
-	var topic string
-	var checkCount int
-	shouldError := func(err error) {
-		defer func() {
-			checkCount++
-		}()
-		if err == nil {
-			t.Errorf("%02d - check '%s' - error expected but not caught", checkCount, topic)
-			return
-		}
-		t.Logf("expected error string: %v", err)
-	}
-
-	topic = "not initialized"
-	{
+func testMiscInsertError(t *testing.T) {
+	Convey("not initialized", func() {
 		v := V{}
 		_, err := v.Insert(nil).After(0)
-		shouldError(err)
+		So(err, ShouldBeError)
 		_, err = v.Insert(nil).Before(0)
-		shouldError(err)
-	}
-	topic = "not array"
-	{
+		So(err, ShouldBeError)
+	})
+
+	Convey("not array", func() {
 		v := NewNull()
 		_, err := v.Insert(nil).After(0)
-		shouldError(err)
+		So(err, ShouldBeError)
 		_, err = v.Insert(nil).Before(0)
-		shouldError(err)
-	}
-	topic = "param error"
-	{
+		So(err, ShouldBeError)
+	})
+
+	Convey("param error", func() {
 		v := NewArray()
 		_, err := v.InsertNull().After(true)
-		shouldError(err)
+		So(err, ShouldBeError)
 		_, err = v.InsertNull().Before(true)
-		shouldError(err)
-	}
-	topic = "out of range"
-	{
+		So(err, ShouldBeError)
+	})
+
+	Convey("out of range", func() {
 		v := NewArray()
 		v.AppendNull().InTheEnd()
 		v.AppendNull().InTheEnd()
 		_, err := v.InsertNull().After(100)
-		shouldError(err)
+		So(err, ShouldBeError)
 		_, err = v.InsertNull().Before(-100)
-		shouldError(err)
-	}
-	topic = "deep not exist"
-	{
+		So(err, ShouldBeError)
+	})
+
+	Convey("deep not exist", func() {
 		raw := `{"object":{"array":[1,2,3,4]}}`
 		v, _ := UnmarshalString(raw)
 		_, err := v.InsertNull().After("object", "not exist")
-		shouldError(err)
+		So(err, ShouldBeError)
 
 		_, err = v.InsertNull().Before("object", "not exist")
-		shouldError(err)
-	}
-	topic = "uninitialized append"
-	{
+		So(err, ShouldBeError)
+	})
+
+	Convey("uninitialized append", func() {
 		_, err := (&Append{}).InTheBeginning("dummy")
-		shouldError(err)
-	}
+		So(err, ShouldBeError)
+	})
 }
 
-func TestMiscAppendError(t *testing.T) {
-	{
+func testMiscAppendError(t *testing.T) {
+	Convey("uninitialized AppendString to uninitialized V", func() {
 		v := V{}
 		_, err := v.AppendString("blahblah").InTheBeginning()
-		if err == nil {
-			t.Errorf("expected error for an uninitialied object")
-			return
-		}
+		So(err, ShouldBeError)
 
 		_, err = v.AppendString("blahblah").InTheEnd()
-		if err == nil {
-			t.Errorf("expected error for an uninitialied object")
-			return
-		}
-	}
+		So(err, ShouldBeError)
+	})
 
-	{
+	Convey("uninitialized AppendString to string", func() {
 		v := NewString("blahblah")
 		_, err := v.AppendString("blahblah").InTheBeginning()
-		if err != ErrNotArrayValue {
-			t.Errorf("expect error for ErrNotArrayValue")
-			return
-		}
-	}
+		So(err, ShouldBeError)
+	})
 
-	{
+	Convey("misc error", func() {
 		raw := `{"object":{"object":{"array":[[]],"object":{}}}}`
 		v, err := UnmarshalString(raw)
-		if err != nil {
-			t.Errorf("UnmarshalString failed: %v", err)
-			return
-		}
+		So(err, ShouldBeNil)
 
 		_, err = v.AppendNull().InTheBeginning("object", "object", "arrayNotExist")
-		if err == nil {
-			s, _ := v.MarshalString()
-			t.Errorf("expect error for an inexist value, marshaled: %v", s)
-			return
-		}
+		So(err, ShouldBeError)
 		t.Logf("expected error: %v", err)
 
 		_, err = v.AppendNull().InTheEnd("object", "object", "arrayNotExist")
-		if err == nil {
-			s, _ := v.MarshalString()
-			t.Errorf("expect error for an inexist value, marshaled: %v", s)
-			return
-		}
+		So(err, ShouldBeError)
 		t.Logf("expected error: %v", err)
 
 		_, err = v.AppendNull().InTheBeginning("object", "object")
-		if err == nil {
-			s, _ := v.MarshalString()
-			t.Errorf("expect error for an not-arrayed value, marshaled: %v", s)
-			return
-		}
+		So(err, ShouldBeError)
 		t.Logf("expected error: %v", err)
 
 		o, _ := v.Get("object", "object", "object")
 		_, err = o.AppendNull().InTheEnd()
-		if err == nil {
-			s, _ := v.MarshalString()
-			t.Errorf("expect error for an not-arrayed value, marshaled: %v", s)
-			return
-		}
+		So(err, ShouldBeError)
 		t.Logf("expected error: %v", err)
 
 		_, err = v.InsertNull().Before("object", "object", "array", true)
-		if err == nil {
-			s, _ := v.MarshalString()
-			t.Errorf("expect error for an invalid parameter, marshaled: %v", s)
-			return
-		}
+		So(err, ShouldBeError)
 		t.Logf("expected error: %v", err)
-	}
+	})
 }
 
-func TestMiscDeleteError(t *testing.T) {
-	var checkCount int
-	shouldError := func(err error) {
-		defer func() {
-			checkCount++
-		}()
-		if err == nil {
-			t.Errorf("%02d - error expected but not caught", checkCount)
-			return
-		}
-		t.Logf("expected error string: %v", err)
-	}
+func testMiscDeleteError(t *testing.T) {
+	var err error
+	raw := `{"Hello":"world","object":{"hello":"world","object":{"int":123456}},"array":[123456]}`
+	v, _ := UnmarshalString(raw)
 
-	{
-		var err error
-		raw := `{"Hello":"world","object":{"hello":"world","object":{"int":123456}},"array":[123456]}`
-		v, _ := UnmarshalString(raw)
+	// param error
+	err = v.Delete(make(map[string]string))
+	So(err, ShouldBeError)
 
-		// param error
-		err = v.Delete(make(map[string]string))
-		shouldError(err)
+	// param error
+	err = v.Delete("object", true)
+	So(err, ShouldBeError)
 
-		// param error
-		err = v.Delete("object", true)
-		shouldError(err)
+	// param error
+	err = v.Delete("array", "2")
+	So(err, ShouldBeError)
 
-		// param error
-		err = v.Delete("array", "2")
-		shouldError(err)
+	// not found error
+	err = v.Delete("earth")
+	So(err, ShouldBeError)
 
-		// not found error
-		err = v.Delete("earth")
-		shouldError(err)
+	// out of range
+	err = v.Delete("array", 100)
+	So(err, ShouldBeError)
 
-		// out of range
-		err = v.Delete("array", 100)
-		shouldError(err)
+	// not an object or array
+	err = v.Delete("object", "object", "int", "number")
+	So(err, ShouldBeError)
 
-		// not an object or array
-		err = v.Delete("object", "object", "int", "number")
-		shouldError(err)
+	// not found error
+	err = v.Delete("object", "bool", "string")
+	So(err, ShouldBeError)
 
-		// not found error
-		err = v.Delete("object", "bool", "string")
-		shouldError(err)
-	}
 }
