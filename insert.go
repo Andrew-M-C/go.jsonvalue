@@ -150,15 +150,11 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 			return nil, err
 		}
 
-		pos, appendToEnd := v.posAtIndexForInsertBefore(pos)
+		pos = v.posAtIndexForInsertBefore(pos)
 		if pos < 0 {
 			return nil, ErrOutOfRange
 		}
-		if appendToEnd {
-			v.children.array = append(v.children.array, c)
-		} else {
-			v.insertToArr(pos, c)
-		}
+		v.insertToArr(pos, c)
 		return c, nil
 	}
 

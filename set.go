@@ -264,29 +264,29 @@ func (v *V) posAtIndexForSet(pos int) (newPos int, appendToEnd bool) {
 	return pos, false
 }
 
-func (v *V) posAtIndexForInsertBefore(pos int) (newPos int, appendToEnd bool) {
+func (v *V) posAtIndexForInsertBefore(pos int) (newPos int) {
 	le := len(v.children.array)
 	if le == 0 {
-		return -1, false
+		return -1
 	}
 
 	if pos == 0 {
-		return 0, false
+		return 0
 	}
 
 	if pos < 0 {
 		pos += le
 		if pos < 0 {
-			return -1, false
+			return -1
 		}
-		return pos, false
+		return pos
 	}
 
 	if pos >= le {
-		return -1, false
+		return -1
 	}
 
-	return pos, false
+	return pos
 }
 
 func (v *V) posAtIndexForInsertAfter(pos int) (newPos int, appendToEnd bool) {

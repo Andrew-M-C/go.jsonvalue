@@ -13,7 +13,7 @@ func TestGet(t *testing.T) {
 }
 
 func testGet(t *testing.T) {
-	full := `{"data":{"message":["hello","world",true,null],"author":"Andrew","year":2019,"YYYY.MM":2019.12,"negative":-1234,"num_in_str":"2020.02","invalid_num_in_str":"2020/02"}}`
+	full := `{"data":{"message":["hello","world",true,null],"author":"Andrew","year":2019,"YYYY.MM":2019.12,"negative":-1234,"num_in_str":"2020.02","negative_in_str":"-12345","invalid_num_in_str":"2020/02"}}`
 
 	o, err := UnmarshalString(full)
 	So(err, ShouldBeNil)
@@ -147,6 +147,14 @@ func testGet(t *testing.T) {
 		So(v.String(), ShouldEqual, "2020.02")
 	})
 
+	Convey("key: negative_in_str", func() {
+		v, err := o.Get("data", "negative_in_str")
+		So(err, ShouldBeNil)
+		So(v.Int(), ShouldEqual, -12345)
+		So(v.IsString(), ShouldBeTrue)
+		So(v.String(), ShouldEqual, "-12345")
+	})
+
 	Convey("key: invalid_num_in_str", func() {
 		v, err := o.Get("data", "invalid_num_in_str")
 		So(err, ShouldBeNil)
@@ -165,6 +173,12 @@ func testMiscError(t *testing.T) {
 	So(err, ShouldNotBeNil)
 	_, err = v.GetString(true)
 	So(err, ShouldNotBeNil)
+
+	// Caseless via non object or array
+	child, err := v.Get("string")
+	So(err, ShouldBeNil)
+	_, err = child.Caseless().Get("NOT_EXIST")
+	So(err, ShouldBeError)
 
 	// out of range
 	_, err = v.Get("array", 100)

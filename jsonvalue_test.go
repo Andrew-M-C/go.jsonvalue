@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"testing"
 
+	amcbytes "github.com/Andrew-M-C/go.util/bytes"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-// go test -v -failfast -cover -coverprofile xxx.prof && go tool cover -html xxx.prof
+// go test -v -failfast -cover -coverprofile cover.out && go tool cover -html cover.out -o cover.html
 
 func test(t *testing.T, scene string, f func(*testing.T)) {
 	if t.Failed() {
@@ -19,9 +20,15 @@ func test(t *testing.T, scene string, f func(*testing.T)) {
 	})
 }
 
+func printBytes(t *testing.T, b []byte, prefix ...string) {
+	s := amcbytes.SDump(b, prefix...)
+	t.Log(s)
+}
+
 func TestJsonvalue(t *testing.T) {
 	test(t, "jsonvalue basic function", testBasicFunction)
-	test(t, "jsonvalue misc wide characters", testMiscCharacters)
+	test(t, "misc strange characters", testMiscCharacters)
+	test(t, "misc simple unmarshal errors", testMiscUnmarshalErrors)
 	test(t, "UTF-16 string", testUTF16)
 	test(t, "percentage symbol", testPercentage)
 	test(t, "misc number typed parameter", testMiscInt)
@@ -51,14 +58,128 @@ func testBasicFunction(t *testing.T) {
 }
 
 func testMiscCharacters(t *testing.T) {
-	s := "\"/\b\f\t\r\n<>&你好世界\\n"
-	expected := "\"\\\"\\/\\b\\f\\t\\r\\n\\u003C\\u003E\\u0026\\u4F60\\u597D\\u4E16\\u754C\\\\n\""
-	v := NewString(s)
-	raw, err := v.MarshalString()
-	So(err, ShouldBeNil)
 
-	t.Logf("marshaled: '%s'", raw)
-	So(raw, ShouldEqual, expected)
+	Convey("unmarshal and marshal back", func() {
+		s := "\"/\b\f\t\r\n<>&你好世界Café\\n"
+		expected := "\"\\\"\\/\\b\\f\\t\\r\\n\\u003C\\u003E\\u0026\\u4F60\\u597D\\u4E16\\u754CCaf\\u00E9\\\\n\""
+		v := NewString(s)
+		raw, err := v.MarshalString()
+		So(err, ShouldBeNil)
+
+		printBytes(t, []byte(raw), "marshaled")
+		printBytes(t, []byte(expected), "expected")
+		So(raw, ShouldEqual, expected)
+
+		v, err = UnmarshalString(raw)
+		So(err, ShouldBeNil)
+
+		printBytes(t, []byte(s), "Original string")
+		printBytes(t, []byte(v.String()), "Got string")
+
+		raw, err = v.MarshalString()
+		So(err, ShouldBeNil)
+		So(raw, ShouldEqual, expected)
+	})
+
+	Convey("unmashal UTF-8 string", func() {
+		s := "你好, Café😊"
+		raw := `"` + s + `"`
+
+		printBytes(t, []byte(raw))
+
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsString(), ShouldBeTrue)
+		So(v.String(), ShouldEqual, s)
+	})
+
+	Convey("unmarshal illegal UTF-8 string", func() {
+		s := `"😊"`
+		b := []byte(s)
+
+		printBytes(t, b, "correct bytes")
+		_, err := Unmarshal(b)
+		So(err, ShouldBeNil)
+
+		incompleteB := b[:2]
+		printBytes(t, incompleteB, "incomplete bytes")
+		_, err = Unmarshal(incompleteB)
+		So(err, ShouldBeError)
+
+		b[1] |= 0x08
+		printBytes(t, b, "error bytes")
+		_, err = Unmarshal(b)
+		So(err, ShouldBeError)
+
+		v, err := UnmarshalString(s)
+		So(err, ShouldBeNil)
+		res := v.MustMarshal()
+		printBytes(t, res, "correct marshaled string")
+	})
+
+	Convey("unmarshal illegal escaped ASCII string", func() {
+		_, err := UnmarshalString(`"\`)
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`"\u00`)
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`"\u0GAB`)
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`"\U1234`)
+		So(err, ShouldBeError)
+
+		v, err := UnmarshalString(`"\uD83D\uDE0A你好Café😊"`) // should be "\uD83D\uDE0A" ==> 😊
+		So(err, ShouldBeNil)
+		So(v.String(), ShouldEqual, "😊你好Café😊")
+
+		_, err = UnmarshalString(`"\uD83D\uDE0A, smile!"`) // should be "\uD83D\uDE0A" ==> 😊
+		So(err, ShouldBeNil)
+
+		_, err = UnmarshalString(`"\uD83D\uDE0"`) // should be "\uD83D\uDE0A" ==> 😊
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`"\uD83D\UDE0A"`) // should be "\uD83D\uDE0A" ==> 😊
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`"\uD83D/uDE0A"`) // should be "\uD83D\uDE0A" ==> 😊
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`"\uD83D\uHE0A"`) // should be "\uD83D\uDE0A" ==> 😊
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`"\uH83D\uDE0A"`) // should be "\uD83D\uDE0A" ==> 😊
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`"\uD83D\u000A"`) // should be "\uD83D\uDE0A" ==> 😊
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`"\uD83D\uFFFF"`) // should be "\uD83D\uDE0A" ==> 😊
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`"\uD83D\uDE0a"`) // should be "\uD83D\uDE0A" ==> 😊
+		So(err, ShouldBeError)
+	})
+}
+
+func testMiscUnmarshalErrors(t *testing.T) {
+	var err error
+
+	_, err = UnmarshalString(`tru`)
+	So(err, ShouldBeError)
+
+	_, err = UnmarshalString(`fals`)
+	So(err, ShouldBeError)
+
+	_, err = UnmarshalString(`nul`)
+	So(err, ShouldBeError)
+
+	_, err = UnmarshalString(`9999999999999999999999999999999999999999999999999999999999999999999`)
+	So(err, ShouldBeError)
+
+	_, err = UnmarshalString(`99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999.9999999999999999999999999999999999999999999999999999999999999999999`)
+	So(err, ShouldBeError)
 }
 
 func testUTF16(t *testing.T) {
@@ -138,14 +259,14 @@ func test_unmarshalWithIter(t *testing.T) {
 		raw := []byte("hello, 世界")
 		rawWithQuote := []byte(fmt.Sprintf("\"%s\"", raw))
 
-		v, err := unmarshalWithIter(&iter{b: rawWithQuote}, 0, len(rawWithQuote))
+		v, err := unmarshalWithIter(&iter{b: rawWithQuote}, 0)
 		So(err, ShouldBeNil)
 		So(v.String(), ShouldEqual, string(raw))
 	})
 
 	Convey("true", func() {
 		raw := []byte("  true  ")
-		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		v, err := unmarshalWithIter(&iter{b: raw}, 0)
 		So(err, ShouldBeNil)
 		So(v.Bool(), ShouldBeTrue)
 		So(v.IsBoolean(), ShouldBeTrue)
@@ -153,7 +274,7 @@ func test_unmarshalWithIter(t *testing.T) {
 
 	Convey("false", func() {
 		raw := []byte("  false  ")
-		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		v, err := unmarshalWithIter(&iter{b: raw}, 0)
 		So(err, ShouldBeNil)
 		So(v.Bool(), ShouldBeFalse)
 		So(v.IsBoolean(), ShouldBeTrue)
@@ -161,21 +282,21 @@ func test_unmarshalWithIter(t *testing.T) {
 
 	Convey("null", func() {
 		raw := []byte("\r\t\n  null \r\t\b  ")
-		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		v, err := unmarshalWithIter(&iter{b: raw}, 0)
 		So(err, ShouldBeNil)
 		So(v.IsNull(), ShouldBeTrue)
 	})
 
 	Convey("int number", func() {
 		raw := []byte(" 1234567890 ")
-		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		v, err := unmarshalWithIter(&iter{b: raw}, 0)
 		So(err, ShouldBeNil)
 		So(v.Int64(), ShouldEqual, 1234567890)
 	})
 
 	Convey("array with basic type", func() {
 		raw := []byte(" [123, true, false, null, [\"array in array\"], \"Hello, world!\" ] ")
-		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		v, err := unmarshalWithIter(&iter{b: raw}, 0)
 		So(err, ShouldBeNil)
 		So(v.IsArray(), ShouldBeTrue)
 
@@ -186,7 +307,7 @@ func test_unmarshalWithIter(t *testing.T) {
 		raw := []byte(`  {"message": "Hello, world!"}	`)
 		printBytes(t, raw)
 
-		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		v, err := unmarshalWithIter(&iter{b: raw}, 0)
 		So(err, ShouldBeNil)
 		So(v.IsObject(), ShouldBeTrue)
 
@@ -208,7 +329,7 @@ func test_unmarshalWithIter(t *testing.T) {
 		raw := []byte(` {"arr": [1234, true , null, false, {"obj":"empty object"}]}  `)
 		printBytes(t, raw)
 
-		v, err := unmarshalWithIter(&iter{b: raw}, 0, len(raw))
+		v, err := unmarshalWithIter(&iter{b: raw}, 0)
 		So(err, ShouldBeNil)
 		So(v.IsObject(), ShouldBeTrue)
 
@@ -219,5 +340,4 @@ func test_unmarshalWithIter(t *testing.T) {
 		So(child.IsString(), ShouldBeTrue)
 		So(child.String(), ShouldEqual, "empty object")
 	})
-
 }

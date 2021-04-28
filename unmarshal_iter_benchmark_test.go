@@ -122,7 +122,7 @@ func BenchmarkIterParseString(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		// err := jsonit.Unmarshal(raw, &s)
 		it := itLst[0]
-		it.parseStrFromBytesBackward(0, len(it.b))
+		it.parseStrFromBytesForwardWithQuote(0)
 	}
 }
 
@@ -159,7 +159,7 @@ func BenchmarkIterParseSimpleString(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		// err := jsonit.Unmarshal(raw, &s)
 		it := itLst[0]
-		it.parseStrFromBytesBackward(0, len(it.b))
+		it.parseStrFromBytesForwardWithQuote(0)
 	}
 }
 
@@ -194,7 +194,7 @@ func BenchmarkIterParseObject(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		// err := jsonit.Unmarshal(raw, &s)
 		it := itLst[i]
-		unmarshalWithIter(it, 0, len(it.b))
+		unmarshalWithIter(it, 0)
 	}
 }
 

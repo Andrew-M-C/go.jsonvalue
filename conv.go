@@ -31,7 +31,7 @@ func formatBool(b bool) string {
 // - [JavaScript has a Unicode problem](https://mathiasbynens.be/notes/javascript-unicode)
 // - [Meaning of escaped unicode characters in JSON](https://stackoverflow.com/questions/21995410/meaning-of-escaped-unicode-characters-in-json)
 func escapeUnicodeToBuff(buf *bytes.Buffer, r rune) {
-	if r <= '\u0127' {
+	if r <= 0x7F {
 		buf.WriteRune(r)
 		return
 	}

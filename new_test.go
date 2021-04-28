@@ -428,9 +428,33 @@ func testValueError(t *testing.T) {
 	var raw string
 	var v *V
 
-	Convey("invalid json", func() {
+	Convey("invalid jsonvalue.V", func() {
 		v = &V{}
 		So(v.String(), ShouldEqual, "")
+	})
+
+	Convey("number in string", func() {
+		v, err = UnmarshalString(`"12.ABCD"`)
+		So(err, ShouldBeNil)
+		So(v.Int(), ShouldBeZeroValue)
+
+		v, err = UnmarshalString(`"-12ABCD"`)
+		So(err, ShouldBeNil)
+		So(v.Int(), ShouldBeZeroValue)
+
+		v, err = UnmarshalString(`{}`)
+		So(err, ShouldBeNil)
+		So(v.Int(), ShouldBeZeroValue)
+
+		v, err = UnmarshalString(`"1234"`)
+		So(err, ShouldBeNil)
+		So(v.Int(), ShouldEqual, 1234)
+		So(v.IsNumber(), ShouldBeFalse)
+		So(v.IsFloat(), ShouldBeFalse)
+		So(v.IsInteger(), ShouldBeFalse)
+		So(v.IsNegative(), ShouldBeFalse)
+		So(v.IsPositive(), ShouldBeFalse)
+		So(v.GreaterThanInt64Max(), ShouldBeFalse)
 	})
 
 	Convey("nil string input", func() {
@@ -455,6 +479,12 @@ func testValueError(t *testing.T) {
 
 	Convey("illegal float number", func() {
 		_, err = UnmarshalString(`1.a`)
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`1.`)
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`.1`)
 		So(err, ShouldBeError)
 	})
 
@@ -513,6 +543,61 @@ func testValueError(t *testing.T) {
 		So(err, ShouldBeError)
 	})
 
+	Convey("illegal array without ]", func() {
+		_, err = UnmarshalString(`[   `)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal object in array without }", func() {
+		_, err = UnmarshalString(`[{   ]`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal array in array without ]", func() {
+		_, err = UnmarshalString(`[[  224 ]`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("another illegal array in array without ]", func() {
+		_, err = UnmarshalString(`[ [  `)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal number in array without ]", func() {
+		_, err = UnmarshalString(`[224.. ]`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal number in array without decimal part", func() {
+		_, err = UnmarshalString(`[224.]`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("another illegal number in array without ]", func() {
+		_, err = UnmarshalString(`[-18446744073709551615 ]`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal false in array ", func() {
+		_, err = UnmarshalString(`[fASLE ]`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal true in array ", func() {
+		_, err = UnmarshalString(`[tRUE ]`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal null in array ", func() {
+		_, err = UnmarshalString(`[nULL ]`)
+		So(err, ShouldBeError)
+	})
+
+	Convey("illegal character in array ", func() {
+		_, err = UnmarshalString(`[W]`)
+		So(err, ShouldBeError)
+	})
+
 	Convey("marshaling uninitialized value", func() {
 		v = &V{}
 		_, err = v.MarshalString()
@@ -537,5 +622,79 @@ func testValueError(t *testing.T) {
 			OmitNull: true,
 		})
 		So(string(rawB), ShouldEqual, `{}`)
+	})
+
+	Convey("illegal kvs in object", func() {
+		_, err = UnmarshalString(`{true}`) // missing key
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{:"value"}`) // missing key
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"key" true}`) // missing colon
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"key":}`) // missing value
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"key":"value"   `) // missing }
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"key":"value"`) // missing }
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"key":,}`) // missing value
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"key"::"value"}`) // duplicate colon
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{{}}`) // missing key
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"object":{ILLEGAL}}`) // invalid object in object
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"array":[ILLEGAL]}`) // invalid array in object
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{[]}`) // missing key
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{[}`) // missing ]
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{12345}`) // missing key
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"big_int":-18446744073709551615}`) // missing key
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"key" "value"}`) // missing colon
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"key":"\"}`) // invalid string in object
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"key\u":"value"}`) // invalid key in object
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{false}`) // missing key
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"false":fAlse}`) // illegal value
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{null}`) // missing key
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"null":nUll}`) // illegal value
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{true}`) // missing key
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`{"true":tRue}`) // illegal value
+		So(err, ShouldBeError)
 	})
 }

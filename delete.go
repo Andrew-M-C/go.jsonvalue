@@ -7,13 +7,19 @@ import (
 	"github.com/buger/jsonparser"
 )
 
-func (v *V) delFromObjectChildren(key string) (exist bool) {
+func (v *V) delFromObjectChildren(caseless bool, key string) (exist bool) {
 	_, exist = v.children.object[key]
 	if exist {
 		delete(v.children.object, key)
 		v.delCaselessKey(key)
 		return true
 	}
+
+	if !caseless {
+		return false
+	}
+
+	v.initCaselessStorage()
 
 	lowerKey := strings.ToLower(key)
 	keys, exist := v.children.lowerCaseKeys[lowerKey]
@@ -39,12 +45,16 @@ func (v *V) delFromObjectChildren(key string) (exist bool) {
 // Delete 从 JSON 中删除参数指定的对象。比如参数 ("data", "list") 表示删除 data.list 值；参数 ("list", 1) 则表示删除 list
 // 数组的第2（从1算起）个值。
 func (v *V) Delete(firstParam interface{}, otherParams ...interface{}) error {
+	return v.delete(false, firstParam, otherParams...)
+}
+
+func (v *V) delete(caseless bool, firstParam interface{}, otherParams ...interface{}) error {
 	paramCount := len(otherParams)
 	if paramCount == 0 {
-		return v.deleteInCurrValue(firstParam)
+		return v.deleteInCurrValue(caseless, firstParam)
 	}
 
-	child, err := v.Get(firstParam, otherParams[:paramCount-1]...)
+	child, err := v.get(caseless, firstParam, otherParams[:paramCount-1]...)
 	if err != nil {
 		return err
 	}
@@ -52,10 +62,10 @@ func (v *V) Delete(firstParam interface{}, otherParams ...interface{}) error {
 	// 	return ErrNotFound
 	// }
 
-	return child.Delete(otherParams[paramCount-1])
+	return child.delete(caseless, otherParams[paramCount-1])
 }
 
-func (v *V) deleteInCurrValue(param interface{}) error {
+func (v *V) deleteInCurrValue(caseless bool, param interface{}) error {
 	if v.valueType == jsonparser.Object {
 		// string expected
 		key, err := intfToString(param)
@@ -63,7 +73,7 @@ func (v *V) deleteInCurrValue(param interface{}) error {
 			return err
 		}
 
-		if exist := v.delFromObjectChildren(key); !exist {
+		if exist := v.delFromObjectChildren(caseless, key); !exist {
 			return ErrNotFound
 		}
 		return nil

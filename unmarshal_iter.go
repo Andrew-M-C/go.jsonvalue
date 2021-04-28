@@ -15,57 +15,6 @@ type iter struct {
 	b []byte
 }
 
-// parseStrFromBytesBackward
-func (it *iter) parseStrFromBytesBackward(offset, length int) (resLen int, err error) {
-	end := offset + length
-	sectEnd := offset
-
-	shift := func(i *int, le int) {
-		if end-*i < le {
-			err = fmt.Errorf("insuffient remaing data to copy, expect %d, but got %d", le, end-*i)
-			return
-		}
-		if sectEnd != *i {
-			it.memcpy(sectEnd, *i, le)
-		}
-		sectEnd += le
-		*i += le
-	}
-
-	// iterate every byte
-	for i := offset; i < offset+length; {
-		chr := it.b[i]
-
-		// ACSII?
-		if chr <= 0x7F {
-			if chr == '\\' {
-				err = it.handleEscapeStartWithEnd(&i, end, &sectEnd)
-			} else if chr == '"' {
-				err = fmt.Errorf("unexpected double quote at position %d", i)
-			} else {
-				// shift(&i, 1)
-				it.b[sectEnd] = it.b[i]
-				i++
-				sectEnd++
-			}
-		} else if runeIdentifyingBytes2(chr) {
-			shift(&i, 2)
-		} else if runeIdentifyingBytes3(chr) {
-			shift(&i, 3)
-		} else if runeIdentifyingBytes4(chr) {
-			shift(&i, 4)
-		} else {
-			err = fmt.Errorf("illegal byte 0x%02X at Position %d", chr, i)
-		}
-
-		if err != nil {
-			return -1, err
-		}
-	}
-
-	return sectEnd - offset, nil
-}
-
 func (it *iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuote int, sectEnd int, err error) {
 	offset++ // skip "
 	end := len(it.b)
@@ -73,7 +22,10 @@ func (it *iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuo
 
 	shift := func(i *int, le int) {
 		if end-*i < le {
-			err = errors.New("illegal UTF8 string")
+			err = fmt.Errorf(
+				"%w, expect at least %d remaining bytes, but got %d at Position %d",
+				ErrIllegalString, end-*i, le, *i,
+			)
 			return
 		}
 		it.memcpy(sectEnd, *i, le)
@@ -105,7 +57,7 @@ func (it *iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuo
 		} else if runeIdentifyingBytes4(chr) {
 			shift(&i, 4)
 		} else {
-			err = errors.New("illegal UTF8 string")
+			err = fmt.Errorf("%w: illegal UTF8 string at Position %d", ErrIllegalString, i)
 		}
 
 		if err != nil {
@@ -156,44 +108,6 @@ func (it iter) handleEscapeStart(i *int, sectEnd *int) error {
 	return nil
 }
 
-func (it iter) handleEscapeStartWithEnd(i *int, end int, sectEnd *int) error {
-	if end-*i <= 1 {
-		return errors.New("escape symbol not followed by another character")
-	}
-	chr := it.b[*i+1]
-	switch chr {
-	default:
-		return fmt.Errorf("unreconized character 0x%02X after escape symbol", chr)
-	case '"', '\'', '/', '\\':
-		it.b[*sectEnd] = chr
-		*sectEnd++
-		*i += 2
-	case 'b':
-		it.b[*sectEnd] = '\b'
-		*sectEnd++
-		*i += 2
-	case 'f':
-		it.b[*sectEnd] = '\f'
-		*sectEnd++
-		*i += 2
-	case 'r':
-		it.b[*sectEnd] = '\r'
-		*sectEnd++
-		*i += 2
-	case 'n':
-		it.b[*sectEnd] = '\n'
-		*sectEnd++
-		*i += 2
-	case 't':
-		it.b[*sectEnd] = '\t'
-		*sectEnd++
-		*i += 2
-	case 'u':
-		return it.handleEscapeUnicodeStartWithEnd(i, end, sectEnd)
-	}
-	return nil
-}
-
 func (it *iter) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (err error) {
 	if end-*i <= 5 {
 		return errors.New("escape symbol not followed by another character")
@@ -211,7 +125,7 @@ func (it *iter) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (
 
 	// this rune is smaller than 0x10000
 	if r <= 0xD7FF || r >= 0xE000 {
-		le := it.assignWideRune(*sectEnd, r)
+		le := it.assignAsciiCodedRune(*sectEnd, r)
 		*i += 6
 		*sectEnd += le
 		return nil
@@ -235,14 +149,23 @@ func (it *iter) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (
 	}
 
 	ex := (rune(ex3) << 12) + (rune(ex2) << 8) + (rune(ex1) << 4) + rune(ex0)
+	if ex < 0xDC00 {
+		return fmt.Errorf(
+			"%w, expect second UTF-16 encoding but got 0x04%X at position %d",
+			ErrIllegalString, r, *i+8,
+		)
+	}
 	ex -= 0xDC00
 	if ex > 0x03FF {
-		return fmt.Errorf("expect second UTF-16 encoding but got 0x04%X at position %d", r, *i+8)
+		return fmt.Errorf(
+			"%w, expect second UTF-16 encoding but got 0x04%X at position %d",
+			ErrIllegalString, r, *i+8,
+		)
 	}
 
 	r = ((r - 0xD800) << 10) + ex + 0x10000
 
-	le := it.assignWideRune(*sectEnd, r)
+	le := it.assignAsciiCodedRune(*sectEnd, r)
 	*i += 12
 	*sectEnd += le
 	return nil
@@ -252,10 +175,7 @@ func chrToHex(chr byte, errOut *error) byte {
 	if chr >= '0' && chr <= '9' {
 		return chr - '0'
 	}
-	if chr >= 'a' && chr <= 'z' {
-		return chr - 'a' + 10
-	}
-	if chr >= 'A' && chr <= 'Z' {
+	if chr >= 'A' && chr <= 'F' {
 		return chr - 'A' + 10
 	}
 	*errOut = fmt.Errorf("invalid unicode value character: %c", rune(chr))
@@ -274,7 +194,14 @@ func (it *iter) memcpy(dst, src, length int) {
 	)
 }
 
-func (it *iter) assignWideRune(dst int, r rune) (offset int) {
+func (it *iter) assignAsciiCodedRune(dst int, r rune) (offset int) {
+	// 0zzzzzzz ==>
+	// 0zzzzzzz
+	if r <= 0x7F {
+		it.b[dst+0] = byte(r)
+		return 1
+	}
+
 	// 00000yyy yyzzzzzz ==>
 	// 110yyyyy 10zzzzzz
 	if r <= 0x7FF {
@@ -319,50 +246,7 @@ func runeIdentifyingBytes3(chr byte) bool {
 }
 
 func runeIdentifyingBytes4(chr byte) bool {
-	return (chr & 0xF8) == 0xF8
-}
-
-func newUTF8IterWithByte(b []byte) *iter {
-	le := len(b)
-	it := &iter{
-		b: make([]byte, le),
-	}
-
-	if le > 0 {
-		src := unsafe.Pointer(&b[0])
-		dst := unsafe.Pointer(&it.b[0])
-		C.memcpy(dst, src, C.size_t(le))
-	}
-	return it
-}
-
-// searchObjEnd search for ending } with the object. input offset should be the position of {
-func (it *iter) searchObjEnd(offset int, right int) (end int, err error) {
-	return it.searchChrFromRight(offset, right, '}')
-}
-
-// searchArrEnd search for ending ] with the object. input offset should be the position of [
-func (it *iter) searchArrEnd(offset int, right int) (end int, err error) {
-	return it.searchChrFromRight(offset, right, ']')
-}
-
-func (it *iter) searchChrFromRight(offset int, right int, tgt byte) (end int, err error) {
-	offset++
-	end = right
-
-	for offset < end {
-		chr := it.b[end-1]
-		switch chr {
-		case ' ', '\r', '\n', '\t', '\b':
-			end--
-		case tgt:
-			return end, nil
-		default:
-			return -1, fmt.Errorf("expecting } but character 0x%02X got", chr)
-		}
-	}
-
-	return -1, fmt.Errorf("right } for start { at Position %d is not found", offset)
+	return (chr & 0xF8) == 0xF0
 }
 
 func (it *iter) parseTrue(offset int) (end int, err error) {
@@ -432,12 +316,23 @@ func (it *iter) parseNumber(
 	numStart := offset
 	fin := len(it.b)
 	floated = false
+	decimalFound := false
+	integerFound := false
 
 	for ; offset < fin; offset++ {
 		chr := it.b[offset]
 		if chr-'0' <= 9 {
+			if floated {
+				decimalFound = true
+			} else {
+				integerFound = true
+			}
 			// continue
 		} else if chr == '.' {
+			if floated {
+				err = fmt.Errorf("%w, duplicated colon", ErrNotValidNumberValue)
+				return
+			}
 			floated = true
 		} else {
 			end = offset
@@ -471,6 +366,13 @@ func (it *iter) parseNumber(
 
 		return i64, u64, float64(i64), floated, negative, end, reachEnd, nil
 
+	}
+
+	if decimalFound && integerFound {
+		// this is a legal float number
+	} else {
+		err = fmt.Errorf("%w, incomplete float number", ErrNotValidNumberValue)
+		return
 	}
 
 	f64, err = strconv.ParseFloat(unsafeBtoS(it.b[sectStart:end]), 64)

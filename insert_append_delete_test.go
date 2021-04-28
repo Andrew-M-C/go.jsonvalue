@@ -60,6 +60,13 @@ func testInsertAppend(t *testing.T) {
 	t.Logf("after SetXxx(): %v", s)
 
 	So(s, ShouldEqual, expected)
+
+	// unmarshal and then marchal back
+	a, err := UnmarshalString(expected)
+	So(err, ShouldBeNil)
+	s, err = a.MarshalString()
+	So(err, ShouldBeNil)
+	So(s, ShouldEqual, expected)
 }
 
 func testDelete(t *testing.T) {
@@ -69,6 +76,9 @@ func testDelete(t *testing.T) {
 
 	s, _ := o.MarshalString()
 	t.Logf("parsed object: %v", s)
+
+	err = o.Delete("oBJECT") // this key not exists
+	So(err, ShouldBeError)
 
 	err = o.Delete("object", "number")
 	So(err, ShouldBeNil)
@@ -88,8 +98,17 @@ func testDelete(t *testing.T) {
 	_, err = o.Caseless().Get("object")
 	So(err, ShouldBeNil)
 
-	err = o.Delete("object") // delete another "object", actually "OBJECT"
+	err = o.Delete("object")
+	So(err, ShouldBeError)
+
+	err = o.Caseless().Delete("object") // delete another "object", actually "OBJECT"
 	So(err, ShouldBeNil)
+
+	err = o.Caseless().Delete("object") // delete again
+	So(err, ShouldBeError)
+
+	err = o.Caseless().Delete("NOT_EXIST")
+	So(err, ShouldBeError)
 
 	_, err = o.Get("object")
 	So(err, ShouldBeError, ErrNotFound)
@@ -130,12 +149,35 @@ func testMiscAppend(t *testing.T) {
 }
 
 func testMiscInsert(t *testing.T) {
+	expected := `[null,1,-2,3,-4,5,-6,7.7,-8.88888,true,false,null,null,{},-2,[[null,-11,22]]]`
+
 	var err error
 	var c *V
 	v := NewArray()
-	expected := `[null,1,-2,3,-4,5,-6,7.7,-8.88888,true,false,null,null,{},[[null,-11,22]]]`
 
-	v.AppendNull().InTheBeginning()
+	_, err = v.InsertNull().Before(0)
+	So(err, ShouldBeError)
+
+	_, err = v.InsertNull().After(0)
+	So(err, ShouldBeError)
+
+	_, err = v.AppendNull().InTheBeginning()
+	So(err, ShouldBeNil)
+
+	_, err = v.InsertNull().Before(10000)
+	So(err, ShouldBeError)
+
+	_, err = v.InsertNull().After(10000)
+	So(err, ShouldBeError)
+
+	_, err = v.InsertNull().Before(-10000)
+	So(err, ShouldBeError)
+
+	_, err = v.InsertNull().After(-10000)
+	So(err, ShouldBeError)
+
+	_, err = v.InsertNull().Before(-2)
+	So(err, ShouldBeError)
 
 	c, err = v.InsertUint(1).After(-1)
 	So(err, ShouldBeNil)
@@ -210,6 +252,10 @@ func testMiscInsert(t *testing.T) {
 	c, err = v.InsertNull().Before(-1, 0, 0)
 	So(err, ShouldBeNil)
 	So(c.IsNull(), ShouldBeTrue)
+
+	c, err = v.InsertInt(-2).Before(-1)
+	So(err, ShouldBeNil)
+	So(c.Int(), ShouldEqual, -2)
 
 	s, _ := v.MarshalString()
 	So(s, ShouldEqual, expected)
@@ -342,5 +388,4 @@ func testMiscDeleteError(t *testing.T) {
 	// not found error
 	err = v.Delete("object", "bool", "string")
 	So(err, ShouldBeError)
-
 }

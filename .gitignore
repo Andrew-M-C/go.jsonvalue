@@ -12,4 +12,5 @@
 *.out
 
 # Coverage file
-cover.html
+*.html
+*.prof

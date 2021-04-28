@@ -153,12 +153,13 @@ func UnmarshalString(s string) (*V, error) {
 	// }
 	// b := *(*[]byte)(unsafe.Pointer(&bh))
 	b := []byte(s)
-	return unmarshalWithIter(&iter{b: b}, 0, len(b))
+	return UnmarshalNoCopy(b)
 }
 
 // unmarshalWithIter parse bytes with unknown value type.
-func unmarshalWithIter(it *iter, offset, end int) (v *V, err error) {
-	offset, reachEnd := it.skipBlanks(offset, end)
+func unmarshalWithIter(it *iter, offset int) (v *V, err error) {
+	end := len(it.b)
+	offset, reachEnd := it.skipBlanks(offset)
 	if reachEnd {
 		return nil, fmt.Errorf("%w, cannot find any symbol characters found", ErrRawBytesUnrecignized)
 	}
@@ -232,7 +233,7 @@ func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end in
 	reachEnd := false
 
 	for offset < right {
-		// 检查结束字符
+		// search for ending ']'
 		offset, reachEnd = it.skipBlanks(offset, right)
 		if reachEnd {
 			// ']' not found
@@ -356,16 +357,18 @@ func unmarshalObjectWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end i
 	}
 
 	for offset < right {
-		// 检查结束字符
 		offset, reachEnd = it.skipBlanks(offset, right)
 		if reachEnd {
-			// ']' not found
+			// '}' not found
 			return nil, -1, fmt.Errorf("%w, cannot find '}'", ErrNotObjectValue)
 		}
 
 		chr := it.b[offset]
 		switch chr {
 		case '}':
+			if err = valNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
 			return obj, offset + 1, nil
 
 		case ',':
@@ -515,20 +518,20 @@ func Unmarshal(b []byte) (ret *V, err error) {
 	trueB := make([]byte, len(b))
 	copy(trueB, b)
 	it := &iter{b: trueB}
-	return unmarshalWithIter(it, 0, le)
+	return unmarshalWithIter(it, 0)
 }
 
 // UnmarshalNoCopy is same as Unmarshal, but it does not copy another []byte instance for saving CPU time.
 // But pay attention that the input []byte may be used as buffer by jsonvalue and mey be modified.
 //
 // UnmarshalNoCopy 与 Unmarshal 相同，但是这个函数在解析过程中不会重新复制一个 []byte，对于大 json 的解析而言能够大大节省时间。
-// 但请注意传入的 []byte 变量肯能会被 jsonvalue 用作缓冲区，并进行修改
+// 但请注意传入的 []byte 变量可能会被 jsonvalue 用作缓冲区，并进行修改
 func UnmarshalNoCopy(b []byte) (ret *V, err error) {
 	le := len(b)
 	if le == 0 {
 		return nil, ErrNilParameter
 	}
-	return unmarshalWithIter(&iter{b: b}, 0, le)
+	return unmarshalWithIter(&iter{b: b}, 0)
 }
 
 var dot = []byte{'.'}
@@ -625,9 +628,6 @@ func (v *V) IsFloat() bool {
 	if v.valueType != jsonparser.Number {
 		return false
 	}
-	if !v.parsed {
-		v.parseNumber()
-	}
 	return v.num.floated
 }
 
@@ -637,12 +637,6 @@ func (v *V) IsFloat() bool {
 func (v *V) IsInteger() bool {
 	if v.valueType != jsonparser.Number {
 		return false
-	}
-	if !v.parsed {
-		err := v.parseNumber()
-		if err != nil {
-			return false
-		}
 	}
 	return !(v.num.floated)
 }
@@ -654,9 +648,6 @@ func (v *V) IsNegative() bool {
 	if v.valueType != jsonparser.Number {
 		return false
 	}
-	if !v.parsed {
-		v.parseNumber()
-	}
 	return v.num.negative
 }
 
@@ -666,12 +657,6 @@ func (v *V) IsNegative() bool {
 func (v *V) IsPositive() bool {
 	if v.valueType != jsonparser.Number {
 		return false
-	}
-	if !v.parsed {
-		err := v.parseNumber()
-		if err != nil {
-			return false
-		}
 	}
 	return !(v.num.negative)
 }
@@ -688,9 +673,6 @@ func (v *V) IsPositive() bool {
 func (v *V) GreaterThanInt64Max() bool {
 	if v.valueType != jsonparser.Number {
 		return false
-	}
-	if !v.parsed {
-		v.parseNumber()
 	}
 	if v.num.negative {
 		return false
@@ -740,9 +722,6 @@ func (v *V) Int() int {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Int()
 	}
-	if !v.parsed {
-		v.parseNumber()
-	}
 	return int(v.num.i64)
 }
 
@@ -752,9 +731,6 @@ func (v *V) Int() int {
 func (v *V) Uint() uint {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Uint()
-	}
-	if !v.parsed {
-		v.parseNumber()
 	}
 	return uint(v.num.u64)
 }
@@ -766,9 +742,6 @@ func (v *V) Int64() int64 {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Int64()
 	}
-	if !v.parsed {
-		v.parseNumber()
-	}
 	return int64(v.num.i64)
 }
 
@@ -778,9 +751,6 @@ func (v *V) Int64() int64 {
 func (v *V) Uint64() uint64 {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Uint64()
-	}
-	if !v.parsed {
-		v.parseNumber()
 	}
 	return uint64(v.num.u64)
 }
@@ -792,9 +762,6 @@ func (v *V) Int32() int32 {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Int32()
 	}
-	if !v.parsed {
-		v.parseNumber()
-	}
 	return int32(v.num.i64)
 }
 
@@ -804,9 +771,6 @@ func (v *V) Int32() int32 {
 func (v *V) Uint32() uint32 {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Uint32()
-	}
-	if !v.parsed {
-		v.parseNumber()
 	}
 	return uint32(v.num.u64)
 }
@@ -818,9 +782,6 @@ func (v *V) Float64() float64 {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Float64()
 	}
-	if !v.parsed {
-		v.parseNumber()
-	}
 	return v.num.f64
 }
 
@@ -830,9 +791,6 @@ func (v *V) Float64() float64 {
 func (v *V) Float32() float32 {
 	if v.valueType != jsonparser.Number {
 		return getNumberFromNotNumberValue(v).Float32()
-	}
-	if !v.parsed {
-		v.parseNumber()
 	}
 	return float32(v.num.f64)
 }
