@@ -1,13 +1,9 @@
 package jsonvalue
 
-//#include <string.h>
-import "C"
-
 import (
 	"errors"
 	"fmt"
 	"strconv"
-	"unsafe"
 )
 
 // iter is used to iterate []byte text
@@ -186,12 +182,13 @@ func (it *iter) memcpy(dst, src, length int) {
 	if dst == src {
 		return
 	}
-	ptr := unsafe.Pointer(&it.b[0])
-	C.memcpy(
-		unsafe.Pointer(uintptr(ptr)+uintptr(dst)),
-		unsafe.Pointer(uintptr(ptr)+uintptr(src)),
-		C.size_t(length),
-	)
+	copy(it.b[dst:dst+length], it.b[src:src+length])
+	// ptr := unsafe.Pointer(&it.b[0])
+	// C.memcpy(
+	// 	unsafe.Pointer(uintptr(ptr)+uintptr(dst)),
+	// 	unsafe.Pointer(uintptr(ptr)+uintptr(src)),
+	// 	C.size_t(length),
+	// )
 }
 
 func (it *iter) assignAsciiCodedRune(dst int, r rune) (offset int) {
@@ -293,14 +290,6 @@ func (it *iter) parseNull(offset int) (end int, err error) {
 	}
 
 	return -1, fmt.Errorf("%w, not 'null' at Position %d", ErrNotValidBoolValue, offset)
-}
-
-type parseNumResult struct {
-	i64      int64
-	u64      uint64
-	f64      float64
-	floated  bool
-	negative bool
 }
 
 func (it *iter) parseNumber(
