@@ -3,8 +3,6 @@ package jsonvalue
 import (
 	"fmt"
 	"strings"
-
-	"github.com/buger/jsonparser"
 )
 
 func (v *V) delFromObjectChildren(caseless bool, key string) (exist bool) {
@@ -66,7 +64,7 @@ func (v *V) delete(caseless bool, firstParam interface{}, otherParams ...interfa
 }
 
 func (v *V) deleteInCurrValue(caseless bool, param interface{}) error {
-	if v.valueType == jsonparser.Object {
+	if v.valueType == Object {
 		// string expected
 		key, err := intfToString(param)
 		if err != nil {
@@ -79,7 +77,7 @@ func (v *V) deleteInCurrValue(caseless bool, param interface{}) error {
 		return nil
 	}
 
-	if v.valueType == jsonparser.Array {
+	if v.valueType == Array {
 		// interger expected
 		pos, err := intfToInt(param)
 		if err != nil {

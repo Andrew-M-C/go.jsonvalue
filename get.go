@@ -3,8 +3,6 @@ package jsonvalue
 import (
 	"fmt"
 	"strings"
-
-	"github.com/buger/jsonparser"
 )
 
 // Len returns length of an object or array type JSON value.
@@ -12,9 +10,9 @@ import (
 // Len 返回当前对象类型或数组类型的 JSON 的成员长度。如果不是这两种类型，那么会返回 0。
 func (v *V) Len() int {
 	switch v.valueType {
-	case jsonparser.Array:
+	case Array:
 		return len(v.children.array)
-	case jsonparser.Object:
+	case Object:
 		return len(v.children.object)
 	default:
 		return 0
@@ -79,7 +77,7 @@ func (v *V) getFromObjectChildren(caseless bool, key string) (child *V, exist bo
 }
 
 func (v *V) getInCurrValue(caseless bool, param interface{}) (*V, error) {
-	if v.valueType == jsonparser.Array {
+	if v.valueType == Array {
 		// integer expected
 		pos, err := intfToInt(param)
 		if err != nil {
@@ -91,7 +89,7 @@ func (v *V) getInCurrValue(caseless bool, param interface{}) (*V, error) {
 		}
 		return child, nil
 
-	} else if v.valueType == jsonparser.Object {
+	} else if v.valueType == Object {
 		// string expected
 		key, err := intfToString(param)
 		if err != nil {
@@ -120,7 +118,7 @@ func (v *V) getBytes(caseless bool, firstParam interface{}, otherParams ...inter
 	if err != nil {
 		return nil, err
 	}
-	if ret.valueType != jsonparser.String {
+	if ret.valueType != String {
 		return nil, ErrTypeNotMatch
 	}
 	return b64.DecodeString(ret.valueStr)
@@ -138,7 +136,7 @@ func (v *V) getString(caseless bool, firstParam interface{}, otherParams ...inte
 	if err != nil {
 		return "", err
 	}
-	if ret.valueType != jsonparser.String {
+	if ret.valueType != String {
 		return "", ErrTypeNotMatch
 	}
 	return ret.String(), nil
@@ -156,7 +154,7 @@ func (v *V) getInt(caseless bool, firstParam interface{}, otherParams ...interfa
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != Number {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Int(), nil
@@ -174,7 +172,7 @@ func (v *V) getUint(caseless bool, firstParam interface{}, otherParams ...interf
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != Number {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Uint(), nil
@@ -192,7 +190,7 @@ func (v *V) getInt64(caseless bool, firstParam interface{}, otherParams ...inter
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != Number {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Int64(), nil
@@ -210,7 +208,7 @@ func (v *V) getUint64(caseless bool, firstParam interface{}, otherParams ...inte
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != Number {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Uint64(), nil
@@ -228,7 +226,7 @@ func (v *V) getInt32(caseless bool, firstParam interface{}, otherParams ...inter
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != Number {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Int32(), nil
@@ -246,7 +244,7 @@ func (v *V) getUint32(caseless bool, firstParam interface{}, otherParams ...inte
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != Number {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Uint32(), nil
@@ -264,7 +262,7 @@ func (v *V) getFloat64(caseless bool, firstParam interface{}, otherParams ...int
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != Number {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Float64(), nil
@@ -282,7 +280,7 @@ func (v *V) getFloat32(caseless bool, firstParam interface{}, otherParams ...int
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != jsonparser.Number {
+	if ret.valueType != Number {
 		return 0, ErrTypeNotMatch
 	}
 	return ret.Float32(), nil
@@ -300,7 +298,7 @@ func (v *V) getBool(caseless bool, firstParam interface{}, otherParams ...interf
 	if err != nil {
 		return false, err
 	}
-	if ret.valueType != jsonparser.Boolean {
+	if ret.valueType != Boolean {
 		return false, ErrTypeNotMatch
 	}
 	return ret.Bool(), nil
@@ -318,7 +316,7 @@ func (v *V) getNull(caseless bool, firstParam interface{}, otherParams ...interf
 	if err != nil {
 		return err
 	}
-	if ret.valueType != jsonparser.Null {
+	if ret.valueType != Null {
 		return ErrTypeNotMatch
 	}
 	return nil
@@ -336,7 +334,7 @@ func (v *V) getObject(caseless bool, firstParam interface{}, otherParams ...inte
 	if err != nil {
 		return nil, err
 	}
-	if ret.valueType != jsonparser.Object {
+	if ret.valueType != Object {
 		return nil, ErrTypeNotMatch
 	}
 	return ret, nil
@@ -354,7 +352,7 @@ func (v *V) getArray(caseless bool, firstParam interface{}, otherParams ...inter
 	if err != nil {
 		return nil, err
 	}
-	if ret.valueType != jsonparser.Array {
+	if ret.valueType != Array {
 		return nil, ErrTypeNotMatch
 	}
 	return ret, nil

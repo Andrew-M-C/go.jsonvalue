@@ -22,21 +22,25 @@ func testNewString(t *testing.T) {
 	s := "你好，世界"
 	v := NewString(s)
 	So(v.String(), ShouldEqual, s)
+	So(v.ValueType(), ShouldEqual, String)
 }
 
 func testNewBool(t *testing.T) {
 	v := NewBool(true)
 	So(v.Bool(), ShouldBeTrue)
 	So(v.IsBoolean(), ShouldBeTrue)
+	So(v.ValueType(), ShouldEqual, Boolean)
 
 	v = NewBool(false)
 	So(v.Bool(), ShouldBeFalse)
 	So(v.IsBoolean(), ShouldBeTrue)
+	So(v.ValueType(), ShouldEqual, Boolean)
 }
 
 func testNewNull(t *testing.T) {
 	v := NewNull()
 	So(v.IsNull(), ShouldBeTrue)
+	So(v.ValueType(), ShouldEqual, Null)
 }
 
 func testNewInteger(t *testing.T) {
@@ -44,21 +48,27 @@ func testNewInteger(t *testing.T) {
 
 	v := NewInt(int(i))
 	So(v.Int(), ShouldEqual, int(i))
+	So(v.ValueType(), ShouldEqual, Number)
 
 	v = NewUint(uint(i))
 	So(v.Uint(), ShouldEqual, uint(i))
+	So(v.ValueType(), ShouldEqual, Number)
 
 	v = NewInt32(int32(i))
 	So(v.Int32(), ShouldEqual, int32(i))
+	So(v.ValueType(), ShouldEqual, Number)
 
 	v = NewUint32(uint32(i))
 	So(v.Uint32(), ShouldEqual, uint32(i))
+	So(v.ValueType(), ShouldEqual, Number)
 
 	v = NewInt64(int64(i))
 	So(v.Int64(), ShouldEqual, int64(i))
+	So(v.ValueType(), ShouldEqual, Number)
 
 	v = NewUint64(uint64(i))
 	So(v.Uint64(), ShouldEqual, uint64(i))
+	So(v.ValueType(), ShouldEqual, Number)
 }
 
 func testNewFloat(t *testing.T) {
@@ -67,26 +77,32 @@ func testNewFloat(t *testing.T) {
 
 	v := NewFloat64(f, 10)
 	So(v.String(), ShouldEqual, s)
+	So(v.ValueType(), ShouldEqual, Number)
 
 	v = NewFloat64(f, 2)
 	So(v.String(), ShouldEqual, "3.14")
+	So(v.ValueType(), ShouldEqual, Number)
 
 	s = "3.1415927"
 	v = NewFloat32(float32(f), -1)
 	So(v.String(), ShouldEqual, s)
+	So(v.ValueType(), ShouldEqual, Number)
 
 	v = NewFloat32(float32(f), 5)
 	So(v.String(), ShouldEqual, "3.14159")
+	So(v.ValueType(), ShouldEqual, Number)
 }
 
 func testEmptyObjectArray(t *testing.T) {
 	v := NewObject()
 	b, _ := v.Marshal()
 	So(string(b), ShouldEqual, "{}")
+	So(v.ValueType(), ShouldEqual, Object)
 
 	v = NewArray()
 	b = v.MustMarshal()
 	So(string(b), ShouldEqual, "[]")
+	So(v.ValueType(), ShouldEqual, Array)
 }
 
 func testMiscValue(t *testing.T) {

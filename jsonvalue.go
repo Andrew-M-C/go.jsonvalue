@@ -39,13 +39,30 @@ import (
 	"encoding/base64"
 	"fmt"
 	"strings"
-
-	"github.com/buger/jsonparser"
 )
 
 var (
 	b64 = base64.StdEncoding
 )
+
+// ValueType identifying JSON value type
+type ValueType int
+
+const (
+	NotExist ValueType = iota
+	String
+	Number
+	Object
+	Array
+	Boolean
+	Null
+	Unknown
+)
+
+// ValueType returns the type of this JSON value.
+func (v *V) ValueType() ValueType {
+	return v.valueType
+}
 
 // test:
 // go test -v -failfast -cover -coverprofile ./cover.out && go tool cover -html=./cover.out -o ./cover.html && open ./cover.html
@@ -54,7 +71,7 @@ var (
 //
 // V 是 jsonvalue 的主类型，表示一个 JSON 值。
 type V struct {
-	valueType jsonparser.ValueType
+	valueType ValueType
 
 	srcByte   []byte
 	srcOffset int
@@ -84,21 +101,21 @@ type children struct {
 	lowerCaseKeys map[string]map[string]struct{}
 }
 
-func new(t jsonparser.ValueType) *V {
+func new(t ValueType) *V {
 	v := V{}
 	v.valueType = t
 	return &v
 }
 
 func newObject() *V {
-	v := new(jsonparser.Object)
+	v := new(Object)
 	v.children.object = make(map[string]*V)
 	v.children.lowerCaseKeys = nil
 	return v
 }
 
 func newArray() *V {
-	v := new(jsonparser.Array)
+	v := new(Array)
 	v.children.array = []*V{}
 	return v
 }
@@ -173,7 +190,7 @@ func unmarshalWithIter(it *iter, offset int) (v *V, err error) {
 		v, offset, err = unmarshalArrayWithIterUnknownEnd(it, offset, end)
 
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-		n := new(jsonparser.Number)
+		n := new(Number)
 		n.num.i64, n.num.u64, n.num.f64, n.num.floated, n.num.negative, offset, _, err = it.parseNumber(offset)
 		if err == nil {
 			n.srcByte = it.b
@@ -269,7 +286,7 @@ func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			v := new(jsonparser.Number)
+			v := new(Number)
 			v.srcByte = it.b
 			v.srcOffset, v.srcEnd = offset, sectEnd
 			v.parsed = true
@@ -421,7 +438,7 @@ func unmarshalObjectWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end i
 			if err != nil {
 				return nil, -1, err
 			}
-			v := new(jsonparser.Number)
+			v := new(Number)
 			v.srcByte = it.b
 			v.srcOffset, v.srcEnd = offset, sectEnd
 			v.parsed = true
@@ -583,7 +600,7 @@ func (v *V) parseNumber() (err error) {
 
 // ==== simple object parsing ====
 func newFromNumber(b []byte) (ret *V, err error) {
-	v := new(jsonparser.Number)
+	v := new(Number)
 	v.srcByte = b
 	v.srcOffset = 0
 	v.srcEnd = len(b)
@@ -596,28 +613,28 @@ func newFromNumber(b []byte) (ret *V, err error) {
 //
 // IsObject 判断当前值是不是一个对象类型
 func (v *V) IsObject() bool {
-	return v.valueType == jsonparser.Object
+	return v.valueType == Object
 }
 
 // IsArray tells whether value is an array
 //
 // IsArray 判断当前值是不是一个数组类型
 func (v *V) IsArray() bool {
-	return v.valueType == jsonparser.Array
+	return v.valueType == Array
 }
 
 // IsString tells whether value is a string
 //
 // IsString 判断当前值是不是一个字符串类型
 func (v *V) IsString() bool {
-	return v.valueType == jsonparser.String
+	return v.valueType == String
 }
 
 // IsNumber tells whether value is a number
 //
 // IsNumber 判断当前值是不是一个数字类型
 func (v *V) IsNumber() bool {
-	return v.valueType == jsonparser.Number
+	return v.valueType == Number
 }
 
 // IsFloat tells whether value is a float point number. If there is no decimal point in original text, it returns false
@@ -625,7 +642,7 @@ func (v *V) IsNumber() bool {
 //
 // IsFloat 判断当前值是不是一个浮点数类型。如果给定的数不包含小数点，那么即便是数字类型，该函数也会返回 false.
 func (v *V) IsFloat() bool {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return false
 	}
 	return v.num.floated
@@ -635,7 +652,7 @@ func (v *V) IsFloat() bool {
 //
 // IsNumber 判断当前值是不是一个定点数整型
 func (v *V) IsInteger() bool {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return false
 	}
 	return !(v.num.floated)
@@ -645,7 +662,7 @@ func (v *V) IsInteger() bool {
 //
 // IsNegative 判断当前值是不是一个负数
 func (v *V) IsNegative() bool {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return false
 	}
 	return v.num.negative
@@ -655,7 +672,7 @@ func (v *V) IsNegative() bool {
 //
 // IsPositive 判断当前值是不是一个正数
 func (v *V) IsPositive() bool {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return false
 	}
 	return !(v.num.negative)
@@ -671,7 +688,7 @@ func (v *V) IsPositive() bool {
 // 	2. 是一个正整型数字.
 // 	3. 该正整数的值大于 0x7fffffffffffffff.
 func (v *V) GreaterThanInt64Max() bool {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return false
 	}
 	if v.num.negative {
@@ -684,14 +701,14 @@ func (v *V) GreaterThanInt64Max() bool {
 //
 // IsBoolean 判断当前值是不是一个布尔类型
 func (v *V) IsBoolean() bool {
-	return v.valueType == jsonparser.Boolean
+	return v.valueType == Boolean
 }
 
 // IsNull tells whether value is a null
 //
 // IsBoolean 判断当前值是不是一个空类型
 func (v *V) IsNull() bool {
-	return v.valueType == jsonparser.Null
+	return v.valueType == Null
 }
 
 // ==== value access ====
@@ -719,7 +736,7 @@ func (v *V) Bool() bool {
 //
 // Int 返回 int 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int() int {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Int()
 	}
 	return int(v.num.i64)
@@ -729,7 +746,7 @@ func (v *V) Int() int {
 //
 // Uint 返回 uint 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint() uint {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Uint()
 	}
 	return uint(v.num.u64)
@@ -739,7 +756,7 @@ func (v *V) Uint() uint {
 //
 // Int64 返回 int64 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int64() int64 {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Int64()
 	}
 	return int64(v.num.i64)
@@ -749,7 +766,7 @@ func (v *V) Int64() int64 {
 //
 // Uint64 返回 uint64 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint64() uint64 {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Uint64()
 	}
 	return uint64(v.num.u64)
@@ -759,7 +776,7 @@ func (v *V) Uint64() uint64 {
 //
 // Int32 返回 int32 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int32() int32 {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Int32()
 	}
 	return int32(v.num.i64)
@@ -769,7 +786,7 @@ func (v *V) Int32() int32 {
 //
 // Uint32 返回 uint32 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint32() uint32 {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Uint32()
 	}
 	return uint32(v.num.u64)
@@ -779,7 +796,7 @@ func (v *V) Uint32() uint32 {
 //
 // Float64 返回 float64 类型值。如果当前值不是数字类型，则返回 0.0。
 func (v *V) Float64() float64 {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Float64()
 	}
 	return v.num.f64
@@ -789,7 +806,7 @@ func (v *V) Float64() float64 {
 //
 // Float32 返回 float32 类型值。如果当前值不是数字类型，则返回 0.0。
 func (v *V) Float32() float32 {
-	if v.valueType != jsonparser.Number {
+	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Float32()
 	}
 	return float32(v.num.f64)
@@ -800,7 +817,7 @@ func (v *V) Float32() float32 {
 //
 // Bytes 返回以 Base64 编码在 string 类型中的二进制数据。如果当前值不是字符串类型，或者是 base64 编码失败，则返回 []byte{}。
 func (v *V) Bytes() []byte {
-	if v.valueType != jsonparser.String {
+	if v.valueType != String {
 		return []byte{}
 	}
 	b, err := b64.DecodeString(v.valueStr)
@@ -820,17 +837,17 @@ func (v *V) String() string {
 	switch v.valueType {
 	default:
 		return ""
-	case jsonparser.Null:
+	case Null:
 		return "null"
-	case jsonparser.Number:
+	case Number:
 		return unsafeBtoS(v.valueBytes())
-	case jsonparser.String:
+	case String:
 		return v.valueStr
-	case jsonparser.Boolean:
+	case Boolean:
 		return formatBool(v.valueBool)
-	case jsonparser.Object:
+	case Object:
 		return v.packObjChildren()
-	case jsonparser.Array:
+	case Array:
 		return v.packArrChildren()
 	}
 }

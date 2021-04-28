@@ -1,9 +1,5 @@
 package jsonvalue
 
-import (
-	"github.com/buger/jsonparser"
-)
-
 // Insert type is for After() and Before() function. Please refer for realated function.
 //
 // Should be generated ONLY BY V.Insert function!
@@ -134,14 +130,14 @@ func (v *V) InsertArray() *Insert {
 func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*V, error) {
 	v := ins.v
 	c := ins.c
-	if v.valueType == jsonparser.NotExist {
+	if v.valueType == NotExist {
 		return nil, ErrValueUninitialized
 	}
 
 	// this is the last iteration
 	paramCount := len(otherParams)
 	if paramCount == 0 {
-		if v.valueType != jsonparser.Array {
+		if v.valueType != Array {
 			return nil, ErrNotArrayValue
 		}
 
@@ -187,14 +183,14 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V, error) {
 	v := ins.v
 	c := ins.c
-	if nil == v || v.valueType == jsonparser.NotExist {
+	if nil == v || v.valueType == NotExist {
 		return nil, ErrValueUninitialized
 	}
 
 	// this is the last iteration
 	paramCount := len(otherParams)
 	if paramCount == 0 {
-		if v.valueType != jsonparser.Array {
+		if v.valueType != Array {
 			return nil, ErrNotArrayValue
 		}
 

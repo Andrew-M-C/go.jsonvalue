@@ -1,7 +1,5 @@
 package jsonvalue
 
-import "github.com/buger/jsonparser"
-
 // Caseless is returned by Caseless(). operations of Caseless type are same as (*V).Get(), but are via caseless key.
 type Caseless interface {
 	Get(firstParam interface{}, otherParams ...interface{}) (*V, error)
@@ -29,7 +27,7 @@ func (v *V) Caseless() Caseless {
 	default:
 		return v
 
-	case jsonparser.Array, jsonparser.Object:
+	case Array, Object:
 		return &caselessOper{
 			v: v,
 		}

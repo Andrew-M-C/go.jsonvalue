@@ -3,15 +3,13 @@ package jsonvalue
 import (
 	"encoding/json"
 	"strconv"
-
-	"github.com/buger/jsonparser"
 )
 
 // NewString returns an initialied string jsonvalue object
 //
 // NewString 用给定的 string 返回一个初始化好的字符串类型的 jsonvalue 值
 func NewString(s string) *V {
-	v := new(jsonparser.String)
+	v := new(String)
 	v.valueStr = s
 	v.parsed = true
 	return v
@@ -21,7 +19,7 @@ func NewString(s string) *V {
 //
 // NewInt64 用给定的 int64 返回一个初始化好的数字类型的 jsonvalue 值
 func NewInt64(i int64) *V {
-	v := new(jsonparser.Number)
+	v := new(Number)
 	// v.num = &num{}
 	v.num.floated = false
 	v.num.negative = i < 0
@@ -39,7 +37,7 @@ func NewInt64(i int64) *V {
 //
 // NewUint64 用给定的 uint64 返回一个初始化好的数字类型的 jsonvalue 值
 func NewUint64(u uint64) *V {
-	v := new(jsonparser.Number)
+	v := new(Number)
 	// v.num = &num{}
 	v.num.floated = false
 	v.num.negative = false
@@ -85,7 +83,7 @@ func NewUint32(u uint32) *V {
 //
 // NewBool 用给定的 bool 返回一个初始化好的布尔类型的 jsonvalue 值
 func NewBool(b bool) *V {
-	v := new(jsonparser.Boolean)
+	v := new(Boolean)
 	v.valueBool = b
 	v.parsed = true
 	return v
@@ -95,7 +93,7 @@ func NewBool(b bool) *V {
 //
 // NewNull 返回一个初始化好的 null 类型的 jsonvalue 值
 func NewNull() *V {
-	v := new(jsonparser.Null)
+	v := new(Null)
 	v.parsed = true
 	return v
 }
@@ -174,7 +172,7 @@ func NewArray() *V {
 // NewFloat64 根据指定的 flout64 类型返回一个初始化好的数字类型的 jsonvalue 值。
 // 参数 precision prec 指定需要编码的小数点后的位数。使用 -1 则交给编译器自行判断。
 func NewFloat64(f float64, prec int) *V {
-	v := new(jsonparser.Number)
+	v := new(Number)
 	// v.num = &num{}
 	v.num.negative = f < 0
 	v.num.f64 = f
@@ -201,7 +199,7 @@ func NewFloat64(f float64, prec int) *V {
 // NewFloat32 根据指定的 float32 类型返回一个初始化好的数字类型的 jsonvalue 值。
 // 参数 precision prec 指定需要编码的小数点后的位数。使用 -1 则交给编译器自行判断。
 func NewFloat32(f float32, prec int) *V {
-	v := new(jsonparser.Number)
+	v := new(Number)
 	// v.num = &num{}
 	v.num.negative = f < 0
 	v.num.f64 = float64(f)
