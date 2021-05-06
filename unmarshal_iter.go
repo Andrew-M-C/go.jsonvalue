@@ -294,35 +294,37 @@ func (it *iter) parseNull(offset int) (end int, err error) {
 
 func (it *iter) parseNumber(
 	offset int,
-) (i64 int64, u64 uint64, f64 float64, floated bool, negative bool, end int, reachEnd bool, err error) {
+) (v *V, end int, reachEnd bool, err error) {
+	v = new(Number)
+	v.parsed = true
 	sectStart := offset
-	negative = false
+	v.num.negative = false
 	if it.b[offset] == '-' {
-		negative = true
+		v.num.negative = true
 		offset++
 	}
 
 	numStart := offset
 	fin := len(it.b)
-	floated = false
+	v.num.floated = false
 	decimalFound := false
 	integerFound := false
 
 	for ; offset < fin; offset++ {
 		chr := it.b[offset]
 		if chr-'0' <= 9 {
-			if floated {
+			if v.num.floated {
 				decimalFound = true
 			} else {
 				integerFound = true
 			}
 			// continue
 		} else if chr == '.' {
-			if floated {
+			if v.num.floated {
 				err = fmt.Errorf("%w, duplicated colon", ErrNotValidNumberValue)
 				return
 			}
-			floated = true
+			v.num.floated = true
 		} else {
 			end = offset
 			break
@@ -334,26 +336,27 @@ func (it *iter) parseNumber(
 		end = fin
 	}
 
-	if !floated {
+	if !v.num.floated {
 		b := it.b[numStart:end]
-		u64, err = strconv.ParseUint(unsafeBtoS(b), 10, 64)
+		v.num.u64, err = strconv.ParseUint(unsafeBtoS(b), 10, 64)
 		if err != nil {
 			err = fmt.Errorf("%w, %v", ErrNotValidNumberValue, err)
 			return
 		}
 
-		if negative {
-			if u64 > 0x7FFFFFFF {
+		if v.num.negative {
+			if v.num.u64 > 0x7FFFFFFF {
 				err = fmt.Errorf("%w, negative integer should not smaller than -0x80000000", ErrNotValidNumberValue)
 				return
 			}
-			i64 = -int64(u64)
-			u64 = uint64(i64)
+			v.num.i64 = -int64(v.num.u64)
+			v.num.u64 = uint64(v.num.i64)
 		} else {
-			i64 = int64(u64)
+			v.num.i64 = int64(v.num.u64)
 		}
 
-		return i64, u64, float64(i64), floated, negative, end, reachEnd, nil
+		v.num.f64 = float64(v.num.i64)
+		return v, end, reachEnd, nil
 
 	}
 
@@ -364,18 +367,21 @@ func (it *iter) parseNumber(
 		return
 	}
 
-	f64, err = strconv.ParseFloat(unsafeBtoS(it.b[sectStart:end]), 64)
+	v.num.f64, err = strconv.ParseFloat(unsafeBtoS(it.b[sectStart:end]), 64)
 	if err != nil {
 		err = fmt.Errorf("%w, %v", ErrNotValidNumberValue, err)
 		return
 	}
 
-	if negative {
-		return int64(f64), uint64(f64), f64, floated, negative, end, reachEnd, nil
+	if v.num.negative {
+		v.num.i64 = int64(v.num.f64)
+		v.num.u64 = uint64(v.num.f64)
+		return v, end, reachEnd, nil
 	}
 
-	u64 = uint64(f64)
-	return int64(u64), u64, f64, floated, negative, end, reachEnd, nil
+	v.num.u64 = uint64(v.num.f64)
+	v.num.i64 = int64(v.num.u64)
+	return v, end, reachEnd, nil
 }
 
 // skipBlanks skip blank characters until end or reaching a non-blank characher

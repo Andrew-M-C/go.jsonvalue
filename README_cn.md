@@ -73,7 +73,7 @@
 
 ### 支持 caseless
 
-从 `v1.0.4` 版本开始，在进行 Get 操作中支持 caseless，也即是不区分大小写。这在 go 的 struct 中是默认逻辑，比如:
+从 `v1.0.6` 版本开始，在进行 Get 操作中支持 caseless，也即是不区分大小写。这在 go 的 struct 中是默认逻辑，比如:
 
 ```go
 package main
@@ -136,7 +136,7 @@ import (
 func main(){
 	s := `{"Id":"ID001"}`
 	v, _ := jsonvalue.UnmarshalString(s)
-	id, _ := b.GetString("id")
+	id, _ := b.Caseless().GetString("id")
 	fmt.Println(id)
 
 	// Output:

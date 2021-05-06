@@ -94,24 +94,24 @@ func testIter_parseNumber(t *testing.T) {
 	Convey("reachEnd == true", func() {
 		it := &iter{b: b[:11]}
 
-		i64, u64, f64, _, _, end, reachEnd, err := it.parseNumber(0)
-		t.Logf("i64 = %v, u64 = %v, f64 = %v", i64, u64, f64)
+		v, end, reachEnd, err := it.parseNumber(0)
+		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
 		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
 		t.Logf(string(b[:end]))
 		So(err, ShouldBeNil)
-		So(f64, ShouldEqual, -12345.6789)
+		So(v.num.f64, ShouldEqual, -12345.6789)
 		So(reachEnd, ShouldBeTrue)
 	})
 
 	Convey("reachEnd == false", func() {
 		it := &iter{b: b}
 
-		i64, u64, f64, _, _, end, reachEnd, err := it.parseNumber(0)
-		t.Logf("i64 = %v, u64 = %v, f64 = %v", i64, u64, f64)
+		v, end, reachEnd, err := it.parseNumber(0)
+		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
 		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
 		t.Logf(string(b[:end]))
 		So(err, ShouldBeNil)
-		So(f64, ShouldEqual, -12345.6789)
+		So(v.num.f64, ShouldEqual, -12345.6789)
 		So(reachEnd, ShouldBeFalse)
 	})
 }

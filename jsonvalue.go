@@ -190,8 +190,8 @@ func unmarshalWithIter(it *iter, offset int) (v *V, err error) {
 		v, offset, err = unmarshalArrayWithIterUnknownEnd(it, offset, end)
 
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-		n := new(Number)
-		n.num.i64, n.num.u64, n.num.f64, n.num.floated, n.num.negative, offset, _, err = it.parseNumber(offset)
+		var n *V
+		n, offset, _, err = it.parseNumber(offset)
 		if err == nil {
 			n.srcByte = it.b
 			n.srcOffset, n.srcEnd = offset, end
@@ -282,19 +282,13 @@ func unmarshalArrayWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end in
 			offset = sectEnd
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-			i64, u64, f64, floated, negative, sectEnd, _, err := it.parseNumber(offset)
+			var v *V
+			v, sectEnd, _, err := it.parseNumber(offset)
 			if err != nil {
 				return nil, -1, err
 			}
-			v := new(Number)
 			v.srcByte = it.b
 			v.srcOffset, v.srcEnd = offset, sectEnd
-			v.parsed = true
-			v.num.floated = floated
-			v.num.negative = negative
-			v.num.i64 = i64
-			v.num.u64 = u64
-			v.num.f64 = f64
 			arr.children.array = append(arr.children.array, v)
 			offset = sectEnd
 
@@ -434,19 +428,13 @@ func unmarshalObjectWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end i
 			if err = keyNotFoundErr(); err != nil {
 				return nil, -1, err
 			}
-			i64, u64, f64, floated, negative, sectEnd, _, err := it.parseNumber(offset)
+			var v *V
+			v, sectEnd, _, err := it.parseNumber(offset)
 			if err != nil {
 				return nil, -1, err
 			}
-			v := new(Number)
 			v.srcByte = it.b
 			v.srcOffset, v.srcEnd = offset, sectEnd
-			v.parsed = true
-			v.num.floated = floated
-			v.num.negative = negative
-			v.num.i64 = i64
-			v.num.u64 = u64
-			v.num.f64 = f64
 			obj.setToObjectChildren(unsafeBtoS(it.b[keyStart:keyEnd]), v)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
