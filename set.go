@@ -89,7 +89,7 @@ func (v *V) SetUint64(u uint64) *Set {
 
 // SetUint32 is equivalent to Set(jsonvalue.NewUint32(b))
 //
-// SetUint64 等效于 Set(jsonvalue.NewUint64(b))
+// SetUint32 等效于 Set(jsonvalue.NewUint32(b))
 func (v *V) SetUint32(u uint32) *Set {
 	return v.Set(NewUint32(u))
 }
