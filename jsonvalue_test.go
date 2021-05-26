@@ -130,7 +130,7 @@ func testMiscCharacters(t *testing.T) {
 		_, err = UnmarshalString(`"\U1234`)
 		So(err, ShouldBeError)
 
-		v, err := UnmarshalString(`"\uD83D\uDE0A你好Café😊"`) // should be "\uD83D\uDE0A" ==> 😊
+		v, err := UnmarshalString(`"\uD83d\uDE0A你好Café😊"`) // should be "\uD83D\uDE0A" ==> 😊
 		So(err, ShouldBeNil)
 		So(v.String(), ShouldEqual, "😊你好Café😊")
 
@@ -156,9 +156,6 @@ func testMiscCharacters(t *testing.T) {
 		So(err, ShouldBeError)
 
 		_, err = UnmarshalString(`"\uD83D\uFFFF"`) // should be "\uD83D\uDE0A" ==> 😊
-		So(err, ShouldBeError)
-
-		_, err = UnmarshalString(`"\uD83D\uDE0a"`) // should be "\uD83D\uDE0A" ==> 😊
 		So(err, ShouldBeError)
 	})
 }

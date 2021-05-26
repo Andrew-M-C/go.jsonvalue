@@ -174,6 +174,9 @@ func chrToHex(chr byte, errOut *error) byte {
 	if chr >= 'A' && chr <= 'F' {
 		return chr - 'A' + 10
 	}
+	if chr >= 'a' && chr <= 'f' {
+		return chr - 'a' + 10
+	}
 	*errOut = fmt.Errorf("invalid unicode value character: %c", rune(chr))
 	return 0
 }
