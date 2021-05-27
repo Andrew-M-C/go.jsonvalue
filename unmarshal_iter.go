@@ -348,7 +348,7 @@ func (it *iter) parseNumber(
 		}
 
 		if v.num.negative {
-			if v.num.u64 > 0x7FFFFFFF {
+			if v.num.u64 > 0x7FFFFFFFFFFFFFFF {
 				err = fmt.Errorf("%w, negative integer should not smaller than -0x80000000", ErrNotValidNumberValue)
 				return
 			}
