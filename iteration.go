@@ -20,7 +20,7 @@ type ArrayIter struct {
 //
 // Return true in callback to continue range iteration, while false to break.
 //
-// 当当前 JSON 值是一个 object 类型时，RangeObjects 遍历所有的键值对。
+// 若当前 JSON 值是一个 object 类型时，RangeObjects 遍历所有的键值对。
 //
 // 在回调函数中返回 true 表示继续迭代，返回 false 表示退出迭代
 func (v *V) RangeObjects(callback func(k string, v *V) bool) {
@@ -41,7 +41,7 @@ func (v *V) RangeObjects(callback func(k string, v *V) bool) {
 
 // IterObjects returns a channel for range statement of object type JSON.
 //
-// 当当前 JSON 值是一个 object 类型时，IterObjects 返回一个可用于 range 操作符的 channel。
+// 若当前 JSON 值是一个 object 类型时，IterObjects 返回一个可用于 range 操作符的 channel。
 func (v *V) IterObjects() <-chan *ObjectIter {
 	c := make(chan *ObjectIter, len(v.children.object))
 
@@ -61,7 +61,7 @@ func (v *V) IterObjects() <-chan *ObjectIter {
 //
 // Return true in callback to continue range iteration, while false to break.
 //
-// 当当前 JSON 值是一个 array 类型时，RangeArray 遍历所有的数组成员。
+// 若当前 JSON 值是一个 array 类型时，RangeArray 遍历所有的数组成员。
 //
 // 在回调函数中返回 true 表示继续迭代，返回 false 表示退出迭代
 func (v *V) RangeArray(callback func(i int, v *V) bool) {
@@ -81,7 +81,7 @@ func (v *V) RangeArray(callback func(i int, v *V) bool) {
 
 // IterArray returns a channel for range statement of array type JSON.
 //
-// 当当前 JSON 值是一个 array 类型时，IterArray 返回一个可用于 range 操作符的 channel。
+// 若当前 JSON 值是一个 array 类型时，IterArray 返回一个可用于 range 操作符的 channel。
 func (v *V) IterArray() <-chan *ArrayIter {
 	c := make(chan *ArrayIter, len(v.children.array))
 

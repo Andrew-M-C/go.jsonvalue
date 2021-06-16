@@ -1,6 +1,9 @@
 package jsonvalue
 
 // Caseless is returned by Caseless(). operations of Caseless type are same as (*V).Get(), but are via caseless key.
+//
+// Caseless 类型通过 Caseless() 函数返回。通过 Caseless 接口操作的所有操作均与 (*v).Get() 相同，但是对 key 进行读取的时候，
+// 不区分大小写。
 type Caseless interface {
 	Get(firstParam interface{}, otherParams ...interface{}) (*V, error)
 	GetBytes(firstParam interface{}, otherParams ...interface{}) ([]byte, error)
@@ -21,7 +24,13 @@ type Caseless interface {
 	Delete(firstParam interface{}, otherParams ...interface{}) error
 }
 
-// Caseless mark current value to be caseless mode
+// Caseless returns Caseless interface to support caseless getting.
+//
+// IMPORTANT: This function is not gouroutine-safe. Write-mutex (instead of read-mutex) should be attached in cross-goroutine scenarios.
+//
+// Caseless 返回 Caseless 接口，从而实现不区分大小写的 Get 操作。
+//
+// 注意: 该函数不是协程安全的，如果在多协程场景下，调用该函数，需要加上写锁，而不能用读锁。
 func (v *V) Caseless() Caseless {
 	switch v.valueType {
 	default:

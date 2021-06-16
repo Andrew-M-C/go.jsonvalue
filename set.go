@@ -17,6 +17,8 @@ type Set struct {
 
 // Set starts setting a child JSON value. Please refer to examples of "func (set *Set) At(...)"
 //
+// https://godoc.org/github.com/Andrew-M-C/go.jsonvalue/#Set.At
+//
 // Set 开始设置一个 JSON 子成员。请参见 "func (set *Set) At(...)" 例子.
 //
 // https://godoc.org/github.com/Andrew-M-C/go.jsonvalue/#Set.At
@@ -124,7 +126,7 @@ func (v *V) SetObject() *Set {
 
 // SetArray is equivalent to Set(jsonvalue.NewArray())
 //
-// SetArray is equivalent to Set(jsonvalue.NewArray())
+// SetArray 等效于 Set(jsonvalue.NewArray())
 func (v *V) SetArray() *Set {
 	return v.Set(NewArray())
 }
