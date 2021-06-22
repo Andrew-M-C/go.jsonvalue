@@ -59,6 +59,25 @@ const (
 	Unknown
 )
 
+var typeStr = [Unknown + 1]string{
+	"illegal",
+	"string",
+	"number",
+	"object",
+	"array",
+	"boolean",
+	"null",
+	"unknown",
+}
+
+// String show the type name of JSON
+func (t ValueType) String() string {
+	if t > Unknown {
+		t = NotExist
+	}
+	return typeStr[int(t)]
+}
+
 // ValueType returns the type of this JSON value.
 func (v *V) ValueType() ValueType {
 	return v.valueType

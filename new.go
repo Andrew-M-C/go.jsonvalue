@@ -2,6 +2,7 @@ package jsonvalue
 
 import (
 	"encoding/json"
+	"reflect"
 	"strconv"
 )
 
@@ -104,7 +105,7 @@ func NewNull() *V {
 //
 // NewObject 返回一个初始化好的 object 类型的 jsonvalue 值。可以使用可选的 map[string]interface{} 类型参数初始化该 object 的下一级键值对，
 // 不过目前只支持基础类型，也就是: int/uint, int/int8/int16/int32/int64, uint/uint8/uint16/uint32/uint64, string, bool, nil。
-func NewObject(keyValues ...map[string]interface{}) *V {
+func NewObject(keyValues ...M) *V {
 	v := newObject()
 	v.parsed = true
 
@@ -118,39 +119,34 @@ func NewObject(keyValues ...map[string]interface{}) *V {
 	return v
 }
 
-func (v *V) parseNewObjectKV(kv map[string]interface{}) {
+// M is the alias of map[string]interface{}
+type M map[string]interface{}
+
+func (v *V) parseNewObjectKV(kv M) {
 	for k, val := range kv {
-		switch val := val.(type) {
-		case nil:
+		rv := reflect.ValueOf(val)
+		switch rv.Kind() {
+		case reflect.Invalid:
 			v.SetNull().At(k)
-		case string:
-			v.SetString(val).At(k)
-		case bool:
-			v.SetBool(val).At(k)
-		case int:
-			v.SetInt(val).At(k)
-		case uint:
-			v.SetUint(val).At(k)
-		case int8:
-			v.SetInt32(int32(val)).At(k)
-		case uint8:
-			v.SetUint32(uint32(val)).At(k)
-		case int16:
-			v.SetInt32(int32(val)).At(k)
-		case uint16:
-			v.SetUint32(uint32(val)).At(k)
-		case int32:
-			v.SetInt32(val).At(k)
-		case uint32:
-			v.SetUint32(val).At(k)
-		case int64:
-			v.SetInt64(val).At(k)
-		case uint64:
-			v.SetUint64(val).At(k)
-		case float32:
-			v.SetFloat32(val, -1).At(k)
-		case float64:
-			v.SetFloat64(val, -1).At(k)
+		case reflect.Bool:
+			v.SetBool(rv.Bool()).At(k)
+		case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
+			v.SetInt64(rv.Int()).At(k)
+		case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
+			v.SetUint64(rv.Uint()).At(k)
+		case reflect.Float32, reflect.Float64:
+			v.SetFloat64(rv.Float(), -1).At(k)
+		case reflect.String:
+			v.SetString(rv.String()).At(k)
+		// case reflect.Map:
+		// 	if rv.Type().Key().Kind() == reflect.String && rv.Type().Elem().Kind() == reflect.Interface {
+		// 		if m, ok := rv.Interface().(M); ok {
+		// 			sub := NewObject(m)
+		// 			if sub != nil {
+		// 				v.Set(sub).At(k)
+		// 			}
+		// 		}
+		// 	}
 		default:
 			// continue
 		}

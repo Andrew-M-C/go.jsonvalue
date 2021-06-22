@@ -81,6 +81,20 @@ func testMiscCharacters(t *testing.T) {
 		So(raw, ShouldEqual, expected)
 	})
 
+	Convey("unmarshal and marshal /", func() {
+		s := `"/"`
+		v, err := UnmarshalString(s)
+		So(err, ShouldBeNil)
+		So(v.IsString(), ShouldBeTrue)
+		So(v.String(), ShouldEqual, "/")
+
+		s = `"\/"`
+		v, err = UnmarshalString(s)
+		So(err, ShouldBeNil)
+		So(v.IsString(), ShouldBeTrue)
+		So(v.String(), ShouldEqual, "/")
+	})
+
 	Convey("unmashal UTF-8 string", func() {
 		s := "你好, Café😊"
 		raw := `"` + s + `"`
