@@ -26,10 +26,20 @@ func (v *V) Get(firstParam interface{}, otherParams ...interface{}) (*V, error) 
 	return v.get(false, firstParam, otherParams...)
 }
 
+// MustGet is same as Get(), but does not return error. If error occurs, a JSON value with
+// NotExist type will be returned.
+//
+// MustGet 与 Get() 函数相同，不过不返回错误。如果发生错误了，那么会返回一个 ValueType() 返回值为 NotExist
+// 的 JSON 值对象。
+func (v *V) MustGet(firstParam interface{}, otherParams ...interface{}) *V {
+	res, _ := v.get(false, firstParam, otherParams...)
+	return res
+}
+
 func (v *V) get(caseless bool, firstParam interface{}, otherParams ...interface{}) (*V, error) {
 	child, err := v.getInCurrValue(caseless, firstParam)
 	if err != nil {
-		return nil, err
+		return &V{}, err
 	}
 
 	if len(otherParams) == 0 {
@@ -55,7 +65,7 @@ func (v *V) getFromObjectChildren(caseless bool, key string) (child *V, exist bo
 	}
 
 	if !caseless {
-		return nil, false
+		return &V{}, false
 	}
 
 	v.initCaselessStorage()
@@ -63,7 +73,7 @@ func (v *V) getFromObjectChildren(caseless bool, key string) (child *V, exist bo
 	lowerCaseKey := strings.ToLower(key)
 	keys, exist := v.children.lowerCaseKeys[lowerCaseKey]
 	if !exist {
-		return nil, false
+		return &V{}, false
 	}
 
 	for actualKey := range keys {
@@ -73,7 +83,7 @@ func (v *V) getFromObjectChildren(caseless bool, key string) (child *V, exist bo
 		}
 	}
 
-	return nil, false
+	return &V{}, false
 }
 
 func (v *V) getInCurrValue(caseless bool, param interface{}) (*V, error) {
@@ -81,11 +91,11 @@ func (v *V) getInCurrValue(caseless bool, param interface{}) (*V, error) {
 		// integer expected
 		pos, err := intfToInt(param)
 		if err != nil {
-			return nil, err
+			return &V{}, err
 		}
-		child, _ := v.childAtIndex(pos)
-		if nil == child {
-			return nil, ErrOutOfRange
+		child, ok := v.childAtIndex(pos)
+		if !ok {
+			return &V{}, ErrOutOfRange
 		}
 		return child, nil
 
@@ -93,16 +103,16 @@ func (v *V) getInCurrValue(caseless bool, param interface{}) (*V, error) {
 		// string expected
 		key, err := intfToString(param)
 		if err != nil {
-			return nil, err
+			return &V{}, err
 		}
 		child, exist := v.getFromObjectChildren(caseless, key)
 		if !exist {
-			return nil, ErrNotFound
+			return &V{}, ErrNotFound
 		}
 		return child, nil
 
 	} else {
-		return nil, fmt.Errorf("%v type does not supports Get()", v.valueType)
+		return &V{}, fmt.Errorf("%v type does not supports Get()", v.valueType)
 	}
 }
 
@@ -116,12 +126,16 @@ func (v *V) GetBytes(firstParam interface{}, otherParams ...interface{}) ([]byte
 func (v *V) getBytes(caseless bool, firstParam interface{}, otherParams ...interface{}) ([]byte, error) {
 	ret, err := v.get(caseless, firstParam, otherParams...)
 	if err != nil {
-		return nil, err
+		return []byte{}, err
 	}
 	if ret.valueType != String {
-		return nil, ErrTypeNotMatch
+		return []byte{}, ErrTypeNotMatch
 	}
-	return b64.DecodeString(ret.valueStr)
+	b, err := b64.DecodeString(ret.valueStr)
+	if err != nil {
+		return []byte{}, err
+	}
+	return b, nil
 }
 
 // GetString is equalivent to v, err := Get(...); v.String(). If error occurs, returns "".
@@ -332,10 +346,10 @@ func (v *V) GetObject(firstParam interface{}, otherParams ...interface{}) (*V, e
 func (v *V) getObject(caseless bool, firstParam interface{}, otherParams ...interface{}) (*V, error) {
 	ret, err := v.get(caseless, firstParam, otherParams...)
 	if err != nil {
-		return nil, err
+		return &V{}, err
 	}
 	if ret.valueType != Object {
-		return nil, ErrTypeNotMatch
+		return &V{}, ErrTypeNotMatch
 	}
 	return ret, nil
 }
@@ -350,10 +364,10 @@ func (v *V) GetArray(firstParam interface{}, otherParams ...interface{}) (*V, er
 func (v *V) getArray(caseless bool, firstParam interface{}, otherParams ...interface{}) (*V, error) {
 	ret, err := v.get(caseless, firstParam, otherParams...)
 	if err != nil {
-		return nil, err
+		return &V{}, err
 	}
 	if ret.valueType != Array {
-		return nil, ErrTypeNotMatch
+		return &V{}, ErrTypeNotMatch
 	}
 	return ret, nil
 }

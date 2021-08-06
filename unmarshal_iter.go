@@ -121,7 +121,7 @@ func (it *iter) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (
 
 	// this rune is smaller than 0x10000
 	if r <= 0xD7FF || r >= 0xE000 {
-		le := it.assignAsciiCodedRune(*sectEnd, r)
+		le := it.assignASCIICodedRune(*sectEnd, r)
 		*i += 6
 		*sectEnd += le
 		return nil
@@ -161,7 +161,7 @@ func (it *iter) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (
 
 	r = ((r - 0xD800) << 10) + ex + 0x10000
 
-	le := it.assignAsciiCodedRune(*sectEnd, r)
+	le := it.assignASCIICodedRune(*sectEnd, r)
 	*i += 12
 	*sectEnd += le
 	return nil
@@ -194,7 +194,7 @@ func (it *iter) memcpy(dst, src, length int) {
 	// )
 }
 
-func (it *iter) assignAsciiCodedRune(dst int, r rune) (offset int) {
+func (it *iter) assignASCIICodedRune(dst int, r rune) (offset int) {
 	// 0zzzzzzz ==>
 	// 0zzzzzzz
 	if r <= 0x7F {

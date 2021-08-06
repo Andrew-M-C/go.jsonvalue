@@ -131,24 +131,24 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 	v := ins.v
 	c := ins.c
 	if v.valueType == NotExist {
-		return nil, ErrValueUninitialized
+		return &V{}, ErrValueUninitialized
 	}
 
 	// this is the last iteration
 	paramCount := len(otherParams)
 	if paramCount == 0 {
 		if v.valueType != Array {
-			return nil, ErrNotArrayValue
+			return &V{}, ErrNotArrayValue
 		}
 
 		pos, err := intfToInt(firstParam)
 		if err != nil {
-			return nil, err
+			return &V{}, err
 		}
 
 		pos = v.posAtIndexForInsertBefore(pos)
 		if pos < 0 {
-			return nil, ErrOutOfRange
+			return &V{}, ErrOutOfRange
 		}
 		v.insertToArr(pos, c)
 		return c, nil
@@ -157,7 +157,7 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 	// this is not the last iterarion
 	child, err := v.GetArray(firstParam, otherParams[:paramCount-1]...)
 	if err != nil {
-		return nil, err
+		return &V{}, err
 	}
 
 	childIns := Insert{
@@ -184,24 +184,24 @@ func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V
 	v := ins.v
 	c := ins.c
 	if nil == v || v.valueType == NotExist {
-		return nil, ErrValueUninitialized
+		return &V{}, ErrValueUninitialized
 	}
 
 	// this is the last iteration
 	paramCount := len(otherParams)
 	if paramCount == 0 {
 		if v.valueType != Array {
-			return nil, ErrNotArrayValue
+			return &V{}, ErrNotArrayValue
 		}
 
 		pos, err := intfToInt(firstParam)
 		if err != nil {
-			return nil, err
+			return &V{}, err
 		}
 
 		pos, appendToEnd := v.posAtIndexForInsertAfter(pos)
 		if pos < 0 {
-			return nil, ErrOutOfRange
+			return &V{}, ErrOutOfRange
 		}
 		if appendToEnd {
 			v.children.array = append(v.children.array, c)
@@ -214,7 +214,7 @@ func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V
 	// this is not the last iterarion
 	child, err := v.GetArray(firstParam, otherParams[:paramCount-1]...)
 	if err != nil {
-		return nil, err
+		return &V{}, err
 	}
 
 	childIns := Insert{

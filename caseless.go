@@ -6,6 +6,7 @@ package jsonvalue
 // 不区分大小写。
 type Caseless interface {
 	Get(firstParam interface{}, otherParams ...interface{}) (*V, error)
+	MustGet(firstParam interface{}, otherParams ...interface{}) *V
 	GetBytes(firstParam interface{}, otherParams ...interface{}) ([]byte, error)
 	GetString(firstParam interface{}, otherParams ...interface{}) (string, error)
 	GetInt(firstParam interface{}, otherParams ...interface{}) (int, error)
@@ -49,6 +50,11 @@ type caselessOper struct {
 
 func (g *caselessOper) Get(firstParam interface{}, otherParams ...interface{}) (*V, error) {
 	return g.v.get(true, firstParam, otherParams...)
+}
+
+func (g *caselessOper) MustGet(firstParam interface{}, otherParams ...interface{}) *V {
+	res, _ := g.v.get(true, firstParam, otherParams...)
+	return res
 }
 
 func (g *caselessOper) GetBytes(firstParam interface{}, otherParams ...interface{}) ([]byte, error) {

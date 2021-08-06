@@ -58,6 +58,16 @@
 	// [{"someObject":["Hello, JSON"]}]
 ```
 
+反过来，我们如果要直接读取上面的 json 数据，也可以这么用 jsonvalue：
+
+```go
+	const raw = `{"someObject": {"someObject": {"someObject": {"message": "Hello, JSON!"}}}}`
+	s := jsonvalue.MustUnmarshalString(s).GetString("someObject", "someObject", "someObject", "message")
+	fmt.Println(v.MustMarshalString())
+	// Output:
+	// Hello, JSON!
+```
+
 对于更多信息，请参见 [godoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue).
 
 ## 相比 map[string]interface{} 的优势

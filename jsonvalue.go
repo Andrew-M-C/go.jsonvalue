@@ -49,13 +49,21 @@ var (
 type ValueType int
 
 const (
+	// NotExist type tells that this JSON value is not exist or legal
 	NotExist ValueType = iota
+	// String JSON string type
 	String
+	// Number JSON number type
 	Number
+	// Object JSON object type
 	Object
+	// Array JSON array type
 	Array
+	// Boolean JSON boolean type
 	Boolean
+	// Null JSON null type
 	Null
+	// Unknown unknown JSON type
 	Unknown
 )
 
@@ -73,6 +81,8 @@ var typeStr = [Unknown + 1]string{
 // String show the type name of JSON
 func (t ValueType) String() string {
 	if t > Unknown {
+		t = NotExist
+	} else if t < 0 {
 		t = NotExist
 	}
 	return typeStr[int(t)]
@@ -176,6 +186,16 @@ func (v *V) valueBytes() []byte {
 	return v.srcByte[v.srcOffset:v.srcEnd]
 }
 
+// MustUnmarshalString just like UnmarshalString(). If error occurres, a JSON value with "NotExist" type would be returned, which
+// could do nothing and return nothing in later use. It is useful to shorten codes.
+//
+// MustUnmarshalString 的逻辑与 UnmarshalString() 相同，不过如果错误的话，会返回一个类型未 "NotExist" 的 JSON 值，这个值在后续的操作中将无法返回
+// 有效的数据，或者是执行任何有效的操作。但起码不会导致程序 panic，便于使用短代码实现一些默认逻辑。
+func MustUnmarshalString(s string) *V {
+	v, _ := UnmarshalString(s)
+	return v
+}
+
 // UnmarshalString is equavilent to Unmarshal([]byte(b)), but much more efficient.
 //
 // UnmarshalString 等效于 Unmarshal([]byte(b))，但效率更高。
@@ -197,7 +217,7 @@ func unmarshalWithIter(it *iter, offset int) (v *V, err error) {
 	end := len(it.b)
 	offset, reachEnd := it.skipBlanks(offset)
 	if reachEnd {
-		return nil, fmt.Errorf("%w, cannot find any symbol characters found", ErrRawBytesUnrecignized)
+		return &V{}, fmt.Errorf("%w, cannot find any symbol characters found", ErrRawBytesUnrecignized)
 	}
 
 	chr := it.b[offset]
@@ -246,15 +266,15 @@ func unmarshalWithIter(it *iter, offset int) (v *V, err error) {
 		}
 
 	default:
-		return nil, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+		return &V{}, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
 	}
 
 	if err != nil {
-		return
+		return &V{}, err
 	}
 
 	if offset, reachEnd = it.skipBlanks(offset, end); !reachEnd {
-		return nil, fmt.Errorf("%w, unnecessary trailing data remains at Position %d", ErrRawBytesUnrecignized, offset)
+		return &V{}, fmt.Errorf("%w, unnecessary trailing data remains at Position %d", ErrRawBytesUnrecignized, offset)
 	}
 
 	return v, nil
@@ -530,6 +550,16 @@ func unmarshalObjectWithIterUnknownEnd(it *iter, offset, right int) (_ *V, end i
 	return nil, -1, fmt.Errorf("%w, cannot find '}'", ErrNotObjectValue)
 }
 
+// MustUnmarshal just like Unmarshal(). If error occurres, a JSON value with "NotExist" type would be returned, which
+// could do nothing and return nothing in later use. It is useful to shorten codes.
+//
+// MustUnmarshal 的逻辑与 Unmarshal() 相同，不过如果错误的话，会返回一个类型未 "NotExist" 的 JSON 值，这个值在后续的操作中将无法返回
+// 有效的数据，或者是执行任何有效的操作。但起码不会导致程序 panic，便于使用短代码实现一些默认逻辑。
+func MustUnmarshal(b []byte) *V {
+	v, _ := Unmarshal(b)
+	return v
+}
+
 // Unmarshal parse raw bytes(encoded in UTF-8 or pure AscII) and returns a *V instance.
 //
 // Unmarshal 解析原始的字节类型数据（以 UTF-8 或纯 AscII 编码），并返回一个 *V 对象。
@@ -545,6 +575,16 @@ func Unmarshal(b []byte) (ret *V, err error) {
 	return unmarshalWithIter(it, 0)
 }
 
+// MustUnmarshalNoCopy just like UnmarshalNoCopy(). If error occurres, a JSON value with "NotExist" type would be returned, which
+// could do nothing and return nothing in later use. It is useful to shorten codes.
+//
+// MustUnmarshalNoCopy 的逻辑与 UnmarshalNoCopy() 相同，不过如果错误的话，会返回一个类型未 "NotExist" 的 JSON 值，这个值在后续的操作中将无法返回
+// 有效的数据，或者是执行任何有效的操作。但起码不会导致程序 panic，便于使用短代码实现一些默认逻辑。
+func MustUnmarshalNoCopy(b []byte) *V {
+	v, _ := UnmarshalNoCopy(b)
+	return v
+}
+
 // UnmarshalNoCopy is same as Unmarshal, but it does not copy another []byte instance for saving CPU time.
 // But pay attention that the input []byte may be used as buffer by jsonvalue and mey be modified.
 //
@@ -553,7 +593,7 @@ func Unmarshal(b []byte) (ret *V, err error) {
 func UnmarshalNoCopy(b []byte) (ret *V, err error) {
 	le := len(b)
 	if le == 0 {
-		return nil, ErrNilParameter
+		return &V{}, ErrNilParameter
 	}
 	return unmarshalWithIter(&iter{b: b}, 0)
 }

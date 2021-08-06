@@ -18,7 +18,7 @@ func (v *V) Export(dst interface{}) error {
 func Import(src interface{}) (*V, error) {
 	b, err := json.Marshal(src)
 	if err != nil {
-		return nil, err
+		return &V{}, err
 	}
 	return Unmarshal(b)
 }

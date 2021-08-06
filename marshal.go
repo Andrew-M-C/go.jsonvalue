@@ -49,24 +49,24 @@ var defaultOption = Opt{
 	OmitNull: false,
 }
 
-// MustMarshal is the same as Marshal, but panics if error pccurred. But there will be no errors when using jsonvalue correctly.
+// MustMarshal is the same as Marshal. If error pccurred, an empty byte slice will be returned.
 //
-// MustMarshal 与 Marshal 相同，但是当错误发生时，会 panic。但是标准使用的时候不会有错误。
+// MustMarshal 与 Marshal 相同，但是当错误发生时，什么都不做，直接返回空数据
 func (v *V) MustMarshal(opt ...Opt) []byte {
 	ret, err := v.Marshal(opt...)
 	if err != nil {
-		panic(err)
+		return []byte{}
 	}
 	return ret
 }
 
-// MustMarshalString is the same as MarshalString, but panics if error pccurred. But there will be no errors when using jsonvalue correctly.
+// MustMarshalString is the same as MarshalString, If error pccurred, an empty byte slice will be returned.
 //
-// MustMarshalString 与 MarshalString 相同，但是当错误发生时，会 panic。但是标准使用的时候不会有错误。
+// MustMarshalString 与 MarshalString 相同，但是当错误发生时，什么都不做，直接返回空数据
 func (v *V) MustMarshalString(opt ...Opt) string {
 	ret, err := v.MarshalString(opt...)
 	if err != nil {
-		panic(err)
+		return ""
 	}
 	return ret
 }
@@ -76,7 +76,7 @@ func (v *V) MustMarshalString(opt ...Opt) string {
 // Marshal 返回序列化后的 JSON 字节序列。
 func (v *V) Marshal(opt ...Opt) (b []byte, err error) {
 	if NotExist == v.valueType {
-		return nil, ErrValueUninitialized
+		return []byte{}, ErrValueUninitialized
 	}
 
 	buf := bytes.Buffer{}

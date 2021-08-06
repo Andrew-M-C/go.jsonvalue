@@ -16,8 +16,18 @@ func testRangeArray(t *testing.T) {
 	Convey("invalid array range", func() {
 		v := NewString("")
 		v.RangeArray(func(i int, c *V) bool {
+			t.Errorf("should NOT iter here!!!")
 			return true
 		}) // just do not panic
+
+		for range MustUnmarshalString("invalid").IterArray() {
+			t.Errorf("should NOT iter here!!!")
+		}
+
+		invalidV, _ := MustUnmarshalString("invalid").Get("another invalid", 1, 2, 3, "opps")
+		for range invalidV.IterArray() {
+			t.Errorf("should NOT iter here!!!")
+		}
 	})
 
 	Convey("nil array callback", func() {
@@ -83,8 +93,18 @@ func testRangeObject(t *testing.T) {
 	Convey("invalid object range", func() {
 		v := NewString("")
 		v.RangeObjects(func(k string, c *V) bool {
+			t.Errorf("should NOT iter here!!!")
 			return true
 		}) // just do not panic
+
+		for range MustUnmarshalString("invalid").IterObjects() {
+			t.Errorf("should NOT iter here!!!")
+		}
+
+		invalidV, _ := MustUnmarshalString("invalid").Get("another invalid", 1, 2, 3, "opps")
+		for range invalidV.IterObjects() {
+			t.Errorf("should NOT iter here!!!")
+		}
 	})
 
 	Convey("nil object callback", func() {
@@ -93,8 +113,7 @@ func testRangeObject(t *testing.T) {
 		v.RangeObjects(nil) // just do not panic
 
 		for iter := range v.IterObjects() {
-			_ = iter.V.String()
-			// just do not panic
+			_ = iter.V.String() // just do not panic
 		}
 	})
 

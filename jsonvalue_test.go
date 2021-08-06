@@ -28,11 +28,12 @@ func printBytes(t *testing.T, b []byte, prefix ...string) {
 func TestJsonvalue(t *testing.T) {
 	test(t, "jsonvalue basic function", testBasicFunction)
 	test(t, "misc strange characters", testMiscCharacters)
+	test(t, "MustUnmarshalXxxx errors", testMustUnmarshalErrors)
 	test(t, "misc simple unmarshal errors", testMiscUnmarshalErrors)
 	test(t, "UTF-16 string", testUTF16)
 	test(t, "percentage symbol", testPercentage)
 	test(t, "misc number typed parameter", testMiscInt)
-	test(t, "test an internal struct", test_unmarshalWithIter)
+	test(t, "test an internal struct", testUnmarshalWithIter)
 }
 
 func testBasicFunction(t *testing.T) {
@@ -132,46 +133,80 @@ func testMiscCharacters(t *testing.T) {
 	})
 
 	Convey("unmarshal illegal escaped ASCII string", func() {
-		_, err := UnmarshalString(`"\`)
-		So(err, ShouldBeError)
+		So(ValueType(56636).String(), ShouldEqual, NotExist.String())
+		So(ValueType(-1).String(), ShouldEqual, NotExist.String())
 
-		_, err = UnmarshalString(`"\u00`)
+		v, err := UnmarshalString(`"\`)
 		So(err, ShouldBeError)
+		So(v.ValueType(), ShouldEqual, NotExist)
 
-		_, err = UnmarshalString(`"\u0GAB`)
+		v, err = UnmarshalString(`"\u00`)
 		So(err, ShouldBeError)
+		So(v.ValueType(), ShouldEqual, NotExist)
 
-		_, err = UnmarshalString(`"\U1234`)
+		v, err = UnmarshalString(`"\u0GAB`)
 		So(err, ShouldBeError)
+		So(v.ValueType(), ShouldEqual, NotExist)
 
-		v, err := UnmarshalString(`"\uD83d\uDE0A你好Café😊"`) // should be "\uD83D\uDE0A" ==> 😊
+		v, err = UnmarshalString(`"\U1234`)
+		So(err, ShouldBeError)
+		So(v.ValueType(), ShouldEqual, NotExist)
+
+		v, err = UnmarshalString(`"\uD83d\uDE0A你好Café😊"`) // should be "\uD83D\uDE0A" ==> 😊
 		So(err, ShouldBeNil)
 		So(v.String(), ShouldEqual, "😊你好Café😊")
+		So(v.ValueType(), ShouldNotEqual, NotExist)
 
-		_, err = UnmarshalString(`"\uD83D\uDE0A, smile!"`) // should be "\uD83D\uDE0A" ==> 😊
+		v, err = UnmarshalString(`"\uD83D\uDE0A, smile!"`) // should be "\uD83D\uDE0A" ==> 😊
 		So(err, ShouldBeNil)
+		So(v.ValueType(), ShouldNotEqual, NotExist)
 
-		_, err = UnmarshalString(`"\uD83D\uDE0"`) // should be "\uD83D\uDE0A" ==> 😊
+		v, err = UnmarshalString(`"\uD83D\uDE0"`) // should be "\uD83D\uDE0A" ==> 😊
 		So(err, ShouldBeError)
+		So(v.ValueType(), ShouldEqual, NotExist)
 
-		_, err = UnmarshalString(`"\uD83D\UDE0A"`) // should be "\uD83D\uDE0A" ==> 😊
+		v, err = UnmarshalString(`"\uD83D\UDE0A"`) // should be "\uD83D\uDE0A" ==> 😊
 		So(err, ShouldBeError)
+		So(v.ValueType(), ShouldEqual, NotExist)
 
-		_, err = UnmarshalString(`"\uD83D/uDE0A"`) // should be "\uD83D\uDE0A" ==> 😊
+		v, err = UnmarshalString(`"\uD83D/uDE0A"`) // should be "\uD83D\uDE0A" ==> 😊
 		So(err, ShouldBeError)
+		So(v.ValueType(), ShouldEqual, NotExist)
 
-		_, err = UnmarshalString(`"\uD83D\uHE0A"`) // should be "\uD83D\uDE0A" ==> 😊
+		v, err = UnmarshalString(`"\uD83D\uHE0A"`) // should be "\uD83D\uDE0A" ==> 😊
 		So(err, ShouldBeError)
+		So(v.ValueType(), ShouldEqual, NotExist)
 
-		_, err = UnmarshalString(`"\uH83D\uDE0A"`) // should be "\uD83D\uDE0A" ==> 😊
+		v, err = UnmarshalString(`"\uH83D\uDE0A"`) // should be "\uD83D\uDE0A" ==> 😊
 		So(err, ShouldBeError)
+		So(v.ValueType(), ShouldEqual, NotExist)
 
-		_, err = UnmarshalString(`"\uD83D\u000A"`) // should be "\uD83D\uDE0A" ==> 😊
+		v, err = UnmarshalString(`"\uD83D\u000A"`) // should be "\uD83D\uDE0A" ==> 😊
 		So(err, ShouldBeError)
+		So(v.ValueType(), ShouldEqual, NotExist)
 
-		_, err = UnmarshalString(`"\uD83D\uFFFF"`) // should be "\uD83D\uDE0A" ==> 😊
+		v, err = UnmarshalString(`"\uD83D\uFFFF"`) // should be "\uD83D\uDE0A" ==> 😊
 		So(err, ShouldBeError)
+		So(v.ValueType(), ShouldEqual, NotExist)
 	})
+}
+
+func testMustUnmarshalErrors(t *testing.T) {
+	const illegal = `:\`
+
+	v := MustUnmarshalString(illegal)
+	So(v, ShouldNotBeNil)
+	So(v.ValueType(), ShouldEqual, NotExist)
+
+	v = nil
+	v = MustUnmarshal([]byte(illegal))
+	So(v, ShouldNotBeNil)
+	So(v.ValueType(), ShouldEqual, NotExist)
+
+	v = nil
+	v = MustUnmarshalNoCopy([]byte(illegal))
+	So(v, ShouldNotBeNil)
+	So(v.ValueType(), ShouldEqual, NotExist)
 }
 
 func testMiscUnmarshalErrors(t *testing.T) {
@@ -265,7 +300,7 @@ func testMiscInt(t *testing.T) {
 	So(err, ShouldBeNil)
 }
 
-func test_unmarshalWithIter(t *testing.T) {
+func testUnmarshalWithIter(t *testing.T) {
 	Convey("string", func() {
 		raw := []byte("hello, 世界")
 		rawWithQuote := []byte(fmt.Sprintf("\"%s\"", raw))

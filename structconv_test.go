@@ -11,6 +11,7 @@ func TestStructConv(t *testing.T) {
 	test(t, "export to int", testExportInt)
 	test(t, "export to float", testExportFloat)
 	test(t, "export to bool", testExportBool)
+	test(t, "misc import", testImport)
 }
 
 func testExportString(t *testing.T) {
@@ -28,6 +29,10 @@ func testExportString(t *testing.T) {
 
 	bol := true
 	err = v.Export(&bol)
+	So(err, ShouldBeError)
+
+	v = &V{}
+	err = v.Export(nil)
 	So(err, ShouldBeError)
 }
 
@@ -115,4 +120,64 @@ func testExportBool(t *testing.T) {
 	str := ""
 	err = v.Export(&str)
 	So(err, ShouldBeError)
+}
+
+func testImport(t *testing.T) {
+	Convey("integers", func() {
+
+		params := []interface{}{
+			int(1),
+			uint(2),
+			int8(3),
+			uint8(4),
+			int16(5),
+			uint16(6),
+			int32(7),
+			uint32(8),
+			int64(9),
+			uint64(10),
+		}
+
+		for i, p := range params {
+			v, err := Import(p)
+			So(err, ShouldBeNil)
+			So(v.ValueType(), ShouldEqual, Number)
+			So(v.Int(), ShouldEqual, i+1)
+		}
+	})
+
+	Convey("string", func() {
+		s := "hello"
+		v, err := Import(s)
+		So(err, ShouldBeNil)
+		So(v.ValueType(), ShouldEqual, String)
+		So(v.String(), ShouldEqual, s)
+	})
+
+	Convey("object", func() {
+		type thing struct {
+			String string `json:"str"`
+		}
+		th := thing{
+			String: "world",
+		}
+
+		v, err := Import(&th)
+		So(err, ShouldBeNil)
+		So(v.ValueType(), ShouldEqual, Object)
+
+		s, err := v.GetString("str")
+		So(err, ShouldBeNil)
+		So(s, ShouldEqual, th.String)
+	})
+
+	Convey("error", func() {
+		f := func() bool {
+			return false
+		}
+		v, err := Import(f)
+		So(err, ShouldBeError)
+		So(v, ShouldNotBeNil)
+		So(v.ValueType(), ShouldEqual, NotExist)
+	})
 }

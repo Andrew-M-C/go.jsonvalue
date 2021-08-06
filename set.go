@@ -149,23 +149,23 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 	v := s.v
 	c := s.c
 	if nil == v || v.valueType == NotExist {
-		return nil, ErrValueUninitialized
+		return &V{}, ErrValueUninitialized
 	}
 	if nil == c || c.valueType == NotExist {
-		return nil, ErrValueUninitialized
+		return &V{}, ErrValueUninitialized
 	}
 
 	// this is the last iteration
 	if len(otherParams) == 0 {
 		switch v.valueType {
 		default:
-			return nil, fmt.Errorf("%v type does not supports Set()", v.valueType)
+			return &V{}, fmt.Errorf("%v type does not supports Set()", v.valueType)
 
 		case Object:
 			var k string
 			k, err := intfToString(firstParam)
 			if err != nil {
-				return nil, err
+				return &V{}, err
 			}
 			v.setToObjectChildren(k, c)
 			return c, nil
@@ -173,11 +173,11 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 		case Array:
 			pos, err := intfToInt(firstParam)
 			if err != nil {
-				return nil, err
+				return &V{}, err
 			}
 			err = v.setAtIndex(c, pos)
 			if err != nil {
-				return nil, err
+				return &V{}, err
 			}
 			return c, nil
 		}
@@ -187,7 +187,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 	if v.valueType == Object {
 		k, err := intfToString(firstParam)
 		if err != nil {
-			return nil, err
+			return &V{}, err
 		}
 		child, exist := v.getFromObjectChildren(false, k)
 		if !exist {
@@ -195,11 +195,11 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 				child = NewObject()
 			} else if i, err := intfToInt(otherParams[0]); err == nil {
 				if i != 0 {
-					return nil, ErrOutOfRange
+					return &V{}, ErrOutOfRange
 				}
 				child = NewArray()
 			} else {
-				return nil, fmt.Errorf("unexpected type %v for Set()", reflect.TypeOf(otherParams[0]))
+				return &V{}, fmt.Errorf("unexpected type %v for Set()", reflect.TypeOf(otherParams[0]))
 			}
 		}
 		next := Set{
@@ -208,7 +208,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 		}
 		_, err = next.At(otherParams[0], otherParams[1:]...)
 		if err != nil {
-			return nil, err
+			return &V{}, err
 		}
 		if !exist {
 			v.setToObjectChildren(k, child)
@@ -220,21 +220,21 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 	if v.valueType == Array {
 		pos, err := intfToInt(firstParam)
 		if err != nil {
-			return nil, err
+			return &V{}, err
 		}
-		child, _ := v.childAtIndex(pos)
+		child, ok := v.childAtIndex(pos)
 		isNewChild := false
-		if nil == child {
+		if !ok {
 			isNewChild = true
 			if _, err := intfToString(otherParams[0]); err == nil {
 				child = NewObject()
 			} else if i, err := intfToInt(otherParams[0]); err == nil {
 				if i != 0 {
-					return nil, ErrOutOfRange
+					return &V{}, ErrOutOfRange
 				}
 				child = NewArray()
 			} else {
-				return nil, fmt.Errorf("unexpected type %v for Set()", reflect.TypeOf(otherParams[0]))
+				return &V{}, fmt.Errorf("unexpected type %v for Set()", reflect.TypeOf(otherParams[0]))
 			}
 		}
 		next := Set{
@@ -243,7 +243,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 		}
 		_, err = next.At(otherParams[0], otherParams[1:]...)
 		if err != nil {
-			return nil, err
+			return &V{}, err
 		}
 		// OK to add this object
 		if isNewChild {
@@ -253,7 +253,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 	}
 
 	// illegal type
-	return nil, fmt.Errorf("%v type does not supports Set()", v.valueType)
+	return &V{}, fmt.Errorf("%v type does not supports Set()", v.valueType)
 }
 
 func (v *V) posAtIndexForSet(pos int) (newPos int, appendToEnd bool) {
@@ -338,7 +338,7 @@ func (v *V) posAtIndexForRead(pos int) int {
 func (v *V) childAtIndex(pos int) (*V, bool) { // if nil returned, means that just push
 	pos = v.posAtIndexForRead(pos)
 	if pos < 0 {
-		return nil, false
+		return &V{}, false
 	}
 	return v.children.array[pos], true
 }

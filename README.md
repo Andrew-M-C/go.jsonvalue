@@ -62,4 +62,14 @@ Similarly, it is quite easy to create sub-arrays like:
 
 [Playground](https://play.golang.org/p/iTxnJDNdny3)
 
+In opposite, to parse and read the first JSON above, you can use jsonvalue like this:
+
+```go
+	const raw = `{"someObject": {"someObject": {"someObject": {"message": "Hello, JSON!"}}}}`
+	s := jsonvalue.MustUnmarshalString(s).GetString("someObject", "someObject", "someObject", "message")
+	fmt.Println(v.MustMarshalString())
+	// Output:
+	// Hello, JSON!
+```
+
 However, it is quite complex and annoying in automatically creating array. I strongly suggest using `SetArray()` to create the array first, then use `Append()` or `Insert()` to set array elements. Please refer go [godoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue).

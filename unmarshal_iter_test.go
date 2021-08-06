@@ -8,13 +8,13 @@ import (
 )
 
 func TestIter(t *testing.T) {
-	test(t, "iter.memcpy", testIter_memcpy)
-	test(t, "iter.assignWideRune", testIter_assignWideRune)
-	test(t, "iter.character searching", testIter_chrSearching)
-	test(t, "iter.testIter_parseNumber", testIter_parseNumber)
+	test(t, "iter.memcpy", testIterMemcpy)
+	test(t, "iter.assignWideRune", testIterAssignWideRune)
+	test(t, "iter.character searching", testIterChrSearching)
+	test(t, "iter.testIter_parseNumber", testIterParseNumber)
 }
 
-func testIter_memcpy(t *testing.T) {
+func testIterMemcpy(t *testing.T) {
 	b := []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA}
 
 	it := iter{b: b}
@@ -28,7 +28,7 @@ func testIter_memcpy(t *testing.T) {
 	So(b[0], ShouldEqual, origByte)
 }
 
-func testIter_assignWideRune(t *testing.T) {
+func testIterAssignWideRune(t *testing.T) {
 	b := make([]byte, 32)
 
 	it := iter{
@@ -39,7 +39,7 @@ func testIter_assignWideRune(t *testing.T) {
 
 	append := func(r rune) {
 		t.Logf("rune hex: %04x", r)
-		len += it.assignAsciiCodedRune(len, r)
+		len += it.assignASCIICodedRune(len, r)
 		t.Logf("bytes: %v", hex.EncodeToString(b))
 	}
 
@@ -55,7 +55,7 @@ func testIter_assignWideRune(t *testing.T) {
 	So(string(b), ShouldEqual, "您好世界!")
 }
 
-func testIter_chrSearching(t *testing.T) {
+func testIterChrSearching(t *testing.T) {
 	raw := []byte("   {  [ {  } ]  }  ")
 	t.Logf("")
 	t.Logf(string(raw))
@@ -88,7 +88,7 @@ func testIter_chrSearching(t *testing.T) {
 	So(raw[offset], ShouldEqual, '}')
 }
 
-func testIter_parseNumber(t *testing.T) {
+func testIterParseNumber(t *testing.T) {
 	b := []byte("-12345.6789  ")
 
 	Convey("reachEnd == true", func() {
