@@ -1,7 +1,6 @@
 package jsonvalue
 
 import (
-	"encoding/json"
 	"reflect"
 	"strconv"
 )
@@ -163,55 +162,57 @@ func NewArray() *V {
 }
 
 // NewFloat64 returns an initialied num jsonvalue object by float64 type. The precision prec controls the number of
-// digits. Use -1 in prec for automatically precision.
+// digits. Use -1 in prec for automatically precision, or just not specifying it.
 //
 // NewFloat64 根据指定的 flout64 类型返回一个初始化好的数字类型的 jsonvalue 值。
-// 参数 precision prec 指定需要编码的小数点后的位数。使用 -1 则交给编译器自行判断。
-func NewFloat64(f float64, prec int) *V {
+// 参数 precision prec 指定需要编码的小数点后的位数。使用 -1 或不传该参数则交给编译器自行判断。
+func NewFloat64(f float64, prec ...int) *V {
 	v := new(Number)
 	// v.num = &num{}
 	v.num.negative = f < 0
 	v.num.f64 = f
 	v.num.i64 = int64(f)
 	v.num.u64 = uint64(f)
-	if prec >= 0 {
-		s := strconv.FormatFloat(f, 'f', prec, 64)
+
+	pr := -1
+	if len(prec) > 0 {
+		pr = prec[0]
+	}
+
+	if isValidFloat(f) {
+		s := strconv.FormatFloat(f, 'f', pr, 64)
 		v.srcByte = []byte(s)
 		v.srcOffset, v.srcEnd = 0, len(s)
-	} else {
-		// s := fmt.Sprintf("%f", f)
-		// b := []byte(s)
-		b, _ := json.Marshal(&f)
-		v.srcByte = b
-		v.srcOffset, v.srcEnd = 0, len(b)
 	}
+
 	v.parsed = true
 	return v
 }
 
 // NewFloat32 returns an initialied num jsonvalue object by float32 type. The precision prec controls the number of
-// digits. Use -1 in prec for automatically precision.
+// digits. Use -1 in prec for automatically precision, or just not specifying it.
 //
 // NewFloat32 根据指定的 float32 类型返回一个初始化好的数字类型的 jsonvalue 值。
-// 参数 precision prec 指定需要编码的小数点后的位数。使用 -1 则交给编译器自行判断。
-func NewFloat32(f float32, prec int) *V {
+// 参数 precision prec 指定需要编码的小数点后的位数。使用 -1 或不传该参数则交给编译器自行判断。
+func NewFloat32(f float32, prec ...int) *V {
 	v := new(Number)
 	// v.num = &num{}
 	v.num.negative = f < 0
 	v.num.f64 = float64(f)
 	v.num.i64 = int64(f)
 	v.num.u64 = uint64(f)
-	if prec >= 0 {
-		s := strconv.FormatFloat(v.num.f64, 'f', prec, 64)
+
+	pr := -1
+	if len(prec) > 0 {
+		pr = prec[0]
+	}
+
+	if isValidFloat(v.num.f64) {
+		s := strconv.FormatFloat(v.num.f64, 'f', pr, 32)
 		v.srcByte = []byte(s)
 		v.srcOffset, v.srcEnd = 0, len(s)
-	} else {
-		// s := fmt.Sprintf("%f", f)
-		// b := []byte(s)
-		b, _ := json.Marshal(&f)
-		v.srcByte = b
-		v.srcOffset, v.srcEnd = 0, len(b)
 	}
+
 	v.parsed = true
 	return v
 }

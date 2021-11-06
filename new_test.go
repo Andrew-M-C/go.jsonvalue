@@ -15,7 +15,7 @@ func TestNewXxx(t *testing.T) {
 	test(t, "empty object/array", testEmptyObjectArray)
 	test(t, "misc value", testMiscValue)
 	test(t, "MustMarshal error", testMustMarshalError)
-	test(t, "MustMarshal error", testValueError)
+	test(t, "ValueError error", testValueError)
 }
 
 func testNewString(t *testing.T) {

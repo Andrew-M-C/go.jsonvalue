@@ -68,4 +68,14 @@ const (
 	//
 	// ErrIllegalString 表示字符串不合法
 	ErrIllegalString = Error("illegal string")
+
+	// ErrUnsupportedFloat shows that float value is not supported, like +Inf, -Inf and NaN.
+	//
+	// ErrUnsupportedFloat 表示 float64 是一个不支持的数值，如 +Inf, -Inf 和 NaN
+	ErrUnsupportedFloat = Error("unsupported float value")
+
+	// ErrUnsupportedFloatInOpt shows that float value in option is not supported, like +Inf, -Inf and NaN.
+	//
+	// ErrUnsupportedFloat 表示配置中的 float64 是一个不支持的数值，如 +Inf, -Inf 和 NaN
+	ErrUnsupportedFloatInOpt = Error("unsupported float value in option")
 )
