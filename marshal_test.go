@@ -37,6 +37,10 @@ func testMarshalFloat64NaN(t *testing.T) {
 		})
 		So(err, ShouldBeNil)
 		So(string(b), ShouldEqual, "1.5")
+
+		b, err = v.Marshal(OptFloatNaNToFloat(1.5))
+		So(err, ShouldBeNil)
+		So(string(b), ShouldEqual, "1.5")
 	})
 
 	Convey("to string", func() {
@@ -47,10 +51,18 @@ func testMarshalFloat64NaN(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(s, ShouldEqual, `"NaN"`)
 
+		s, err = v.MarshalString(OptFloatNaNToStringNaN())
+		So(err, ShouldBeNil)
+		So(s, ShouldEqual, `"NaN"`)
+
 		s, err = v.MarshalString(Opt{
 			FloatNaNHandleType: FloatNaNConvertToString,
 			FloatNaNToString:   "not a number",
 		})
+		So(err, ShouldBeNil)
+		So(s, ShouldEqual, `"not a number"`)
+
+		s, err = v.MarshalString(OptFloatNaNToString("not a number"))
 		So(err, ShouldBeNil)
 		So(s, ShouldEqual, `"not a number"`)
 	})
@@ -60,6 +72,10 @@ func testMarshalFloat64NaN(t *testing.T) {
 		s, err := v.MarshalString(Opt{
 			FloatNaNHandleType: FloatNaNNull,
 		})
+		So(err, ShouldBeNil)
+		So(s, ShouldEqual, "null")
+
+		s, err = v.MarshalString(OptFloatNaNToNull())
 		So(err, ShouldBeNil)
 		So(s, ShouldEqual, "null")
 	})
@@ -122,6 +138,11 @@ func testMarshalFloat64Inf(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(s, ShouldContainSubstring, `"+inf":2.25`)
 		So(s, ShouldContainSubstring, `"-inf":-2.25`)
+
+		s, err = v.MarshalString(OptFloatInfToFloat(2.25))
+		So(err, ShouldBeNil)
+		So(s, ShouldContainSubstring, `"+inf":2.25`)
+		So(s, ShouldContainSubstring, `"-inf":-2.25`)
 	})
 
 	Convey("to string", func() {
@@ -132,10 +153,18 @@ func testMarshalFloat64Inf(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(s, ShouldEqual, `"+Inf"`)
 
+		s, err = v.MarshalString(OptFloatInfToStringInf())
+		So(err, ShouldBeNil)
+		So(s, ShouldEqual, `"+Inf"`)
+
 		v = NewFloat64(math.Inf(-1))
 		s, err = v.MarshalString(Opt{
 			FloatInfHandleType: FloatInfConvertToString,
 		})
+		So(err, ShouldBeNil)
+		So(s, ShouldEqual, `"-Inf"`)
+
+		s, err = v.MarshalString(OptFloatInfToStringInf())
 		So(err, ShouldBeNil)
 		So(s, ShouldEqual, `"-Inf"`)
 
@@ -152,10 +181,20 @@ func testMarshalFloat64Inf(t *testing.T) {
 		So(s, ShouldContainSubstring, `"+inf":"infinity"`)
 		So(s, ShouldContainSubstring, `"-inf":"-infinity"`)
 
+		s, err = v.MarshalString(OptFloatInfToString("infinity", ""))
+		So(err, ShouldBeNil)
+		So(s, ShouldContainSubstring, `"+inf":"infinity"`)
+		So(s, ShouldContainSubstring, `"-inf":"-infinity"`)
+
 		s, err = v.MarshalString(Opt{
 			FloatInfHandleType:       FloatInfConvertToString,
 			FloatInfPositiveToString: "+mugen",
 		})
+		So(err, ShouldBeNil)
+		So(s, ShouldContainSubstring, `"+inf":"+mugen"`)
+		So(s, ShouldContainSubstring, `"-inf":"-mugen"`)
+
+		s, err = v.MarshalString(OptFloatInfToString("+mugen", ""))
 		So(err, ShouldBeNil)
 		So(s, ShouldContainSubstring, `"+inf":"+mugen"`)
 		So(s, ShouldContainSubstring, `"-inf":"-mugen"`)
@@ -165,6 +204,11 @@ func testMarshalFloat64Inf(t *testing.T) {
 			FloatInfPositiveToString: "heaven",
 			FloatInfNegativeToString: "hell",
 		})
+		So(err, ShouldBeNil)
+		So(s, ShouldContainSubstring, `"+inf":"heaven"`)
+		So(s, ShouldContainSubstring, `"-inf":"hell"`)
+
+		s, err = v.MarshalString(OptFloatInfToString("heaven", "hell"))
 		So(err, ShouldBeNil)
 		So(s, ShouldContainSubstring, `"+inf":"heaven"`)
 		So(s, ShouldContainSubstring, `"-inf":"hell"`)
@@ -178,6 +222,11 @@ func testMarshalFloat64Inf(t *testing.T) {
 		s, err := v.MarshalString(Opt{
 			FloatInfHandleType: FloatInfNull,
 		})
+		So(err, ShouldBeNil)
+		So(s, ShouldContainSubstring, `"+inf":null`)
+		So(s, ShouldContainSubstring, `"-inf":null`)
+
+		s, err = v.MarshalString(OptFloatInfToNull())
 		So(err, ShouldBeNil)
 		So(s, ShouldContainSubstring, `"+inf":null`)
 		So(s, ShouldContainSubstring, `"-inf":null`)

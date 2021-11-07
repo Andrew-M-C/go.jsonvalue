@@ -629,14 +629,16 @@ func testValueError(t *testing.T) {
 		raw, _ = v.MarshalString()
 		So(raw, ShouldEqual, `{"null":null}`)
 
-		raw, _ = v.MarshalString(Opt{
-			OmitNull: true,
-		})
+		raw, _ = v.MarshalString(Opt{OmitNull: true})
 		So(raw, ShouldEqual, `{}`)
 
-		rawB, _ := v.Marshal(Opt{
-			OmitNull: true,
-		})
+		raw, _ = v.MarshalString(OptOmitNull(true))
+		So(raw, ShouldEqual, `{}`)
+
+		rawB, _ := v.Marshal(Opt{OmitNull: true})
+		So(string(rawB), ShouldEqual, `{}`)
+
+		rawB, _ = v.Marshal(OptOmitNull(true))
 		So(string(rawB), ShouldEqual, `{}`)
 	})
 

@@ -46,7 +46,7 @@ func ExampleOpt() {
 
 	s := v.MustMarshalString()
 	fmt.Println(s)
-	s = v.MustMarshalString(jsonvalue.Opt{OmitNull: true})
+	s = v.MustMarshalString(jsonvalue.OptOmitNull(true))
 	fmt.Println(s)
 	// Output:
 	// {"null":null}
