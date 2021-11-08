@@ -168,10 +168,8 @@ func (v *V) getInt(caseless bool, firstParam interface{}, otherParams ...interfa
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != Number {
-		return 0, ErrTypeNotMatch
-	}
-	return ret.Int(), nil
+	ret, err = getNumberAndErrorFromValue(ret)
+	return ret.Int(), err
 }
 
 // GetUint is equalivent to v, err := Get(...); v.Uint(). If error occurs, returns 0.
@@ -186,10 +184,8 @@ func (v *V) getUint(caseless bool, firstParam interface{}, otherParams ...interf
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != Number {
-		return 0, ErrTypeNotMatch
-	}
-	return ret.Uint(), nil
+	ret, err = getNumberAndErrorFromValue(ret)
+	return ret.Uint(), err
 }
 
 // GetInt64 is equalivent to v, err := Get(...); v.Int64(). If error occurs, returns 0.
@@ -204,10 +200,8 @@ func (v *V) getInt64(caseless bool, firstParam interface{}, otherParams ...inter
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != Number {
-		return 0, ErrTypeNotMatch
-	}
-	return ret.Int64(), nil
+	ret, err = getNumberAndErrorFromValue(ret)
+	return ret.Int64(), err
 }
 
 // GetUint64 is equalivent to v, err := Get(...); v.Unt64(). If error occurs, returns 0.
@@ -222,10 +216,8 @@ func (v *V) getUint64(caseless bool, firstParam interface{}, otherParams ...inte
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != Number {
-		return 0, ErrTypeNotMatch
-	}
-	return ret.Uint64(), nil
+	ret, err = getNumberAndErrorFromValue(ret)
+	return ret.Uint64(), err
 }
 
 // GetInt32 is equalivent to v, err := Get(...); v.Int32(). If error occurs, returns 0.
@@ -240,10 +232,8 @@ func (v *V) getInt32(caseless bool, firstParam interface{}, otherParams ...inter
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != Number {
-		return 0, ErrTypeNotMatch
-	}
-	return ret.Int32(), nil
+	ret, err = getNumberAndErrorFromValue(ret)
+	return ret.Int32(), err
 }
 
 // GetUint32 is equalivent to v, err := Get(...); v.Uint32(). If error occurs, returns 0.
@@ -258,10 +248,8 @@ func (v *V) getUint32(caseless bool, firstParam interface{}, otherParams ...inte
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != Number {
-		return 0, ErrTypeNotMatch
-	}
-	return ret.Uint32(), nil
+	ret, err = getNumberAndErrorFromValue(ret)
+	return ret.Uint32(), err
 }
 
 // GetFloat64 is equalivent to v, err := Get(...); v.Float64(). If error occurs, returns 0.0.
@@ -276,10 +264,8 @@ func (v *V) getFloat64(caseless bool, firstParam interface{}, otherParams ...int
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != Number {
-		return 0, ErrTypeNotMatch
-	}
-	return ret.Float64(), nil
+	ret, err = getNumberAndErrorFromValue(ret)
+	return ret.Float64(), err
 }
 
 // GetFloat32 is equalivent to v, err := Get(...); v.Float32(). If error occurs, returns 0.0.
@@ -294,10 +280,8 @@ func (v *V) getFloat32(caseless bool, firstParam interface{}, otherParams ...int
 	if err != nil {
 		return 0, err
 	}
-	if ret.valueType != Number {
-		return 0, ErrTypeNotMatch
-	}
-	return ret.Float32(), nil
+	ret, err = getNumberAndErrorFromValue(ret)
+	return ret.Float32(), err
 }
 
 // GetBool is equalivent to v, err := Get(...); v.Bool(). If error occurs, returns false.

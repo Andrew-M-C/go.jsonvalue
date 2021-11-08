@@ -1,6 +1,7 @@
 package jsonvalue
 
 import (
+	"errors"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -11,6 +12,7 @@ func TestGet(t *testing.T) {
 	test(t, "misc get errors", testMiscError)
 	test(t, "caseless get", testCaselessGet)
 	test(t, "NotExist get", testNotExistGet)
+	test(t, "get number from a string", testGetNumFromString)
 }
 
 func testGet(t *testing.T) {
@@ -445,5 +447,105 @@ func testNotExistGet(t *testing.T) {
 		So(v, ShouldNotBeNil)
 		So(err, ShouldBeError)
 		So(v.ValueType(), ShouldEqual, NotExist)
+	})
+}
+
+func testGetNumFromString(t *testing.T) {
+	Convey("invalid number", func() {
+		v := MustUnmarshalString(`{"num":"abcde"}`)
+
+		i, err := v.GetInt("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrParseNumberFromString), ShouldBeTrue)
+		So(i, ShouldBeZeroValue)
+
+		f, err := v.GetFloat64("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrParseNumberFromString), ShouldBeTrue)
+		So(f, ShouldBeZeroValue)
+	})
+
+	Convey("int", func() {
+		v := MustUnmarshalString(`{"num":"-123.25"}`)
+
+		i, err := v.GetInt("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(i, ShouldEqual, -123)
+
+		f, err := v.GetFloat64("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(f, ShouldEqual, -123.25)
+	})
+
+	Convey("uint", func() {
+		v := MustUnmarshalString(`{"num":"123.25"}`)
+
+		i, err := v.GetInt("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(i, ShouldEqual, 123)
+
+		f, err := v.GetFloat64("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(f, ShouldEqual, 123.25)
+	})
+
+	Convey("int32", func() {
+		v := MustUnmarshalString(`{"num":"-123.25"}`)
+
+		i, err := v.GetInt32("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(i, ShouldEqual, -123)
+
+		f, err := v.GetFloat32("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(f, ShouldEqual, -123.25)
+	})
+
+	Convey("uint32", func() {
+		v := MustUnmarshalString(`{"num":"123.25"}`)
+
+		i, err := v.GetInt("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(i, ShouldEqual, 123)
+
+		f, err := v.GetFloat32("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(f, ShouldEqual, 123.25)
+	})
+
+	Convey("int64", func() {
+		v := MustUnmarshalString(`{"num":"-123.25"}`)
+
+		i, err := v.GetInt64("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(i, ShouldEqual, -123)
+
+		f, err := v.GetFloat64("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(f, ShouldEqual, -123.25)
+	})
+
+	Convey("uint64", func() {
+		v := MustUnmarshalString(`{"num":"123.25"}`)
+
+		i, err := v.GetInt64("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(i, ShouldEqual, 123)
+
+		f, err := v.GetFloat64("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(f, ShouldEqual, 123.25)
 	})
 }

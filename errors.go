@@ -54,6 +54,11 @@ const (
 	// ErrTypeNotMatch 表示指定的对象不匹配
 	ErrTypeNotMatch = Error("not match given type")
 
+	// ErrParseNumberFromString shows the error when parsing number from string
+	//
+	// ErrParseNumberFromString 表示从 string 类型的 value 中读取数字失败
+	ErrParseNumberFromString = Error("failed to parse number from string")
+
 	// ErrNotArrayValue shows that operation target value is not an array
 	//
 	// ErrNotArrayValue 表示当前不是一个数组类型 JSON

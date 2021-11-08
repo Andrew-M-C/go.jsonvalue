@@ -772,6 +772,30 @@ func getNumberFromNotNumberValue(v *V) *V {
 	return ret
 }
 
+func getNumberAndErrorFromValue(v *V) (*V, error) {
+	switch v.valueType {
+	default:
+		return NewInt(0), ErrTypeNotMatch
+
+	case Number:
+		return v, nil
+
+	case String:
+		ret, _ := newFromNumber([]byte(v.valueStr))
+		err := ret.parseNumber()
+		if err != nil {
+			return NewInt(0), fmt.Errorf("%w: %v", ErrParseNumberFromString, err)
+		}
+		return ret, ErrTypeNotMatch
+
+	case Boolean:
+		if v.Bool() {
+			return NewInt(1), ErrTypeNotMatch
+		}
+		return NewInt(0), ErrTypeNotMatch
+	}
+}
+
 // Bool returns represented bool value. If value is not boolean, returns false.
 //
 // Bool 返回布尔类型值。如果当前值不是布尔类型，则返回 false。
