@@ -142,6 +142,14 @@ func (o Opt) mergeTo(tgt *Opt) {
 	*tgt = o
 }
 
+// CombineOptions is a function for internal use, which combine severial Options together. Please
+// do not use this.
+//
+// CombineOptions 用于 jsonvalue 内部使用，合并入参的多个额外选项。
+func CombineOptions(opts []Option) *Opt {
+	return combineOptions(opts)
+}
+
 func combineOptions(opts []Option) *Opt {
 	opt := &Opt{}
 	for _, o := range opts {

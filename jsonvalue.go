@@ -789,10 +789,26 @@ func getNumberAndErrorFromValue(v *V) (*V, error) {
 		return ret, ErrTypeNotMatch
 
 	case Boolean:
-		if v.Bool() {
-			return NewInt(1), ErrTypeNotMatch
-		}
 		return NewInt(0), ErrTypeNotMatch
+	}
+}
+
+func getBoolAndErrorFromValue(v *V) (*V, error) {
+	switch v.valueType {
+	default:
+		return NewBool(false), ErrTypeNotMatch
+
+	case Number:
+		return NewBool(v.Float64() != 0), ErrTypeNotMatch
+
+	case String:
+		if v.valueStr == "true" {
+			return NewBool(true), ErrTypeNotMatch
+		}
+		return NewBool(false), ErrTypeNotMatch
+
+	case Boolean:
+		return v, nil
 	}
 }
 

@@ -30,6 +30,13 @@ func (v *V) AppendString(s string) *Append {
 	return v.Append(NewString(s))
 }
 
+// AppendBytes is equivalent to Append(jsonvalue.NewBytes(b))
+//
+// AppendBytes 等价于 Append(jsonvalue.NewBytes(b))
+func (v *V) AppendBytes(b []byte) *Append {
+	return v.Append(NewBytes(b))
+}
+
 // AppendBool is equivalent to Append(jsonvalue.NewBool(b))
 //
 // AppendBool 等价于 Append(jsonvalue.NewBool(b))

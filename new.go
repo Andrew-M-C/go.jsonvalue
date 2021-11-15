@@ -1,6 +1,7 @@
 package jsonvalue
 
 import (
+	"encoding/base64"
 	"reflect"
 	"strconv"
 )
@@ -13,6 +14,14 @@ func NewString(s string) *V {
 	v.valueStr = s
 	v.parsed = true
 	return v
+}
+
+// NewBytes returns an initialized string with Base64 string by given bytes
+//
+// NewBytes 用给定的字节串，返回一个初始化好的字符串类型的 jsonvalue 值，内容是字节串 Base64 之后的字符串。
+func NewBytes(b []byte) *V {
+	s := base64.StdEncoding.EncodeToString(b)
+	return NewString(s)
 }
 
 // NewInt64 returns an initialied num jsonvalue object by int64 type

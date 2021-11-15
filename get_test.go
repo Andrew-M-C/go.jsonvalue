@@ -548,4 +548,36 @@ func testGetNumFromString(t *testing.T) {
 		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
 		So(f, ShouldEqual, 123.25)
 	})
+
+	Convey("bool", func() {
+		v := MustUnmarshalString(`{"str":"true"}`)
+		b, err := v.GetBool("str")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(b, ShouldBeTrue)
+
+		v = MustUnmarshalString(`{"str":""}`)
+		b, err = v.GetBool("str")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(b, ShouldBeFalse)
+
+		v = MustUnmarshalString(`{"num":"0"}`)
+		b, err = v.GetBool("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(b, ShouldBeFalse)
+
+		v = MustUnmarshalString(`{"num":1}`)
+		b, err = v.GetBool("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(b, ShouldBeTrue)
+
+		v = MustUnmarshalString(`{"num":0}`)
+		b, err = v.GetBool("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(b, ShouldBeFalse)
+	})
 }

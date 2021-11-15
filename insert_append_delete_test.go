@@ -17,7 +17,7 @@ func TestInsertAppendDelete(t *testing.T) {
 }
 
 func testInsertAppend(t *testing.T) {
-	expected := `[123456,"hello","world",1234.123456789,true,["12345"],null,null]`
+	expected := `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ=="]`
 	a := NewArray()
 
 	a.AppendString("world").InTheBeginning()
@@ -54,6 +54,10 @@ func testInsertAppend(t *testing.T) {
 
 	a.Append(nil).InTheEnd()
 	So(a.MustMarshalString(), ShouldEqual, `[123456,"hello","world",1234.123456789,true,["12345"],null,null]`)
+	t.Log(a.MustMarshalString())
+
+	a.AppendBytes([]byte("1")).InTheEnd()
+	So(a.MustMarshalString(), ShouldEqual, `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ=="]`)
 	t.Log(a.MustMarshalString())
 
 	s, _ := a.MarshalString()

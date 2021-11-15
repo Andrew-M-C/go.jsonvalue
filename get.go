@@ -296,10 +296,8 @@ func (v *V) getBool(caseless bool, firstParam interface{}, otherParams ...interf
 	if err != nil {
 		return false, err
 	}
-	if ret.valueType != Boolean {
-		return false, ErrTypeNotMatch
-	}
-	return ret.Bool(), nil
+	ret, err = getBoolAndErrorFromValue(ret)
+	return ret.Bool(), err
 }
 
 // GetNull is equalivent to v, err := Get(...); raise err if error occurs or v.IsNull() == false.
