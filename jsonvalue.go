@@ -598,50 +598,23 @@ func UnmarshalNoCopy(b []byte) (ret *V, err error) {
 	return unmarshalWithIter(&iter{b: b}, 0)
 }
 
-var dot = []byte{'.'}
-
+// parseNumber parse a number string. Reference:
+//
+// - [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html)
 func (v *V) parseNumber() (err error) {
-	b := v.srcByte[v.srcOffset:v.srcEnd]
-
-	// if v.num == nil {
-	// 	v.num = &num{}
-	// }
-
-	if bytes.Contains(b, dot) {
-		v.num.floated = true
-		v.num.f64, err = parseFloat(b)
-		if err != nil {
-			return
-		}
-
-		v.parsed = true
-		v.num.negative = (v.num.f64 < 0)
-		v.num.i64 = int64(v.num.f64)
-		v.num.u64 = uint64(v.num.f64)
-
-	} else if b[0] == '-' {
-		v.num.negative = true
-		v.num.i64, err = parseInt(b)
-		if err != nil {
-			return
-		}
-
-		v.parsed = true
-		v.num.u64 = uint64(v.num.i64)
-		v.num.f64 = float64(v.num.i64)
-
-	} else {
-		v.num.negative = false
-		v.num.u64, err = parseUint(b)
-		if err != nil {
-			return
-		}
-
-		v.parsed = true
-		v.num.i64 = int64(v.num.u64)
-		v.num.f64 = float64(v.num.u64)
+	it := iter{
+		b: v.srcByte[v.srcOffset:v.srcEnd],
 	}
 
+	parsed, end, reachEnd, err := it.parseNumber(0)
+	if err != nil {
+		return err
+	}
+	if !reachEnd {
+		return fmt.Errorf("invalid character: 0x%02x", v.srcByte[end])
+	}
+
+	*v = *parsed
 	return nil
 }
 
@@ -764,7 +737,7 @@ func getNumberFromNotNumberValue(v *V) *V {
 	if !v.IsString() {
 		return NewInt(0)
 	}
-	ret, _ := newFromNumber([]byte(v.valueStr))
+	ret, _ := newFromNumber(bytes.TrimSpace([]byte(v.valueStr)))
 	err := ret.parseNumber()
 	if err != nil {
 		return NewInt64(0)
@@ -781,15 +754,12 @@ func getNumberAndErrorFromValue(v *V) (*V, error) {
 		return v, nil
 
 	case String:
-		ret, _ := newFromNumber([]byte(v.valueStr))
+		ret, _ := newFromNumber(bytes.TrimSpace([]byte(v.valueStr)))
 		err := ret.parseNumber()
 		if err != nil {
 			return NewInt(0), fmt.Errorf("%w: %v", ErrParseNumberFromString, err)
 		}
 		return ret, ErrTypeNotMatch
-
-	case Boolean:
-		return NewInt(0), ErrTypeNotMatch
 	}
 }
 

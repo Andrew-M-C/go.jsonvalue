@@ -177,6 +177,22 @@ func testMiscValue(t *testing.T) {
 		So(v.GreaterThanInt64Max(), ShouldBeFalse)
 	})
 
+	Convey("parse exponential form float", func() {
+		raw := `-1.25e3`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsFloat(), ShouldBeTrue)
+		So(v.IsNegative(), ShouldBeTrue)
+		So(v.Float32(), ShouldEqual, -1250)
+
+		raw = `1.25E-1`
+		v, err = UnmarshalString(raw)
+		So(err, ShouldBeNil)
+		So(v.IsFloat(), ShouldBeTrue)
+		So(v.IsNegative(), ShouldBeFalse)
+		So(v.Float32(), ShouldEqual, 0.125)
+	})
+
 	Convey("parse negative integer", func() {
 		raw := `-12345`
 		v, err := UnmarshalString(raw)

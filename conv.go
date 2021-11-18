@@ -4,20 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
-	"strconv"
 )
-
-func parseUint(b []byte) (uint64, error) {
-	return strconv.ParseUint(unsafeBtoS(b), 10, 64)
-}
-
-func parseInt(b []byte) (int64, error) {
-	return strconv.ParseInt(unsafeBtoS(b), 10, 64)
-}
-
-func parseFloat(b []byte) (float64, error) {
-	return strconv.ParseFloat(unsafeBtoS(b), 64)
-}
 
 func formatBool(b bool) string {
 	if b {

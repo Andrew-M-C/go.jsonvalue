@@ -3,7 +3,6 @@ package jsonvalue
 import (
 	"errors"
 	"fmt"
-	"strconv"
 )
 
 // iter is used to iterate []byte text
@@ -293,98 +292,6 @@ func (it *iter) parseNull(offset int) (end int, err error) {
 	}
 
 	return -1, fmt.Errorf("%w, not 'null' at Position %d", ErrNotValidBoolValue, offset)
-}
-
-func (it *iter) parseNumber(
-	offset int,
-) (v *V, end int, reachEnd bool, err error) {
-	v = new(Number)
-	v.parsed = true
-	sectStart := offset
-	v.num.negative = false
-	if it.b[offset] == '-' {
-		v.num.negative = true
-		offset++
-	}
-
-	numStart := offset
-	fin := len(it.b)
-	v.num.floated = false
-	decimalFound := false
-	integerFound := false
-
-	for ; offset < fin; offset++ {
-		chr := it.b[offset]
-		if chr-'0' <= 9 {
-			if v.num.floated {
-				decimalFound = true
-			} else {
-				integerFound = true
-			}
-			// continue
-		} else if chr == '.' {
-			if v.num.floated {
-				err = fmt.Errorf("%w, duplicated colon", ErrNotValidNumberValue)
-				return
-			}
-			v.num.floated = true
-		} else {
-			end = offset
-			break
-		}
-	}
-
-	if offset >= fin {
-		reachEnd = true
-		end = fin
-	}
-
-	if !v.num.floated {
-		b := it.b[numStart:end]
-		v.num.u64, err = strconv.ParseUint(unsafeBtoS(b), 10, 64)
-		if err != nil {
-			err = fmt.Errorf("%w, %v", ErrNotValidNumberValue, err)
-			return
-		}
-
-		if v.num.negative {
-			if v.num.u64 > 0x7FFFFFFFFFFFFFFF {
-				err = fmt.Errorf("%w, negative integer should not smaller than -0x80000000", ErrNotValidNumberValue)
-				return
-			}
-			v.num.i64 = -int64(v.num.u64)
-			v.num.u64 = uint64(v.num.i64)
-		} else {
-			v.num.i64 = int64(v.num.u64)
-		}
-
-		v.num.f64 = float64(v.num.i64)
-		return v, end, reachEnd, nil
-
-	}
-
-	if decimalFound && integerFound {
-		// this is a legal float number
-	} else {
-		err = fmt.Errorf("%w, incomplete float number", ErrNotValidNumberValue)
-		return
-	}
-
-	v.num.f64, err = strconv.ParseFloat(unsafeBtoS(it.b[sectStart:end]), 64)
-	if err != nil {
-		err = fmt.Errorf("%w, %v", ErrNotValidNumberValue, err)
-		return
-	}
-
-	if v.num.negative {
-		v.num.i64 = int64(v.num.f64)
-		v.num.u64 = uint64(v.num.f64)
-		return v, end, reachEnd, nil
-	}
-
-	v.num.u64 = uint64(v.num.f64)
-	v.num.i64 = int64(v.num.u64)
-	return v, end, reachEnd, nil
 }
 
 // skipBlanks skip blank characters until end or reaching a non-blank characher

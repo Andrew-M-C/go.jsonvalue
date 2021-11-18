@@ -180,7 +180,8 @@ func testGet(t *testing.T) {
 func testMiscError(t *testing.T) {
 	var err error
 	raw := `{"array":[0,1,2,3],"string":"hello, world","number":1234.12345}`
-	v, _ := UnmarshalString(raw)
+	v, err := UnmarshalString(raw)
+	So(err, ShouldBeNil)
 
 	// param error
 	_, err = v.GetInt("array", true)
@@ -452,7 +453,7 @@ func testNotExistGet(t *testing.T) {
 
 func testGetNumFromString(t *testing.T) {
 	Convey("invalid number", func() {
-		v := MustUnmarshalString(`{"num":"abcde"}`)
+		v := MustUnmarshalString(`{"num":"abcde","bool":true}`)
 
 		i, err := v.GetInt("num")
 		So(err, ShouldBeError)
@@ -463,10 +464,15 @@ func testGetNumFromString(t *testing.T) {
 		So(err, ShouldBeError)
 		So(errors.Is(err, ErrParseNumberFromString), ShouldBeTrue)
 		So(f, ShouldBeZeroValue)
+
+		f, err = v.GetFloat64("bool")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(f, ShouldBeZeroValue)
 	})
 
 	Convey("int", func() {
-		v := MustUnmarshalString(`{"num":"-123.25"}`)
+		v := MustUnmarshalString(`{"num":"-123.25","negative":-9223372036854775808}`)
 
 		i, err := v.GetInt("num")
 		So(err, ShouldBeError)
@@ -477,6 +483,10 @@ func testGetNumFromString(t *testing.T) {
 		So(err, ShouldBeError)
 		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
 		So(f, ShouldEqual, -123.25)
+
+		i, err = v.GetInt(`negative`)
+		So(err, ShouldBeNil)
+		So(i, ShouldEqual, -9223372036854775808)
 	})
 
 	Convey("uint", func() {
@@ -575,6 +585,12 @@ func testGetNumFromString(t *testing.T) {
 		So(b, ShouldBeTrue)
 
 		v = MustUnmarshalString(`{"num":0}`)
+		b, err = v.GetBool("num")
+		So(err, ShouldBeError)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
+		So(b, ShouldBeFalse)
+
+		v = MustUnmarshalString(`{"num":null}`)
 		b, err = v.GetBool("num")
 		So(err, ShouldBeError)
 		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
