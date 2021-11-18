@@ -8,6 +8,7 @@ import (
 
 func TestIterFloat(t *testing.T) {
 	test(t, "other parseResult conditions", testUnmarshalFloatErrors)
+	test(t, "https://github.com/Andrew-M-C/go.jsonvalue/issues/8", testIssue8)
 }
 
 func testUnmarshalFloatErrors(t *testing.T) {
@@ -147,4 +148,21 @@ func testUnmarshalFloatErrors(t *testing.T) {
 		_, err = UnmarshalString(`1e2e`)
 		So(err, ShouldBeError)
 	})
+}
+
+func testIssue8(t *testing.T) {
+	strJson := []byte(`{"tunnels":[{"name":"command_line","uri":"/api/tunnels/command_line","public_url":"https://11111.ngrok.io","proto":"https","config":{"addr":"http://localhost:11111","inspect":true},"metrics":{"conns":{"count":1,"gauge":0,"rate1":5.456067032277228e-19,"rate5":0.0000016821504265361616,"rate15":0.00008846097772300972,"p50":8287268034,"p90":8287268034,"p95":8287268034,"p99":8287268034},"http":{"count":5,"rate1":2.5535363027836646e-18,"rate5":0.000008299538128664852,"rate15":0.0004403445395661658,"p50":427625,"p90":600127,"p95":600127,"p99":600127}}},{"name":"command_line (http)","uri":"/api/tunnels/command_line%20%28http%29","public_url":"http://11111.ngrok.io","proto":"http","config":{"addr":"http://localhost:11111","inspect":true},"metrics":{"conns":{"count":0,"gauge":0,"rate1":0,"rate5":0,"rate15":0,"p50":0,"p90":0,"p95":0,"p99":0},"http":{"count":0,"rate1":0,"rate5":0,"rate15":0,"p50":0,"p90":0,"p95":0,"p99":0}}}],"uri":"/api/tunnels"}`)
+	j, err := Unmarshal(strJson)
+	So(err, ShouldBeNil)
+
+	bb, _ := j.GetString("tunnels", 0, "proto")
+	So(bb, ShouldEqual, "https")
+
+	cc, _ := j.GetString("tunnels", 0, "public_url")
+	So(cc, ShouldEqual, "https://11111.ngrok.io")
+
+	v, err := j.Get("tunnels", 0, "metrics", "conns", "rate1")
+	So(err, ShouldBeNil)
+	So(v.IsFloat(), ShouldBeTrue)
+	So(v.String(), ShouldEqual, "5.456067032277228e-19")
 }
