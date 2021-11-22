@@ -8,7 +8,8 @@
 [![Latest](https://img.shields.io/badge/latest-v1.1.1-blue.svg)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.1.1)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-[English](./README.md)
+- [English](./README.md)
+- [文档和详细用法](./docs/zh-cn/README.md)
 
 **Jsonvalue** 是一个用于处理 JSON 序列化/反序列化的 Go 语言包。当处理普通的 `struct` 不适合处理的 JSON 场景时，以前我们会使用 `map[string]interface{}` 来处理。但是这个方法其实有不少问题和困难。参见[这篇文章](https://cloud.tencent.com/developer/article/1676060)。这个包就是为了解决这个问题而开发的。
 

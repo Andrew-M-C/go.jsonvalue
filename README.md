@@ -8,7 +8,7 @@
 [![Latest](https://img.shields.io/badge/latest-v1.1.1-blue.svg)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.1.1)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-[中文版](./README_cn.md)
+[中文版](./README_cn.md)，[中文版详细文档](./docs/zh-cn/README.md)
 
 **Jsonvalue** is a Golang package for JSON parsing. It is used in situations those Go structures cannot achieve, or `map[string]interface{}` could not do properbally.
 
