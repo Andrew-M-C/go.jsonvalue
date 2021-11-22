@@ -18,7 +18,7 @@ func testMarshalFloat64NaN(t *testing.T) {
 		_, err := v.Marshal()
 		So(err, ShouldBeError)
 
-		v = NewFloat32(float32(math.NaN()), -1)
+		v = NewFloat32(float32(math.NaN()))
 		_, err = v.MarshalString()
 		So(err, ShouldBeError)
 

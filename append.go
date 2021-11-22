@@ -89,15 +89,15 @@ func (v *V) AppendUint32(u uint32) *Append {
 // AppendFloat64 is equivalent to Append(jsonvalue.NewFloat64(b))
 //
 // AppendUint32 等价于 Append(jsonvalue.NewUint32(b))
-func (v *V) AppendFloat64(f float64, prec int) *Append {
-	return v.Append(NewFloat64(f, prec))
+func (v *V) AppendFloat64(f float64) *Append {
+	return v.Append(NewFloat64(f))
 }
 
 // AppendFloat32 is equivalent to Append(jsonvalue.NewFloat32(b))
 //
 // AppendFloat32 等价于 Append(jsonvalue.NewFloat32(b))
-func (v *V) AppendFloat32(f float32, prec int) *Append {
-	return v.Append(NewFloat32(f, prec))
+func (v *V) AppendFloat32(f float32) *Append {
+	return v.Append(NewFloat32(f))
 }
 
 // AppendNull is equivalent to Append(jsonvalue.NewNull())

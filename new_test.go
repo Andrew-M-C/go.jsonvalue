@@ -75,21 +75,33 @@ func testNewFloat(t *testing.T) {
 	s := "3.1415926535"
 	f := 3.1415926535
 
-	v := NewFloat64(f, 10)
+	v := NewFloat64f(f, 'f', 10)
 	So(v.String(), ShouldEqual, s)
 	So(v.ValueType(), ShouldEqual, Number)
 
-	v = NewFloat64(f, 2)
+	v = NewFloat64f(f, '?', 11)
+	So(v.String(), ShouldEqual, s)
+	So(v.ValueType(), ShouldEqual, Number)
+
+	v = NewFloat64f(f, 'g', 3)
 	So(v.String(), ShouldEqual, "3.14")
 	So(v.ValueType(), ShouldEqual, Number)
 
 	s = "3.1415927"
-	v = NewFloat32(float32(f), -1)
+	v = NewFloat32(float32(f))
 	So(v.String(), ShouldEqual, s)
 	So(v.ValueType(), ShouldEqual, Number)
 
-	v = NewFloat32(float32(f), 5)
+	v = NewFloat32f(float32(f), 'f', 5)
 	So(v.String(), ShouldEqual, "3.14159")
+	So(v.ValueType(), ShouldEqual, Number)
+
+	v = NewFloat32f(float32(f), 'e', 5)
+	So(v.String(), ShouldEqual, "3.14159e+00")
+	So(v.ValueType(), ShouldEqual, Number)
+
+	v = NewFloat32f(float32(f), '?', 5)
+	So(v.String(), ShouldEqual, "3.1416")
 	So(v.ValueType(), ShouldEqual, Number)
 }
 

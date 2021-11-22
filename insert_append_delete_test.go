@@ -24,7 +24,7 @@ func testInsertAppend(t *testing.T) {
 	So(a.MustMarshalString(), ShouldEqual, `["world"]`)
 	t.Log(a.MustMarshalString())
 
-	a.AppendFloat64(1234.123456789, 9).InTheEnd()
+	a.AppendFloat64(1234.123456789).InTheEnd()
 	So(a.MustMarshalString(), ShouldEqual, `["world",1234.123456789]`)
 	t.Log(a.MustMarshalString())
 
@@ -140,8 +140,8 @@ func testMiscAppend(t *testing.T) {
 	a.AppendUint32(4).InTheEnd()
 	a.AppendInt64(-5).InTheEnd()
 	a.AppendUint64(6).InTheEnd()
-	a.AppendFloat32(-7.7, 1).InTheEnd()
-	a.AppendFloat64(8.8, 4).InTheEnd()
+	a.AppendFloat32(-7.7).InTheEnd()
+	a.Append(NewFloat64f(8.8, 'f', 4)).InTheEnd()
 	a.AppendObject().InTheEnd()
 	a.AppendArray().InTheEnd()
 	a.AppendNull().InTheEnd(-1)
@@ -207,12 +207,12 @@ func testMiscInsert(t *testing.T) {
 	So(err, ShouldBeNil)
 	So(c.Int(), ShouldEqual, -6)
 
-	c, err = v.InsertFloat32(7.7, 1).After(-1)
+	c, err = v.InsertFloat32(7.7).After(-1)
 	Print(v.MustMarshalString())
 	So(err, ShouldBeNil)
 	So(c.String(), ShouldEqual, "7.7")
 
-	c, err = v.InsertFloat64(-8.88888, 5).After(-1)
+	c, err = v.InsertFloat64(-8.88888).After(-1)
 	So(err, ShouldBeNil)
 	So(c.Float64(), ShouldEqual, -8.88888)
 

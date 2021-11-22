@@ -82,15 +82,15 @@ func (v *V) InsertUint32(u uint32) *Insert {
 // InsertFloat64 is equivalent to Insert(jsonvalue.NewFloat64(b))
 //
 // InsertFloat64 等效于 Insert(jsonvalue.NewFloat64(b))
-func (v *V) InsertFloat64(f float64, prec int) *Insert {
-	return v.Insert(NewFloat64(f, prec))
+func (v *V) InsertFloat64(f float64) *Insert {
+	return v.Insert(NewFloat64(f))
 }
 
 // InsertFloat32 is equivalent to Insert(jsonvalue.NewFloat32(b))
 //
 // InsertFloat32 等效于 Insert(jsonvalue.NewFloat32(b))
-func (v *V) InsertFloat32(f float32, prec int) *Insert {
-	return v.Insert(NewFloat32(f, prec))
+func (v *V) InsertFloat32(f float32) *Insert {
+	return v.Insert(NewFloat32(f))
 }
 
 // InsertNull is equivalent to Insert(jsonvalue.NewNull())

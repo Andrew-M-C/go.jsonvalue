@@ -99,15 +99,15 @@ func (v *V) SetUint32(u uint32) *Set {
 // SetFloat64 is equivalent to Set(jsonvalue.NewFloat64(b))
 //
 // SetFloat64 等效于 Set(jsonvalue.NewFloat64(b))
-func (v *V) SetFloat64(f float64, prec int) *Set {
-	return v.Set(NewFloat64(f, prec))
+func (v *V) SetFloat64(f float64) *Set {
+	return v.Set(NewFloat64(f))
 }
 
 // SetFloat32 is equivalent to Set(jsonvalue.NewFloat32(b))
 //
 // SetFloat32 等效于 Set(jsonvalue.NewFloat32(b))
-func (v *V) SetFloat32(f float32, prec int) *Set {
-	return v.Set(NewFloat32(f, prec))
+func (v *V) SetFloat32(f float32) *Set {
+	return v.Set(NewFloat32(f))
 }
 
 // SetNull is equivalent to Set(jsonvalue.NewNull())

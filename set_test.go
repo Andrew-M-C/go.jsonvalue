@@ -105,15 +105,20 @@ func testSetMisc(t *testing.T) {
 	So(err, ShouldBeNil)
 	So(b, ShouldBeFalse)
 
-	v.SetFloat64(1234.12345678, 8).At("data", "float64")
+	v.SetFloat64(1234.12345678).At("data", "float64")
 	f, err := v.Get("data", "float64")
 	So(err, ShouldBeNil)
 	So(f.String(), ShouldEqual, "1234.12345678")
 
-	v.SetFloat32(1234.123, 4).At("data", "float32")
+	v.Set(NewFloat32f(1234.123, 'f', 4)).At("data", "float32")
 	f, err = v.Get("data", "float32")
 	So(err, ShouldBeNil)
 	So(f.String(), ShouldEqual, "1234.1230")
+
+	v.SetFloat32(1234.123).At("data", "float32")
+	f, err = v.Get("data", "float32")
+	So(err, ShouldBeNil)
+	So(f.String(), ShouldEqual, "1234.123")
 
 	v.SetObject().At("data", "object")
 	v.SetString("hello").At("data", "object", "message")

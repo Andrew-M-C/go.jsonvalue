@@ -2,6 +2,8 @@ package jsonvalue
 
 import (
 	"encoding/base64"
+	"fmt"
+	"math"
 	"reflect"
 	"strconv"
 )
@@ -143,7 +145,7 @@ func (v *V) parseNewObjectKV(kv M) {
 		case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
 			v.SetUint64(rv.Uint()).At(k)
 		case reflect.Float32, reflect.Float64:
-			v.SetFloat64(rv.Float(), -1).At(k)
+			v.SetFloat64(rv.Float()).At(k)
 		case reflect.String:
 			v.SetString(rv.String()).At(k)
 		// case reflect.Map:
@@ -170,12 +172,60 @@ func NewArray() *V {
 	return v
 }
 
-// NewFloat64 returns an initialied num jsonvalue object by float64 type. The precision prec controls the number of
-// digits. Use -1 in prec for automatically precision, or just not specifying it.
+// NewFloat64 returns an initialied num jsonvalue value by float64 type. The format and precision control is the same
+// with encoding/json: https://github.com/golang/go/blob/master/src/encoding/json/encode.go#L575
 //
-// NewFloat64 根据指定的 flout64 类型返回一个初始化好的数字类型的 jsonvalue 值。
-// 参数 precision prec 指定需要编码的小数点后的位数。使用 -1 或不传该参数则交给编译器自行判断。
-func NewFloat64(f float64, prec ...int) *V {
+// NewFloat64 根据指定的 flout64 类型返回一个初始化好的数字类型的 jsonvalue 值。数字转出来的字符串格式参照 encoding/json 中的逻辑。
+func NewFloat64(f float64) *V {
+	abs := math.Abs(f)
+	format := byte('f')
+	if abs < 1e-6 || abs >= 1e21 {
+		format = byte('e')
+	}
+
+	return newFloat64f(f, format, -1, 64)
+}
+
+// NewFloat64f returns an initialied num jsonvalue value by float64 type. The format and prec parameter are used in
+// strconv.FormatFloat(). Only 'f', 'E', 'e', 'G', 'g' formats are supported, other formats will be mapped to 'g'.
+//
+// NewFloat64f 根据指定的 float64 类型返回一个初始化好的数字类型的 jsonvalue 值。其中参数 format 和 prec 分别用于
+// strconv.FormatFloat() 函数. 只有 'f'、'E'、'e'、'G'、'g' 格式是支持的，其他配置均统一映射为 'g'。
+func NewFloat64f(f float64, format byte, prec int) *V {
+	if err := validateFloat64Format(format); err != nil {
+		format = 'g'
+	}
+	return newFloat64f(f, format, prec, 64)
+}
+
+// NewFloat32 returns an initialied num jsonvalue value by float32 type. The format and precision control is the same
+// with encoding/json: https://github.com/golang/go/blob/master/src/encoding/json/encode.go#L575
+//
+// NewFloat32 根据指定的 float32 类型返回一个初始化好的数字类型的 jsonvalue 值。数字转出来的字符串格式参照 encoding/json 中的逻辑。
+func NewFloat32(f float32) *V {
+	f64 := float64(f)
+	abs := math.Abs(f64)
+	format := byte('f')
+	if abs < 1e-6 || abs >= 1e21 {
+		format = byte('e')
+	}
+
+	return newFloat64f(f64, format, -1, 32)
+}
+
+// NewFloat32f returns an initialied num jsonvalue value by float64 type. The format and prec parameter are used in
+// strconv.FormatFloat(). Only 'f', 'E', 'e', 'G', 'g' formats are supported, other formats will be mapped to 'g'.
+//
+// NewFloat32f 根据指定的 float64 类型返回一个初始化好的数字类型的 jsonvalue 值。其中参数 format 和 prec 分别用于
+// strconv.FormatFloat() 函数. 只有 'f'、'E'、'e'、'G'、'g' 格式是支持的，其他配置均统一映射为 'g'。
+func NewFloat32f(f float32, format byte, prec int) *V {
+	if err := validateFloat64Format(format); err != nil {
+		format = 'g'
+	}
+	return newFloat64f(float64(f), format, prec, 64)
+}
+
+func newFloat64f(f float64, format byte, prec, bitsize int) *V {
 	v := new(Number)
 	// v.num = &num{}
 	v.num.negative = f < 0
@@ -183,13 +233,8 @@ func NewFloat64(f float64, prec ...int) *V {
 	v.num.i64 = int64(f)
 	v.num.u64 = uint64(f)
 
-	pr := -1
-	if len(prec) > 0 {
-		pr = prec[0]
-	}
-
 	if isValidFloat(f) {
-		s := strconv.FormatFloat(f, 'f', pr, 64)
+		s := strconv.FormatFloat(f, format, prec, bitsize)
 		v.srcByte = []byte(s)
 		v.srcOffset, v.srcEnd = 0, len(s)
 	}
@@ -198,30 +243,11 @@ func NewFloat64(f float64, prec ...int) *V {
 	return v
 }
 
-// NewFloat32 returns an initialied num jsonvalue object by float32 type. The precision prec controls the number of
-// digits. Use -1 in prec for automatically precision, or just not specifying it.
-//
-// NewFloat32 根据指定的 float32 类型返回一个初始化好的数字类型的 jsonvalue 值。
-// 参数 precision prec 指定需要编码的小数点后的位数。使用 -1 或不传该参数则交给编译器自行判断。
-func NewFloat32(f float32, prec ...int) *V {
-	v := new(Number)
-	// v.num = &num{}
-	v.num.negative = f < 0
-	v.num.f64 = float64(f)
-	v.num.i64 = int64(f)
-	v.num.u64 = uint64(f)
-
-	pr := -1
-	if len(prec) > 0 {
-		pr = prec[0]
+func validateFloat64Format(f byte) error {
+	switch f {
+	case 'f', 'E', 'e', 'G', 'g':
+		return nil
+	default:
+		return fmt.Errorf("unsupported float value in option: %c", f)
 	}
-
-	if isValidFloat(v.num.f64) {
-		s := strconv.FormatFloat(v.num.f64, 'f', pr, 32)
-		v.srcByte = []byte(s)
-		v.srcOffset, v.srcEnd = 0, len(s)
-	}
-
-	v.parsed = true
-	return v
 }

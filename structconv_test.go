@@ -85,7 +85,7 @@ func testExportInt(t *testing.T) {
 func testExportFloat(t *testing.T) {
 	const F = 12345.4321
 
-	n := NewFloat64(F, 4)
+	n := NewFloat64(F)
 
 	var f32 float32
 	var f64 float64

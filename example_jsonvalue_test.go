@@ -26,18 +26,18 @@ func ExampleNewFloat64() {
 	f := 123.123456789
 	var v *jsonvalue.V
 
-	v = jsonvalue.NewFloat64(f, 9)
+	v = jsonvalue.NewFloat64(f)
 	fmt.Println(v)
 
-	v = jsonvalue.NewFloat64(f, 6)
+	v = jsonvalue.NewFloat64f(f, 'f', 6)
 	fmt.Println(v)
 
-	v = jsonvalue.NewFloat64(f, 10)
+	v = jsonvalue.NewFloat64f(f, 'e', 10)
 	fmt.Println(v)
 	// Output:
 	// 123.123456789
 	// 123.123457
-	// 123.1234567890
+	// 1.2312345679e+02
 }
 
 func ExampleOpt() {
@@ -181,7 +181,7 @@ func ExampleSet_At_another4() {
 
 	fmt.Println(v.MustMarshalString())
 
-	v.SetFloat64(123.12345, -1).At("arr", 3)
+	v.SetFloat64(123.12345).At("arr", 3)
 	fmt.Println(v.MustMarshalString())
 	// Output:
 	// {"arr":[0,1,2,3,4,5,6,7,8,9]}
