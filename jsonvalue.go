@@ -38,6 +38,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -897,7 +898,10 @@ func (v *V) String() string {
 	case Null:
 		return "null"
 	case Number:
-		return unsafeBtoS(v.valueBytes())
+		if len(v.valueBytes()) > 0 {
+			return unsafeBtoS(v.valueBytes())
+		}
+		return strconv.FormatFloat(v.num.f64, 'g', -1, 64)
 	case String:
 		return v.valueStr
 	case Boolean:

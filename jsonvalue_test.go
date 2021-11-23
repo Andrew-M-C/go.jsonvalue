@@ -3,6 +3,7 @@ package jsonvalue
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"testing"
 
 	amcbytes "github.com/Andrew-M-C/go.util/bytes"
@@ -56,6 +57,15 @@ func testBasicFunction(t *testing.T) {
 
 	b, _ = json.Marshal(&j)
 	t.Logf("marshal back: %v", string(b))
+
+	v = NewFloat64(math.NaN())
+	So(v.String(), ShouldEqual, "NaN")
+
+	v = NewFloat64(math.Inf(1))
+	So(v.String(), ShouldEqual, "+Inf")
+
+	v = NewFloat64(math.Inf(-1))
+	So(v.String(), ShouldEqual, "-Inf")
 }
 
 func testMiscCharacters(t *testing.T) {
