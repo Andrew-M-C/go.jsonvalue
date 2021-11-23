@@ -4,7 +4,11 @@
 
 ---
 
-[TOC]
+- [反序列化: Unmarshal 系列函数](./03_get.md#unmarshal-系列函数)
+- [jsonvalue.V 对象的属性](./03_get.md#jsonvaluev-对象的属性)
+- [Get 系列函数](./03_get.md#get-系列函数)
+- [迭代 Object 和 Array 的成员](./03_get.md#迭代-object-和-array-的成员)
+- [MustGet 和相关函数](./03_get.md#mustget-和相关函数)
 
 ---
 
@@ -175,6 +179,8 @@ err = not match given type
 ```
 
 可见，n 和 err 都返回了值，这算是打了巴掌又给糖吃（笑）——一方面尽责地帮开发者解析 JSON 内容，另一方面还是提示开发者数据可能存在的错误。当然如果这是预期范围内的正常错误的话，在程序中完全可以忽略。
+
+---
 
 ## 迭代 Object 和 Array 的成员
 
