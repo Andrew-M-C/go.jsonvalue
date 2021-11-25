@@ -7,7 +7,7 @@
 - [选项概述](./06_option.md#选项概述)
 - [忽略 null 值](./06_option.md#忽略-null-值)
 - [处理浮点数 NaN](./06_option.md#处理浮点数-nan)
-- [处理浮点数 +/-Inf](./06_option.md#处理浮点数-+/-Inf)
+- [处理浮点数 +/-Inf](./06_option.md#处理浮点数--inf)
 - [旧版 options](./06_option.md#旧版-options)
 
 ---

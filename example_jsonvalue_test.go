@@ -227,13 +227,13 @@ func ExampleV_RangeArray() {
 	// 6
 }
 
-func ExampleV_IterArray() {
+func ExampleV_ForRangeArr() {
 	s := `[1,2,3,4,5,6,7,8,9,10]`
 	v, _ := jsonvalue.UnmarshalString(s)
 
-	for it := range v.IterArray() {
-		fmt.Println(it.V)
-		if it.I < 5 {
+	for i, v := range v.ForRangeArr() {
+		fmt.Println(v)
+		if i < 5 {
 			// continue
 		} else {
 			break
@@ -260,12 +260,12 @@ func ExampleV_RangeObjects() {
 	// message - Hello, JSON!
 }
 
-func ExampleV_IterObjects() {
+func ExampleV_ForRangeObj() {
 	s := `{"message":"Hello, JSON!"}`
 	v, _ := jsonvalue.UnmarshalString(s)
 
-	for it := range v.IterObjects() {
-		fmt.Println(it.K, "-", it.V)
+	for k, v := range v.ForRangeObj() {
+		fmt.Println(k, "-", v)
 	}
 	// Output:
 	// message - Hello, JSON!

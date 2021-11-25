@@ -1,16 +1,12 @@
 package jsonvalue
 
-// ObjectIter is used in IterObjects function.
-//
-// ObjectIter 用于 IterObjects 函数。
+// Deprecated: ObjectIter is a deprecated type.
 type ObjectIter struct {
 	K string
 	V *V
 }
 
-// ArrayIter is used in IterArray function.
-//
-// ArrayIter 用于 IterArray 函数。
+// Deprecated: ArrayIter is a deprecated type.
 type ArrayIter struct {
 	I int
 	V *V
@@ -39,9 +35,7 @@ func (v *V) RangeObjects(callback func(k string, v *V) bool) {
 	}
 }
 
-// IterObjects returns a channel for range statement of object type JSON.
-//
-// 若当前 JSON 值是一个 object 类型时，IterObjects 返回一个可用于 range 操作符的 channel。
+// Deprecated: IterObjects is deprecated, please Use ForRangeObj() instead.
 func (v *V) IterObjects() <-chan *ObjectIter {
 	c := make(chan *ObjectIter, len(v.children.object))
 
@@ -55,6 +49,17 @@ func (v *V) IterObjects() <-chan *ObjectIter {
 		close(c)
 	}()
 	return c
+}
+
+// ForRangeObj returns a map which can be used in for - range block to iteration KVs in a JSON object value.
+//
+// ForRangeObj 返回一个 map 类型，用于使用 for - range 块迭代 JSON 对象类型的子成员。
+func (v *V) ForRangeObj() map[string]*V {
+	res := make(map[string]*V, len(v.children.object))
+	for k, v := range v.children.object {
+		res[k] = v
+	}
+	return res
 }
 
 // RangeArray goes through each children when this is an array value
@@ -79,9 +84,7 @@ func (v *V) RangeArray(callback func(i int, v *V) bool) {
 	}
 }
 
-// IterArray returns a channel for range statement of array type JSON.
-//
-// 若当前 JSON 值是一个 array 类型时，IterArray 返回一个可用于 range 操作符的 channel。
+// Deprecated: IterArray is deprecated, please Use ForRangeArr() instead.
 func (v *V) IterArray() <-chan *ArrayIter {
 	c := make(chan *ArrayIter, len(v.children.array))
 
@@ -95,4 +98,12 @@ func (v *V) IterArray() <-chan *ArrayIter {
 		close(c)
 	}()
 	return c
+}
+
+// ForRangeArr returns a slice which can be used in for - range block to iteration KVs in a JSON array value.
+//
+// ForRangeObj 返回一个切片，用于使用 for - range 块迭代 JSON 数组类型的子成员。
+func (v *V) ForRangeArr() []*V {
+	res := make([]*V, 0, len(v.children.array))
+	return append(res, v.children.array...)
 }

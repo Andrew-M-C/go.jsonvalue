@@ -198,20 +198,20 @@ func (v *V) RangeObjects(callback func(k string, v *V) bool)
 ### for-range 风格
 
 ```go
-func (v *V) IterArray() <-chan *ArrayIter
-func (v *V) IterObjects() <-chan *ObjectIter
+func (v *V) ForRangeArr() []*V
+func (v *V) ForRangeObj() map[string]*V
 ```
 
 这种模式返回了一个预先存好了 kv 信息的 channel，并且已经 close 了，因此开发者可以使用 `for` 语法，进行更加直观的开发：
 
 ```go
     v := jsonvalue.MustUnmarshalString(`["A","B","C","D"]`)
-    for it := range v.IterArray() {
-        fmt.Println(it.I, "-", it.V)
+    for i, v := range v.ForRangeArr() {
+        fmt.Println(i, "-", v)
     }
 ```
 
-在 `IterObject` 函数中，由于 jsonvalue 是使用 map 来实现 object 的 kv 存储，因此 key 的顺序不予保证。
+在 `ForRangeObj` 函数中，由于 jsonvalue 是使用 map 来实现 object 的 kv 存储，因此 key 的顺序不予保证。
 
 在命名的角度上，由于历史原因，笔者先开发了 RangeXxx 系列函数，所以导致 for-range 风格的函数反而不使用 range 命名，还请开发者们谅解。
 
@@ -249,10 +249,10 @@ func (v *V) IterObjects() <-chan *ObjectIter
 
 ```go
     c := jsonvalue.MustUnmarshalString(confString) // 假设 confString 是获取到的配置字符串
-    for it := range c.Get("top").IterArray() {
+    for _, v := range c.Get("top").ForRangeArr() {
         feeds = append(feeds, &Feed{               // 将帖子主题追加到返回列表中，假设帖子的结构体为 Feed
-            ID:    it.V.MustGet("UID").String(),
-            Title: it.V.MustGet("title").String(),
+            ID:    v.MustGet("UID").String(),
+            Title: v.MustGet("title").String(),
         }) 
     }
 ```

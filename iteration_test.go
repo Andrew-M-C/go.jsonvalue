@@ -24,8 +24,16 @@ func testRangeArray(t *testing.T) {
 			t.Errorf("should NOT iter here!!!")
 		}
 
+		for range MustUnmarshalString("invalid").ForRangeArr() {
+			t.Errorf("should NOT iter here!!!")
+		}
+
 		invalidV, _ := MustUnmarshalString("invalid").Get("another invalid", 1, 2, 3, "opps")
 		for range invalidV.IterArray() {
+			t.Errorf("should NOT iter here!!!")
+		}
+
+		for range invalidV.ForRangeArr() {
 			t.Errorf("should NOT iter here!!!")
 		}
 	})
@@ -37,6 +45,10 @@ func testRangeArray(t *testing.T) {
 
 		for iter := range v.IterArray() {
 			_ = iter.V.String() // just do not panic
+		}
+
+		for _, v := range v.ForRangeArr() {
+			_ = v.String() // just do not panic
 		}
 	})
 
@@ -101,8 +113,16 @@ func testRangeObject(t *testing.T) {
 			t.Errorf("should NOT iter here!!!")
 		}
 
+		for range MustUnmarshalString("invalid").ForRangeObj() {
+			t.Errorf("should NOT iter here!!!")
+		}
+
 		invalidV, _ := MustUnmarshalString("invalid").Get("another invalid", 1, 2, 3, "opps")
 		for range invalidV.IterObjects() {
+			t.Errorf("should NOT iter here!!!")
+		}
+
+		for range invalidV.ForRangeObj() {
 			t.Errorf("should NOT iter here!!!")
 		}
 	})
@@ -114,6 +134,10 @@ func testRangeObject(t *testing.T) {
 
 		for iter := range v.IterObjects() {
 			_ = iter.V.String() // just do not panic
+		}
+
+		for _, v := range v.ForRangeObj() {
+			_ = v.String() // just do not panic
 		}
 	})
 

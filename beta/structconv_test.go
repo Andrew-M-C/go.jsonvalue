@@ -349,9 +349,7 @@ func testStructConv_Import_ArrayAndSlice(t *testing.T) {
 		So(j.IsArray(), ShouldBeTrue)
 		So(j.Len(), ShouldEqual, 2)
 
-		for it := range j.IterArray() {
-			i := it.I
-
+		for i := range j.ForRangeArr() {
 			s, err := j.GetString(i, "string")
 			So(err, ShouldBeNil)
 			So(s, ShouldEqual, st[i].S)
