@@ -33,18 +33,16 @@ func (it *iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuo
 		chr := it.b[i]
 
 		// ACSII?
-		if chr <= 0x7F {
-			if chr == '\\' {
-				err = it.handleEscapeStart(&i, &sectEnd)
-			} else if chr == '"' {
-				// found end quote
-				return sectEnd - offset, i + 1, nil
-			} else {
-				// shift(&i, 1)
-				it.b[sectEnd] = it.b[i]
-				i++
-				sectEnd++
-			}
+		if chr == '\\' {
+			err = it.handleEscapeStart(&i, &sectEnd)
+		} else if chr == '"' {
+			// found end quote
+			return sectEnd - offset, i + 1, nil
+		} else if chr <= 0x7F {
+			// shift(&i, 1)
+			it.b[sectEnd] = it.b[i]
+			i++
+			sectEnd++
 		} else if runeIdentifyingBytes2(chr) {
 			shift(&i, 2)
 		} else if runeIdentifyingBytes3(chr) {
@@ -204,35 +202,26 @@ func (it *iter) assignASCIICodedRune(dst int, r rune) (offset int) {
 	// 00000yyy yyzzzzzz ==>
 	// 110yyyyy 10zzzzzz
 	if r <= 0x7FF {
-		b0 := byte((r&0x7C0)>>6) + 0xC0
-		b1 := byte((r&0x03F)>>0) + 0x80
-		it.b[dst+0] = b0
-		it.b[dst+1] = b1
+		it.b[dst+0] = byte((r&0x7C0)>>6) + 0xC0
+		it.b[dst+1] = byte((r&0x03F)>>0) + 0x80
 		return 2
 	}
 
 	// xxxxyyyy yyzzzzzz ==>
 	// 1110xxxx 10yyyyyy 10zzzzzz
 	if r <= 0xFFFF {
-		b0 := byte((r&0xF000)>>12) + 0xE0
-		b1 := byte((r&0x0FC0)>>6) + 0x80
-		b2 := byte((r&0x003F)>>0) + 0x80
-		it.b[dst+0] = b0
-		it.b[dst+1] = b1
-		it.b[dst+2] = b2
+		it.b[dst+0] = byte((r&0xF000)>>12) + 0xE0
+		it.b[dst+1] = byte((r&0x0FC0)>>6) + 0x80
+		it.b[dst+2] = byte((r&0x003F)>>0) + 0x80
 		return 3
 	}
 
 	// 000wwwxx xxxxyyyy yyzzzzzz ==>
 	// 11110www 10xxxxxx 10yyyyyy 10zzzzzz
-	b0 := byte((r&0x1C0000)>>18) + 0xF0
-	b1 := byte((r&0x03F000)>>12) + 0x80
-	b2 := byte((r&0x000FC0)>>6) + 0x80
-	b3 := byte((r&0x00003F)>>0) + 0x80
-	it.b[dst+0] = b0
-	it.b[dst+1] = b1
-	it.b[dst+2] = b2
-	it.b[dst+3] = b3
+	it.b[dst+0] = byte((r&0x1C0000)>>18) + 0xF0
+	it.b[dst+1] = byte((r&0x03F000)>>12) + 0x80
+	it.b[dst+2] = byte((r&0x000FC0)>>6) + 0x80
+	it.b[dst+3] = byte((r&0x00003F)>>0) + 0x80
 	return 4
 }
 
