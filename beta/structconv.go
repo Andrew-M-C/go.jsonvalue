@@ -13,7 +13,7 @@ import (
 // Import convert json value from a marsalable parameter to *V. This a experimental function.
 //
 // Import 将符合 encoding/json 的 struct 转为 *jsonvalue.V 类型。不经过 encoding/json，并且支持 Option.
-func Import(src interface{}, opts ...jsonvalue.Option) (*jsonvalue.V, error) {
+func Import(src interface{}) (*jsonvalue.V, error) {
 	v, fu, err := validateValAndReturnParser(reflect.ValueOf(src), ext{})
 	if err != nil {
 		return &jsonvalue.V{}, err

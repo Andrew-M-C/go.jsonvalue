@@ -8,5 +8,4 @@
 
 ---
 
-- beta 功能
-- NewFloat64 函数不兼容老版本，以及 NewFloat64f 的参数格式
+- 性能说明
