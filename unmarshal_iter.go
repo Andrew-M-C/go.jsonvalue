@@ -8,6 +8,8 @@ import (
 // iter is used to iterate []byte text
 type iter struct {
 	b []byte
+
+	numRuneTypes []numRuneType
 }
 
 func (it *iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuote int, sectEnd int, err error) {
