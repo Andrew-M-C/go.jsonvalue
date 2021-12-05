@@ -7,8 +7,20 @@ import (
 )
 
 func TestIterFloat(t *testing.T) {
+	test(t, "test floatStateMachine", testFloatStateMachine)
 	test(t, "other parseResult conditions", testUnmarshalFloatErrors)
 	test(t, "https://github.com/Andrew-M-C/go.jsonvalue/issues/8", testIssue8)
+}
+
+func testFloatStateMachine(t *testing.T) {
+	Convey("basic", func() {
+		it := &iter{b: []byte{'0'}}
+		stm := newFloatStateMachine(it, 0)
+		So(stm.offset(), ShouldBeZeroValue)
+
+		stm = stm.withOffsetAddOne()
+		So(stm.offset(), ShouldEqual, 1)
+	})
 }
 
 func testUnmarshalFloatErrors(t *testing.T) {
