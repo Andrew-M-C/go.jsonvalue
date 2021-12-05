@@ -14,7 +14,7 @@ func TestIterFloat(t *testing.T) {
 
 func testFloatStateMachine(t *testing.T) {
 	Convey("basic", func() {
-		it := &iter{b: []byte{'0'}}
+		it := iter{'0'}
 		stm := newFloatStateMachine(it, 0)
 		So(stm.offset(), ShouldBeZeroValue)
 
@@ -38,7 +38,7 @@ func testUnmarshalFloatErrors(t *testing.T) {
 	})
 
 	Convey("stateStart", func() {
-		it := &iter{b: []byte("E")}
+		it := &iter{'E'}
 		_, _, _, err := it.parseNumber(0)
 		So(err, ShouldBeError)
 	})

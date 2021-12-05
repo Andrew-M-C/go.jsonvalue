@@ -2,20 +2,31 @@ package jsonvalue
 
 import (
 	"fmt"
-	"path/filepath"
-	"runtime"
 	"strconv"
-	"strings"
 )
 
 // For state machine chart, please refer to ./img/parse_float_state_chart.drawio
 
-func (it *iter) parseNumber(
+var (
+	numRuneTypes []numRuneType
+)
+
+func init() {
+	numRuneTypes = make([]numRuneType, 256)
+	for i := '1'; i <= '9'; i++ {
+		numRuneTypes[i] = numRuneDigitOneNine
+	}
+	numRuneTypes['0'] = numRuneDigitZero
+	numRuneTypes['E'] = numRuneExponent
+	numRuneTypes['e'] = numRuneExponent
+	numRuneTypes['-'] = numRuneNegative
+	numRuneTypes['+'] = numRunePositive
+	numRuneTypes['.'] = numRuneFraction
+}
+
+func (it iter) parseNumber(
 	offset int,
 ) (v *V, end int, reachEnd bool, err error) {
-
-	// debug ONLY
-	lastBytes = it.b
 
 	stm := newFloatStateMachine(it, offset)
 	var bType numRuneType
@@ -25,7 +36,7 @@ func (it *iter) parseNumber(
 	for err == nil {
 		stm, b, bType = stm.pop(it)
 		if bType == numRuneInvalid {
-			v, err = stm.parseResult(offset, stm.offset(), it.b, integer)
+			v, err = stm.parseResult(offset, stm.offset(), it, integer)
 			break
 		}
 
@@ -132,37 +143,24 @@ func (stm floatStateMachine) withNegative() floatStateMachine {
 	return stm | 0x8000000000000000
 }
 
-func newFloatStateMachine(it *iter, offset int) floatStateMachine {
-	remain := len(it.b) - offset
+func newFloatStateMachine(it iter, offset int) floatStateMachine {
+	remain := len(it) - offset
 	stm := floatStateMachine(0)
 	stm = stm.withRemain(remain)
 	stm = stm.withOffset(offset)
 
-	if it.numRuneTypes == nil {
-		it.numRuneTypes = make([]numRuneType, 256)
-		for i := '1'; i <= '9'; i++ {
-			it.numRuneTypes[i] = numRuneDigitOneNine
-		}
-		it.numRuneTypes['0'] = numRuneDigitZero
-		it.numRuneTypes['E'] = numRuneExponent
-		it.numRuneTypes['e'] = numRuneExponent
-		it.numRuneTypes['-'] = numRuneNegative
-		it.numRuneTypes['+'] = numRunePositive
-		it.numRuneTypes['.'] = numRuneFraction
-	}
-
 	return stm
 }
 
-func (s floatStateMachine) pop(it *iter) (_ floatStateMachine, b byte, typ numRuneType) {
+func (s floatStateMachine) pop(it iter) (_ floatStateMachine, b byte, typ numRuneType) {
 	remain := s.remain()
 	if remain == 0 {
 		return s, 0, numRuneInvalid
 	}
 
-	b = it.b[s.offset()]
+	b = it[s.offset()]
 
-	if typ = it.numRuneTypes[int(b)]; typ != numRuneInvalid {
+	if typ = numRuneTypes[int(b)]; typ != numRuneInvalid {
 		s = s.withOffsetAddOne()
 		s = s.withRemainMinusOne()
 		return s, b, typ
@@ -170,33 +168,33 @@ func (s floatStateMachine) pop(it *iter) (_ floatStateMachine, b byte, typ numRu
 	return s, 0, numRuneInvalid
 }
 
-var (
-	lastBytes []byte
-)
+// var (
+// 	lastBytes []byte
+// )
 
 func (s floatStateMachine) errorf(f string, a ...interface{}) error {
-	// a = append([]interface{}{s.offset()}, a...)
-	// return fmt.Errorf("parsing number at index %d: "+f, a...)
+	a = append([]interface{}{s.offset()}, a...)
+	return fmt.Errorf("parsing number at index %d: "+f, a...)
 
 	// debug ONLY
-	getCaller := func(skip int) string {
-		pc, _, _, ok := runtime.Caller(skip + 1)
-		if !ok {
-			return "<caller N/A>"
-		}
-		ca := runtime.CallersFrames([]uintptr{pc})
-		fr, _ := ca.Next()
+	// getCaller := func(skip int) string {
+	// 	pc, _, _, ok := runtime.Caller(skip + 1)
+	// 	if !ok {
+	// 		return "<caller N/A>"
+	// 	}
+	// 	ca := runtime.CallersFrames([]uintptr{pc})
+	// 	fr, _ := ca.Next()
 
-		fu := filepath.Ext(fr.Function)
-		fu = strings.TrimLeft(fu, ".")
-		li := fr.Line
+	// 	fu := filepath.Ext(fr.Function)
+	// 	fu = strings.TrimLeft(fu, ".")
+	// 	li := fr.Line
 
-		return fmt.Sprintf("%s(), Line %d", fu, li)
-	}
-	ca := getCaller(1)
+	// 	return fmt.Sprintf("%s(), Line %d", fu, li)
+	// }
+	// ca := getCaller(1)
 
-	a = append([]interface{}{ca, string(lastBytes), s.offset()}, a...)
-	return fmt.Errorf("%s - parsing number ('%s') at index %d: "+f, a...)
+	// a = append([]interface{}{ca, string(lastBytes), s.offset()}, a...)
+	// return fmt.Errorf("%s - parsing number ('%s') at index %d: "+f, a...)
 }
 
 const (
