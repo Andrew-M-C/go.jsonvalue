@@ -6,7 +6,6 @@ import (
 	"math"
 	"testing"
 
-	amcbytes "github.com/Andrew-M-C/go.util/bytes"
 	. "github.com/smartystreets/goconvey/convey"
 )
 
@@ -22,7 +21,12 @@ func test(t *testing.T, scene string, f func(*testing.T)) {
 }
 
 func printBytes(t *testing.T, b []byte, prefix ...string) {
-	s := amcbytes.SDump(b, prefix...)
+	var s string
+
+	if len(prefix) > 0 {
+		s = prefix[0]
+	}
+	s = s + string(b[:])
 	t.Log(s)
 }
 
