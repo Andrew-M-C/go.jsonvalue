@@ -69,7 +69,7 @@ func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt)
 	default:
 		// do nothing
 	case String:
-		v.marshalString(buf)
+		v.marshalString(buf, opt)
 	case Boolean:
 		v.marshalBoolean(buf)
 	case Number:
@@ -84,9 +84,9 @@ func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt)
 	return err
 }
 
-func (v *V) marshalString(buf *bytes.Buffer) {
+func (v *V) marshalString(buf *bytes.Buffer, opt *Opt) {
 	buf.WriteByte('"')
-	escapeStringToBuff(v.valueStr, buf)
+	escapeStringToBuff(v.valueStr, buf, opt)
 	buf.WriteByte('"')
 }
 
@@ -132,7 +132,7 @@ func marshalNaN(buf *bytes.Buffer, opt *Opt) error {
 			buf.WriteString(`"NaN"`)
 		} else {
 			buf.WriteByte('"')
-			escapeStringToBuff(s, buf)
+			escapeStringToBuff(s, buf, opt)
 			buf.WriteByte('"')
 		}
 	}
@@ -162,7 +162,7 @@ func marshalInfP(buf *bytes.Buffer, opt *Opt) error {
 			buf.WriteString(`"+Inf"`)
 		} else {
 			buf.WriteByte('"')
-			escapeStringToBuff(s, buf)
+			escapeStringToBuff(s, buf, opt)
 			buf.WriteByte('"')
 		}
 	}
@@ -190,10 +190,10 @@ func marshalInfN(buf *bytes.Buffer, opt *Opt) error {
 	case FloatInfConvertToString:
 		buf.WriteByte('"')
 		if s := opt.FloatInfNegativeToString; s != "" {
-			escapeStringToBuff(s, buf)
+			escapeStringToBuff(s, buf, opt)
 		} else if opt.FloatInfPositiveToString != "" {
 			s = "-" + strings.TrimLeft(opt.FloatInfPositiveToString, "+")
-			escapeStringToBuff(s, buf)
+			escapeStringToBuff(s, buf, opt)
 		} else {
 			buf.WriteString(`-Inf`)
 		}
@@ -243,7 +243,7 @@ func (v *V) marshalObject(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 		}
 
 		buf.WriteByte('"')
-		escapeStringToBuff(k, buf)
+		escapeStringToBuff(k, buf, opt)
 		buf.WriteString("\":")
 
 		child.marshalToBuffer(nil, buf, opt)

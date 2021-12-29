@@ -1,7 +1,9 @@
 package jsonvalue
 
 import (
+	"fmt"
 	"math"
+	"strings"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -10,6 +12,7 @@ import (
 func TestMarshal(t *testing.T) {
 	test(t, "NaN", testMarshalFloat64NaN)
 	test(t, "Inf", testMarshalFloat64Inf)
+	test(t, "escapeHTML", testMarshalEscapeHTML)
 }
 
 func testMarshalFloat64NaN(t *testing.T) {
@@ -256,5 +259,49 @@ func testMarshalFloat64Inf(t *testing.T) {
 
 		iter(math.Inf(1))
 		iter(math.Inf(-1))
+	})
+}
+
+func testMarshalEscapeHTML(t *testing.T) {
+	esc := func(s string) string {
+		seq := []rune{'&', '<', '>'}
+		for _, r := range seq {
+			s = strings.ReplaceAll(s, string(r), fmt.Sprintf("\\u00%X", r))
+		}
+		return s
+	}
+
+	key := "<X>&<Y>"
+	value := "<12, 34> & <56, 78>"
+
+	v := NewObject(M{
+		key: value,
+	})
+
+	Convey("default escape", func() {
+		s := v.MustMarshalString()
+		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, esc(key), esc(value)))
+
+		vv, err := UnmarshalString(s)
+		So(err, ShouldBeNil)
+		So(vv.MustGet(key).String(), ShouldEqual, value)
+	})
+
+	Convey("escapeHTML on", func() {
+		s := v.MustMarshalString(OptEscapeHTML(true))
+		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, esc(key), esc(value)))
+
+		vv, err := UnmarshalString(s)
+		So(err, ShouldBeNil)
+		So(vv.MustGet(key).String(), ShouldEqual, value)
+	})
+
+	Convey("escapeHTML off", func() {
+		s := v.MustMarshalString(OptEscapeHTML(false))
+		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, key, value))
+
+		vv, err := UnmarshalString(s)
+		So(err, ShouldBeNil)
+		So(vv.MustGet(key).String(), ShouldEqual, value)
 	})
 }

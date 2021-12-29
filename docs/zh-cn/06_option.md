@@ -8,6 +8,7 @@
 - [忽略 null 值](./06_option.md#忽略-null-值)
 - [处理浮点数 NaN](./06_option.md#处理浮点数-nan)
 - [处理浮点数 +/-Inf](./06_option.md#处理浮点数--inf)
+- [原生 json SetEscapeHTML 支持](./06_option.md#原生-json-SetEscapeHTML-支持)
 - [旧版 options](./06_option.md#旧版-options)
 
 ---
@@ -169,6 +170,16 @@ func OptFloatInfToStringInf() Option
 
 `OptFloatInfToStringInf()` 函数等效于 `OptFloatInfToString("+Inf", "-Inf")`
 
+## 原生 json SetEscapeHTML 支持
+
+```go
+func OptEscapeHTML(on bool) Option
+```
+
+该功能对应原生 `encoding/json` 的 [`Encoder`](https://pkg.go.dev/encoding/json#Encoder.SetEscapeHTML) 类型的 [`SetEscapeHTML`](https://pkg.go.dev/encoding/json#Encoder.SetEscapeHTML) 函数。
+
+按照 JSON 标准，`&`, `<` 和 `>` 三个字符是需要转义为 `\u00XX` 格式的。但在实际使用中，这三个字符即使不转义，也是安全的。默认逻辑中，jsonvalue 进行序列化时会将这三个字符转义，但是可以通过在选项中传入 `OptEscapeHTML(false)` 来关闭该转义。
+
 ## 旧版 options
 
-在旧版本（v1.1.1 及以前）对 option 的使用方式是传入一个 `Opt` 类型的 struct。新版也兼容这种模式，但建议改为前文所述的函数模式进行配置。
+在旧版本（v1.1.1 及以前）对 option 的使用方式是传入一个 `Opt` 类型的 struct。新版虽然兼容这种模式，但后续新的选项将不再通过 `Opt` 类型对外暴露，因此建议改为前文所述的函数模式进行配置。

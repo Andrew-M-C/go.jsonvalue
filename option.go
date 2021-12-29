@@ -1,8 +1,9 @@
 package jsonvalue
 
-// Opt is the option of jsonvalue in marshaling.
+// Deprecated: Opt is the option of jsonvalue in marshaling. This type is deprecated,
+// please use OptXxxx() functions instead.
 //
-// Opt 表示序列化当前 jsonvalue 类型时的参数
+// Opt 表示序列化当前 jsonvalue 类型时的参数。这个类型后续可能不再迭代新字段了，请改用 OptXxxx() 函数进行配置。
 type Opt struct {
 	// OmitNull tells how to handle null json value. The default value is false.
 	// If OmitNull is true, null value will be omitted when marshaling.
@@ -81,6 +82,14 @@ type Opt struct {
 	// 则会被映射为这个值的负数。
 	// 不允许指定为 NaN, +Inf 或 -Inf。如果不指定，则映射为 0
 	FloatInfToFloat float64
+
+	// escapeHTML tells what do deal with &, <, > character. Default value is nil, which tells using the default value,
+	// which should be 'true'.
+	escapeHTML *bool
+}
+
+func (o *Opt) shouldEscapeHTML() bool {
+	return o.escapeHTML == nil || *o.escapeHTML
 }
 
 type FloatNaNHandleType uint8
@@ -347,4 +356,23 @@ func (o *optFloatInfConvertToString) mergeTo(opt *Opt) {
 	opt.FloatInfHandleType = FloatInfConvertToString
 	opt.FloatInfPositiveToString = o.positive
 	opt.FloatInfNegativeToString = o.negative
+}
+
+// ==== escapeHTML ====
+
+// OptEscapeHTML specifies whether problematic HTML characters should be escaped inside JSON quoted strings.
+// The default behavior is to escape &, <, and > to \u0026, \u003c, and \u003e to avoid certain safety problems that
+// can arise when embedding JSON in HTML.
+func OptEscapeHTML(on bool) Option {
+	return &optEscapeHTML{
+		escapeHTML: on,
+	}
+}
+
+type optEscapeHTML struct {
+	escapeHTML bool
+}
+
+func (o *optEscapeHTML) mergeTo(opt *Opt) {
+	opt.escapeHTML = &o.escapeHTML
 }

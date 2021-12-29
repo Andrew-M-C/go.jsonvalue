@@ -54,7 +54,7 @@ var (
 	escPercent     = []byte{'\\', 'u', '0', '0', '2', '5'}
 )
 
-func escapeStringToBuff(s string, buf *bytes.Buffer) {
+func escapeStringToBuff(s string, buf *bytes.Buffer, opt *Opt) {
 	for _, chr := range s {
 		switch chr {
 		case '"':
@@ -82,14 +82,26 @@ func escapeStringToBuff(s string, buf *bytes.Buffer) {
 			// buf.WriteString("\\r")
 			buf.Write(escReturn)
 		case '<':
-			// buf.WriteString("\\u003C")
-			buf.Write(escLeftAngle)
+			if opt.shouldEscapeHTML() {
+				// buf.WriteString("\\u003C")
+				buf.Write(escLeftAngle)
+			} else {
+				escapeUnicodeToBuff(buf, chr)
+			}
 		case '>':
-			// buf.WriteString("\\u003E")
-			buf.Write(escRightAngle)
+			if opt.shouldEscapeHTML() {
+				// buf.WriteString("\\u003E")
+				buf.Write(escRightAngle)
+			} else {
+				escapeUnicodeToBuff(buf, chr)
+			}
 		case '&':
-			// buf.WriteString("\\u0026")
-			buf.Write(escAnd)
+			if opt.shouldEscapeHTML() {
+				// buf.WriteString("\\u0026")
+				buf.Write(escAnd)
+			} else {
+				escapeUnicodeToBuff(buf, chr)
+			}
 		case '%': // not standard JSON encoding
 			// buf.WriteString("\\u0025")
 			buf.Write(escPercent)

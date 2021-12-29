@@ -25,6 +25,8 @@ type Caseless interface {
 	Delete(firstParam interface{}, otherParams ...interface{}) error
 }
 
+var _ Caseless = (*V)(nil)
+
 // Caseless returns Caseless interface to support caseless getting.
 //
 // IMPORTANT: This function is not gouroutine-safe. Write-mutex (instead of read-mutex) should be attached in cross-goroutine scenarios.

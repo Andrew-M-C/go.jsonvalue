@@ -140,7 +140,7 @@ func (p KeyPath) String() (s string) {
 			buff.WriteString(s)
 		} else {
 			buff.WriteRune('"')
-			escapeStringToBuff(k.String(), &buff)
+			escapeStringToBuff(k.String(), &buff, &Opt{})
 			buff.WriteRune('"')
 		}
 	}
@@ -203,7 +203,7 @@ func (sov *sortObjectV) marshalObjectWithLessFunc(buf *bytes.Buffer, opt *Opt) {
 		}
 
 		buf.WriteRune('"')
-		escapeStringToBuff(key, buf)
+		escapeStringToBuff(key, buf, opt)
 		buf.WriteString("\":")
 
 		child.marshalToBuffer(child.newParentInfo(sov.parentInfo, stringKey(key)), buf, opt)
@@ -266,7 +266,7 @@ func (sssv *sortStringSliceV) marshalObjectWithStringSlice(buf *bytes.Buffer, op
 		}
 
 		buf.WriteRune('"')
-		escapeStringToBuff(key, buf)
+		escapeStringToBuff(key, buf, opt)
 		buf.WriteString("\":")
 
 		child.marshalToBuffer(nil, buf, opt)
