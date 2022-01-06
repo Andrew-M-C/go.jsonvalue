@@ -1,15 +1,15 @@
 # 额外选项配置
 
-[上一页](./05_caseless.md) | [总目录](./README.md) | [下一页](./07_conversion.md)
+[上一页](./06_caseless.md) | [总目录](./README.md) | [下一页](./08_conversion.md)
 
 ---
 
-- [选项概述](./06_option.md#选项概述)
-- [忽略 null 值](./06_option.md#忽略-null-值)
-- [处理浮点数 NaN](./06_option.md#处理浮点数-nan)
-- [处理浮点数 +/-Inf](./06_option.md#处理浮点数--inf)
-- [原生 json SetEscapeHTML 支持](./06_option.md#原生-json-SetEscapeHTML-支持)
-- [旧版 options](./06_option.md#旧版-options)
+- [选项概述](./07_option.md#选项概述)
+- [忽略 null 值](./07_option.md#忽略-null-值)
+- [处理浮点数 NaN](./07_option.md#处理浮点数-nan)
+- [处理浮点数 +/-Inf](./07_option.md#处理浮点数--inf)
+- [原生 json SetEscapeHTML 支持](./07_option.md#原生-json-SetEscapeHTML-支持)
+- [旧版 options](./07_option.md#旧版-options)
 
 ---
 

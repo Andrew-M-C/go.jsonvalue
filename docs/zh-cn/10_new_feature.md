@@ -1,11 +1,11 @@
 # v1.2.0 新特性
 
-[上一页](./08_beta.md) | [总目录](./README.md) | [下一页](./10_benchmark.md)
+[上一页](./09_beta.md) | [总目录](./README.md) | [下一页](./11_benchmark.md)
 
 ---
 
-- [NewFloat64 和 NewFloat32 功能变更](./09_new_feature.md#newfloat64-和-newfloat32-功能变更)
-- [使用函数形式配置序列化的额外参数](./09_new_feature.md#使用函数形式配置序列化的额外参数)
+- [NewFloat64 和 NewFloat32 功能变更](./10_new_feature.md#newfloat64-和-newfloat32-功能变更)
+- [使用函数形式配置序列化的额外参数](./10_new_feature.md#使用函数形式配置序列化的额外参数)
 
 ---
 
