@@ -7,95 +7,129 @@ import (
 
 // For state machine chart, please refer to ./img/parse_float_state_chart.drawio
 
-func (it *iter) parseNumber(
+func (it iter) parseNumber(
 	offset int,
 ) (v *V, end int, reachEnd bool, err error) {
 
-	stm := newFloatStateMachine(it, offset)
-	for stm.res == nil {
-		if err = stm.next(); err != nil {
-			break
+	idx := offset
+	negative := false
+	floated := false
+	exponentGot := false
+	dotGot := false
+	intAfterDotGot := false
+	integer := uint64(0)
+	edgeFound := false
+
+	// len(it)-idx means remain bytes
+
+	for ; len(it)-idx > 0 && !edgeFound; idx++ {
+		b := it[idx]
+
+		switch b {
+		default:
+			edgeFound = true
+
+		case '0':
+			if idx == offset {
+				// OK
+			} else if exponentGot {
+				// OK
+			} else if dotGot {
+				intAfterDotGot = true
+			} else if negative {
+				if integer == 0 && idx != offset+1 {
+					err = it.numErrorf(idx, "unexpected zero")
+					return
+				}
+			} else if integer == 0 {
+				err = it.numErrorf(idx, "unexpected zero")
+				return
+			}
+			integer *= 10
+
+		case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			if !floated {
+				integer = integer*10 + uint64(b) - '0'
+			} else if !exponentGot {
+				intAfterDotGot = true
+			}
+
+		case 'e', 'E':
+			if exponentGot {
+				err = it.numErrorf(idx, "unexpected exponent symbol")
+				return
+			}
+			exponentGot = true
+			floated = true
+
+		case '+':
+			// Codes below not needed because this error is caught in outer logic
+			// if !floated {
+			// 	err = it.numErrorf(idx, "unexpected positive symbol")
+			// 	return
+			// }
+
+		case '-':
+			if !floated {
+				if idx != offset {
+					err = it.numErrorf(idx, "unexpected negative symbol")
+					return
+				}
+				negative = true
+			}
+
+		case '.':
+			if idx == offset || floated || exponentGot || dotGot {
+				err = it.numErrorf(idx, "unexpected dot symbol")
+				return
+			}
+			dotGot = true
+			floated = true
 		}
 	}
 
-	return stm.res, stm.progress.offset, stm.progress.remain == 0, err
+	if edgeFound {
+		idx--
+	}
+
+	if floated {
+		if dotGot && !intAfterDotGot {
+			err = it.numErrorf(offset, "integer after dot missing")
+			return
+		}
+		v, err = it.parseFloatResult(offset, idx)
+	} else {
+		if integer > 0 && it[offset] == '0' {
+			err = it.numErrorf(offset, "non-zero integer should not start with zero")
+			return
+		}
+
+		firstB := it[offset]
+		if idx-offset == 1 {
+			if firstB >= '0' && firstB <= '9' {
+				// OK
+			} else {
+				err = it.numErrorf(offset, "invalid number format")
+				return
+			}
+		}
+
+		if negative {
+			v, err = it.parseNegativeIntResult(offset, idx, integer)
+		} else {
+			v, err = it.parsePositiveIntResult(offset, idx, integer)
+		}
+	}
+
+	return v, idx, len(it)-idx == 0, err
 }
 
-type floatStateMachine struct {
-	it   *iter
-	next func() error
-
-	progress struct {
-		start  int
-		offset int
-		remain int
-	}
-
-	status struct {
-		integer       uint64
-		negative      bool
-		fractionStart int
-		exponent      uint64
-		exponentStart int
-	}
-
-	res *V
-}
-
-func newFloatStateMachine(it *iter, offset int) *floatStateMachine {
-	stm := &floatStateMachine{
-		it: it,
-	}
-	stm.progress.start = offset
-	stm.progress.offset = offset
-	stm.progress.remain = len(it.b) - offset
-	stm.next = stm.stateStart
-	stm.status.fractionStart = -1
-	stm.status.exponentStart = -1
-	return stm
-}
-
-func (s *floatStateMachine) hasFraction() bool {
-	return s.status.fractionStart >= 0
-}
-
-func (s *floatStateMachine) hasExponent() bool {
-	return s.status.exponentStart >= 0
-}
-
-func (s *floatStateMachine) pop() (b byte, ok bool) {
-	if s.progress.remain == 0 {
-		return 0, false
-	}
-	b = s.it.b[s.progress.offset]
-
-	good := func() (byte, bool) {
-		s.progress.offset++
-		s.progress.remain--
-		return b, true
-	}
-
-	if b >= '0' && b <= '9' {
-		return good()
-	}
-	if b == '-' || b == '+' {
-		return good()
-	}
-	if b == '.' {
-		return good()
-	}
-	if b == 'E' || b == 'e' {
-		return good()
-	}
-
-	return 0, false
-}
-
-func (s *floatStateMachine) errorf(f string, a ...interface{}) error {
-	a = append([]interface{}{s.progress.offset}, a...)
+func (it iter) numErrorf(offset int, f string, a ...interface{}) error {
+	a = append([]interface{}{offset}, a...)
 	return fmt.Errorf("parsing number at index %d: "+f, a...)
 
-	// debug ONLY
+	// debug ONLY below
+
 	// getCaller := func(skip int) string {
 	// 	pc, _, _, ok := runtime.Caller(skip + 1)
 	// 	if !ok {
@@ -111,8 +145,9 @@ func (s *floatStateMachine) errorf(f string, a ...interface{}) error {
 	// 	return fmt.Sprintf("%s(), Line %d", fu, li)
 	// }
 	// ca := getCaller(1)
-	// a = append([]interface{}{ca, s.progress.offset}, a...)
-	// return fmt.Errorf("%s - parsing number at index %d: "+f, a...)
+
+	// a = append([]interface{}{ca, string(it), offset}, a...)
+	// return fmt.Errorf("%s - parsing number \"%s\" at index %d: "+f, a...)
 }
 
 const (
@@ -123,34 +158,15 @@ const (
 	intMinAbs     = 9223372036854775808
 )
 
-func (s *floatStateMachine) parseResult() error {
-	// parse float
-	if s.hasFraction() || s.hasExponent() {
-		return s.parseFloatResult()
-	}
-
-	// parse negative int
-	if s.status.negative {
-		return s.parseNegativeIntResult()
-	}
-
-	// parse negative int
-	return s.parsePositiveIntResult()
-}
-
-func (s *floatStateMachine) parseFloatResult() error {
-	le := s.progress.offset - s.progress.start
-	bytes := s.it.b[s.progress.start:s.progress.offset]
-
-	str := string(bytes)
-	f, err := strconv.ParseFloat(str, 64)
+func (it iter) parseFloatResult(start, end int) (*V, error) {
+	f, err := strconv.ParseFloat(unsafeBtoS(it[start:end]), 64)
 	if err != nil {
-		return s.errorf("%w", err)
+		return nil, it.numErrorf(start, "%w", err)
 	}
 
 	v := new(Number)
-	v.srcByte = bytes
-	v.srcOffset, v.srcEnd = 0, le
+	v.srcByte = it
+	v.srcOffset, v.srcEnd = start, end
 
 	v.parsed = true
 
@@ -160,254 +176,62 @@ func (s *floatStateMachine) parseFloatResult() error {
 	v.num.u64 = uint64(f)
 	v.num.f64 = f
 
-	s.res = v
-	return nil
+	return v, nil
 }
 
-func (s *floatStateMachine) parsePositiveIntResult() error {
-	le := s.progress.offset - s.progress.start
+func (it iter) parsePositiveIntResult(start, end int, integer uint64) (*V, error) {
+	le := end - start
 
 	if le > len(uintMaxStr) {
-		return s.errorf("value too large")
+		return nil, it.numErrorf(start, "value too large")
 	} else if le == len(uintMaxStr) {
-		if s.status.integer < uintMaxDigits {
-			return s.errorf("value too large")
+		if integer < uintMaxDigits {
+			return nil, it.numErrorf(start, "value too large")
 		}
 	}
 
 	v := new(Number)
-	v.srcByte = s.it.b
-	v.srcOffset, v.srcEnd = s.progress.offset, s.progress.offset+le
+	v.srcByte = it
+	v.srcOffset, v.srcEnd = start, end
 
 	v.parsed = true
 
 	v.num.negative = false
 	v.num.floated = false
-	v.num.i64 = int64(s.status.integer)
-	v.num.u64 = uint64(s.status.integer)
-	v.num.f64 = float64(s.status.integer)
+	v.num.i64 = int64(integer)
+	v.num.u64 = uint64(integer)
+	v.num.f64 = float64(integer)
 
-	s.res = v
-	return nil
+	return v, nil
 }
 
-func (s *floatStateMachine) parseNegativeIntResult() error {
-	le := s.progress.offset - s.progress.start
+func (it iter) parseNegativeIntResult(start, end int, integer uint64) (*V, error) {
+	le := end - start
 
 	if le > len(intMinStr) {
-		return s.errorf("absolute value too large")
+		return nil, it.numErrorf(start, "absolute value too large")
 	} else if le == len(intMinStr) {
-		if s.status.integer > intMinAbs {
-			return s.errorf("absolute value too large")
+		if integer > intMinAbs {
+			return nil, it.numErrorf(start, "absolute value too large")
 		}
 	}
 
 	v := new(Number)
-	v.srcByte = s.it.b
-	v.srcOffset, v.srcEnd = s.progress.offset, s.progress.offset+le
+	v.srcByte = it
+	v.srcOffset, v.srcEnd = start, end
 
 	v.parsed = true
 	v.num.negative = true
 	v.num.floated = false
 
-	if s.status.integer == intMinAbs {
+	if integer == intMinAbs {
 		v.num.i64 = intMin
 	} else {
-		v.num.i64 = -int64(s.status.integer)
+		v.num.i64 = -int64(integer)
 	}
 
 	v.num.u64 = uint64(v.num.i64)
-	v.num.f64 = float64(s.status.integer)
+	v.num.f64 = float64(integer)
 
-	s.res = v
-	return nil
-}
-
-func (s *floatStateMachine) stateStart() error {
-	b, ok := s.pop()
-	if !ok {
-		return s.errorf("zero string")
-	}
-
-	switch b {
-	case '0':
-		s.next = s.stateLeadingZero
-	case '1', '2', '3', '4', '5', '6', '7', '8', '9':
-		s.status.integer = uint64(b) - '0'
-		s.next = s.stateLeadingDigit
-	case '-':
-		s.status.negative = true
-		s.next = s.stateLeadingNegative
-	default:
-		return s.errorf("illegal character 0x%02x", b)
-	}
-
-	return nil
-}
-
-func (s *floatStateMachine) stateLeadingZero() error {
-	b, ok := s.pop()
-	if !ok {
-		s.res = NewInt(0)
-		return nil
-	}
-
-	switch b {
-	case 'E', 'e':
-		s.status.exponentStart = s.progress.offset
-		s.next = s.stateExponent
-	case '.':
-		s.status.fractionStart = s.progress.offset
-		s.next = s.stateFraction
-	default:
-		return s.errorf("illegal character 0x%02x", b)
-	}
-
-	return nil
-}
-
-func (s *floatStateMachine) stateLeadingDigit() error {
-	b, ok := s.pop()
-	if !ok {
-		return s.parseResult()
-	}
-
-	if b >= '0' && b <= '9' {
-		s.status.integer = s.status.integer*10 + uint64(b-'0')
-		s.next = s.stateIntegerDigit
-	} else if b == '.' {
-		s.status.fractionStart = s.progress.offset
-		s.next = s.stateFraction
-	} else if b == 'E' || b == 'e' {
-		s.status.exponentStart = s.progress.offset
-		s.next = s.stateExponent
-	} else {
-		return s.errorf("illegal character 0x%02x", b)
-	}
-
-	return nil
-}
-
-func (s *floatStateMachine) stateLeadingNegative() error {
-	b, ok := s.pop()
-	if !ok {
-		return s.errorf("expect digit after negative symbol")
-	}
-
-	if b >= '1' && b <= '9' {
-		s.status.integer = s.status.integer*10 + uint64(b-'0')
-		s.next = s.stateLeadingDigit
-
-	} else if b == '0' {
-		s.next = s.stateLeadingZero
-
-	} else {
-		return s.errorf("illegal character 0x%02x", b)
-	}
-
-	return nil
-}
-
-func (s *floatStateMachine) stateIntegerDigit() error {
-	b, ok := s.pop()
-	if !ok {
-		return s.parseResult()
-	}
-
-	if b >= '0' && b <= '9' {
-		s.status.integer = s.status.integer*10 + uint64(b-'0')
-	} else if b == 'E' || b == 'e' {
-		s.status.exponentStart = s.progress.offset
-		s.next = s.stateExponent
-	} else if b == '.' {
-		s.status.fractionStart = s.progress.offset
-		s.next = s.stateFraction
-	} else {
-		return s.errorf("illegal character 0x%02x", b)
-	}
-
-	return nil
-}
-
-func (s *floatStateMachine) stateFraction() error {
-	b, ok := s.pop()
-	if !ok {
-		return s.errorf("expect digit after fraction symbol")
-	}
-
-	if b >= '0' && b <= '9' {
-		s.status.fractionStart = s.progress.offset
-		s.next = s.stateFractionDigit
-	} else {
-		return s.errorf("illegal character 0x%02x", b)
-	}
-
-	return nil
-}
-
-func (s *floatStateMachine) stateExponent() error {
-	b, ok := s.pop()
-	if !ok {
-		return s.errorf("expect digit after exponent symbol")
-	}
-
-	if b >= '0' && b <= '9' {
-		s.status.exponent = uint64(b - '0')
-		s.next = s.stateExponentDigit
-	} else if b == '+' || b == '-' {
-		s.next = s.stateExponentSign
-	} else {
-		return s.errorf("illegal character 0x%02x after exponent", b)
-	}
-
-	return nil
-}
-
-func (s *floatStateMachine) stateExponentSign() error {
-	b, ok := s.pop()
-	if !ok {
-		return s.errorf("expect digit after signed symbol")
-	}
-
-	if b >= '0' && b <= '9' {
-		s.status.exponent = uint64(b - '0')
-		s.next = s.stateExponentDigit
-	} else {
-		return s.errorf("illegal character 0x%02x after exponent", b)
-	}
-
-	return nil
-}
-
-func (s *floatStateMachine) stateFractionDigit() error {
-	b, ok := s.pop()
-	if !ok {
-		return s.parseResult()
-	}
-
-	if b >= '0' && b <= '9' {
-		// continue
-	} else if b == 'E' || b == 'e' {
-		s.status.exponentStart = s.progress.offset
-		s.next = s.stateExponent
-	} else {
-		return s.errorf("illegal character 0x%02x", b)
-	}
-
-	return nil
-}
-
-func (s *floatStateMachine) stateExponentDigit() error {
-	b, ok := s.pop()
-	if !ok {
-		return s.parseResult()
-	}
-
-	if b >= '0' && b <= '9' {
-		// continue
-	} else {
-		return s.errorf("illegal character 0x%02x", b)
-	}
-
-	return nil
+	return v, nil
 }

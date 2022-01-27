@@ -313,14 +313,14 @@ func testUnmarshalWithIter(t *testing.T) {
 		raw := []byte("hello, 世界")
 		rawWithQuote := []byte(fmt.Sprintf("\"%s\"", raw))
 
-		v, err := unmarshalWithIter(&iter{b: rawWithQuote}, 0)
+		v, err := unmarshalWithIter(iter(rawWithQuote), 0)
 		So(err, ShouldBeNil)
 		So(v.String(), ShouldEqual, string(raw))
 	})
 
 	Convey("true", func() {
 		raw := []byte("  true  ")
-		v, err := unmarshalWithIter(&iter{b: raw}, 0)
+		v, err := unmarshalWithIter(iter(raw), 0)
 		So(err, ShouldBeNil)
 		So(v.Bool(), ShouldBeTrue)
 		So(v.IsBoolean(), ShouldBeTrue)
@@ -328,7 +328,7 @@ func testUnmarshalWithIter(t *testing.T) {
 
 	Convey("false", func() {
 		raw := []byte("  false  ")
-		v, err := unmarshalWithIter(&iter{b: raw}, 0)
+		v, err := unmarshalWithIter(iter(raw), 0)
 		So(err, ShouldBeNil)
 		So(v.Bool(), ShouldBeFalse)
 		So(v.IsBoolean(), ShouldBeTrue)
@@ -336,21 +336,21 @@ func testUnmarshalWithIter(t *testing.T) {
 
 	Convey("null", func() {
 		raw := []byte("\r\t\n  null \r\t\b  ")
-		v, err := unmarshalWithIter(&iter{b: raw}, 0)
+		v, err := unmarshalWithIter(iter(raw), 0)
 		So(err, ShouldBeNil)
 		So(v.IsNull(), ShouldBeTrue)
 	})
 
 	Convey("int number", func() {
 		raw := []byte(" 1234567890 ")
-		v, err := unmarshalWithIter(&iter{b: raw}, 0)
+		v, err := unmarshalWithIter(iter(raw), 0)
 		So(err, ShouldBeNil)
 		So(v.Int64(), ShouldEqual, 1234567890)
 	})
 
 	Convey("array with basic type", func() {
 		raw := []byte(" [123, true, false, null, [\"array in array\"], \"Hello, world!\" ] ")
-		v, err := unmarshalWithIter(&iter{b: raw}, 0)
+		v, err := unmarshalWithIter(iter(raw), 0)
 		So(err, ShouldBeNil)
 		So(v.IsArray(), ShouldBeTrue)
 
@@ -361,7 +361,7 @@ func testUnmarshalWithIter(t *testing.T) {
 		raw := []byte(`  {"message": "Hello, world!"}	`)
 		printBytes(t, raw)
 
-		v, err := unmarshalWithIter(&iter{b: raw}, 0)
+		v, err := unmarshalWithIter(iter(raw), 0)
 		So(err, ShouldBeNil)
 		So(v.IsObject(), ShouldBeTrue)
 
@@ -383,7 +383,7 @@ func testUnmarshalWithIter(t *testing.T) {
 		raw := []byte(` {"arr": [1234, true , null, false, {"obj":"empty object"}]}  `)
 		printBytes(t, raw)
 
-		v, err := unmarshalWithIter(&iter{b: raw}, 0)
+		v, err := unmarshalWithIter(iter(raw), 0)
 		So(err, ShouldBeNil)
 		So(v.IsObject(), ShouldBeTrue)
 

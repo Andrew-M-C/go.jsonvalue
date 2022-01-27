@@ -26,9 +26,8 @@ func testUnmarshalFloatErrors(t *testing.T) {
 	})
 
 	Convey("stateStart", func() {
-		it := &iter{b: []byte("E")}
-		stm := newFloatStateMachine(it, 0)
-		err := stm.next()
+		it := &iter{'E'}
+		_, _, _, err := it.parseNumber(0)
 		So(err, ShouldBeError)
 	})
 
@@ -42,12 +41,29 @@ func testUnmarshalFloatErrors(t *testing.T) {
 		_, err = UnmarshalString(`01`)
 		So(err, ShouldBeError)
 
+		_, err = UnmarshalString(`00`)
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`+1`)
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`-00`)
+		So(err, ShouldBeError)
+
 		v, err = UnmarshalString(`0.0`)
 		So(err, ShouldBeNil)
 		So(v, ShouldNotBeNil)
 		So(v.IsNumber(), ShouldBeTrue)
 		So(v.Int(), ShouldEqual, 0)
 		So(v.IsFloat(), ShouldBeTrue)
+
+		v, err = UnmarshalString(`0.10`)
+		So(err, ShouldBeNil)
+		So(v, ShouldNotBeNil)
+		So(v.IsNumber(), ShouldBeTrue)
+		So(v.Int(), ShouldEqual, 0)
+		So(v.IsFloat(), ShouldBeTrue)
+		So(v.Float64(), ShouldEqual, 0.1)
 
 		v, err = UnmarshalString(`0E0`)
 		So(err, ShouldBeNil)

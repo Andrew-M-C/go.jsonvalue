@@ -17,7 +17,7 @@ func TestIter(t *testing.T) {
 func testIterMemcpy(t *testing.T) {
 	b := []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA}
 
-	it := iter{b: b}
+	it := iter(b)
 
 	origByte := b[4]
 
@@ -31,9 +31,7 @@ func testIterMemcpy(t *testing.T) {
 func testIterAssignWideRune(t *testing.T) {
 	b := make([]byte, 32)
 
-	it := iter{
-		b: b,
-	}
+	it := iter(b)
 
 	len := 0
 
@@ -48,7 +46,7 @@ func testIterAssignWideRune(t *testing.T) {
 	append('世')
 	append('界')
 
-	it.b[len] = '!'
+	it[len] = '!'
 	len++
 
 	b = b[:len]
@@ -61,7 +59,7 @@ func testIterChrSearching(t *testing.T) {
 	t.Logf(string(raw))
 	t.Logf("01234567890123456789")
 
-	it := iter{b: raw}
+	it := iter(raw)
 
 	offset, reachEnd := it.skipBlanks(0)
 	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
@@ -92,7 +90,7 @@ func testIterParseNumber(t *testing.T) {
 	b := []byte("-12345.6789  ")
 
 	Convey("reachEnd == true", func() {
-		it := &iter{b: b[:11]}
+		it := iter(b[:11])
 
 		v, end, reachEnd, err := it.parseNumber(0)
 		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
@@ -104,14 +102,14 @@ func testIterParseNumber(t *testing.T) {
 	})
 
 	Convey("reachEnd == false", func() {
-		it := &iter{b: b}
+		it := iter(b)
 
 		v, end, reachEnd, err := it.parseNumber(0)
-		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
-		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
-		t.Logf(string(b[:end]))
 		So(err, ShouldBeNil)
 		So(v.num.f64, ShouldEqual, -12345.6789)
 		So(reachEnd, ShouldBeFalse)
+		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
+		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
+		t.Logf(string(b[:end]))
 	})
 }
