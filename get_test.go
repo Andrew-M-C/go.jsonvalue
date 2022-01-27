@@ -472,12 +472,13 @@ func testGetNumFromString(t *testing.T) {
 	})
 
 	Convey("int", func() {
-		v := MustUnmarshalString(`{"num":"-123.25","negative":-9223372036854775808}`)
+		v, err := UnmarshalString(`{"num":"-123.25","negative":-9223372036854775808}`)
+		So(err, ShouldBeNil)
 
 		i, err := v.GetInt("num")
 		So(err, ShouldBeError)
-		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
 		So(i, ShouldEqual, -123)
+		So(errors.Is(err, ErrTypeNotMatch), ShouldBeTrue)
 
 		f, err := v.GetFloat64("num")
 		So(err, ShouldBeError)

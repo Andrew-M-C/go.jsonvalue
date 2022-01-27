@@ -7,20 +7,8 @@ import (
 )
 
 func TestIterFloat(t *testing.T) {
-	test(t, "test floatStateMachine", testFloatStateMachine)
 	test(t, "other parseResult conditions", testUnmarshalFloatErrors)
 	test(t, "https://github.com/Andrew-M-C/go.jsonvalue/issues/8", testIssue8)
-}
-
-func testFloatStateMachine(t *testing.T) {
-	Convey("basic", func() {
-		it := iter{'0'}
-		stm := newFloatStateMachine(it, 0)
-		So(stm.offset(), ShouldBeZeroValue)
-
-		stm = stm.withOffsetAddOne()
-		So(stm.offset(), ShouldEqual, 1)
-	})
 }
 
 func testUnmarshalFloatErrors(t *testing.T) {
@@ -53,12 +41,29 @@ func testUnmarshalFloatErrors(t *testing.T) {
 		_, err = UnmarshalString(`01`)
 		So(err, ShouldBeError)
 
+		_, err = UnmarshalString(`00`)
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`+1`)
+		So(err, ShouldBeError)
+
+		_, err = UnmarshalString(`-00`)
+		So(err, ShouldBeError)
+
 		v, err = UnmarshalString(`0.0`)
 		So(err, ShouldBeNil)
 		So(v, ShouldNotBeNil)
 		So(v.IsNumber(), ShouldBeTrue)
 		So(v.Int(), ShouldEqual, 0)
 		So(v.IsFloat(), ShouldBeTrue)
+
+		v, err = UnmarshalString(`0.10`)
+		So(err, ShouldBeNil)
+		So(v, ShouldNotBeNil)
+		So(v.IsNumber(), ShouldBeTrue)
+		So(v.Int(), ShouldEqual, 0)
+		So(v.IsFloat(), ShouldBeTrue)
+		So(v.Float64(), ShouldEqual, 0.1)
 
 		v, err = UnmarshalString(`0E0`)
 		So(err, ShouldBeNil)

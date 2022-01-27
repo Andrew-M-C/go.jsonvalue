@@ -7,176 +7,129 @@ import (
 
 // For state machine chart, please refer to ./img/parse_float_state_chart.drawio
 
-var (
-	numRuneTypes []numRuneType
-)
-
-func init() {
-	numRuneTypes = make([]numRuneType, 256)
-	for i := '1'; i <= '9'; i++ {
-		numRuneTypes[i] = numRuneDigitOneNine
-	}
-	numRuneTypes['0'] = numRuneDigitZero
-	numRuneTypes['E'] = numRuneExponent
-	numRuneTypes['e'] = numRuneExponent
-	numRuneTypes['-'] = numRuneNegative
-	numRuneTypes['+'] = numRunePositive
-	numRuneTypes['.'] = numRuneFraction
-}
-
 func (it iter) parseNumber(
 	offset int,
 ) (v *V, end int, reachEnd bool, err error) {
 
-	stm := newFloatStateMachine(it, offset)
-	var bType numRuneType
-	var b byte
-	var integer uint64
+	idx := offset
+	negative := false
+	floated := false
+	exponentGot := false
+	dotGot := false
+	intAfterDotGot := false
+	integer := uint64(0)
+	edgeFound := false
 
-	for err == nil {
-		stm, b, bType = stm.pop(it)
-		if bType == numRuneInvalid {
-			v, err = stm.parseResult(offset, stm.offset(), it, integer)
-			break
-		}
+	// len(it)-idx means remain bytes
 
-		switch stm.state() {
+	for ; len(it)-idx > 0 && !edgeFound; idx++ {
+		b := it[idx]
+
+		switch b {
 		default:
-		case stateStart:
-			stm, integer, err = stm.stateStart(b, bType)
-		case stateLeadingZero:
-			stm, err = stm.stateLeadingZero(b, bType)
-		case stateLeadingNegative:
-			stm, integer, err = stm.stateLeadingNegative(b, bType, integer)
-		case stateLeadingDigit:
-			stm, integer, err = stm.stateLeadingDigit(b, bType, integer)
-		case stateFraction:
-			stm, err = stm.stateFraction(b, bType)
-		case stateIntegerDigit:
-			stm, integer, err = stm.stateIntegerDigit(b, bType, integer)
-		case stateFractionDigit:
-			stm, err = stm.stateFractionDigit(b, bType)
-		case stateExponent:
-			stm, err = stm.stateExponent(b, bType)
-		case stateExponentSign:
-			stm, err = stm.stateExponentSign(b, bType)
-		case stateExponentDigit:
-			err = stm.stateExponentDigit(b, bType)
+			edgeFound = true
+
+		case '0':
+			if idx == offset {
+				// OK
+			} else if exponentGot {
+				// OK
+			} else if dotGot {
+				intAfterDotGot = true
+			} else if negative {
+				if integer == 0 && idx != offset+1 {
+					err = it.numErrorf(idx, "unexpected zero")
+					return
+				}
+			} else if integer == 0 {
+				err = it.numErrorf(idx, "unexpected zero")
+				return
+			}
+			integer *= 10
+
+		case '1', '2', '3', '4', '5', '6', '7', '8', '9':
+			if !floated {
+				integer = integer*10 + uint64(b) - '0'
+			} else if !exponentGot {
+				intAfterDotGot = true
+			}
+
+		case 'e', 'E':
+			if exponentGot {
+				err = it.numErrorf(idx, "unexpected exponent symbol")
+				return
+			}
+			exponentGot = true
+			floated = true
+
+		case '+':
+			// Codes below not needed because this error is caught in outer logic
+			// if !floated {
+			// 	err = it.numErrorf(idx, "unexpected positive symbol")
+			// 	return
+			// }
+
+		case '-':
+			if !floated {
+				if idx != offset {
+					err = it.numErrorf(idx, "unexpected negative symbol")
+					return
+				}
+				negative = true
+			}
+
+		case '.':
+			if idx == offset || floated || exponentGot || dotGot {
+				err = it.numErrorf(idx, "unexpected dot symbol")
+				return
+			}
+			dotGot = true
+			floated = true
 		}
 	}
 
-	return v, stm.offset(), stm.remain() == 0, err
-}
-
-type floatStateMachineState uint8
-
-const (
-	stateStart floatStateMachineState = iota
-	stateLeadingZero
-	stateLeadingNegative
-	stateLeadingDigit
-	stateFraction
-	stateIntegerDigit
-	stateFractionDigit
-	stateExponent
-	stateExponentSign
-	stateExponentDigit
-)
-
-type numRuneType uint8
-
-const (
-	numRuneInvalid numRuneType = iota
-	numRuneDigitOneNine
-	numRuneDigitZero
-	numRuneNegative
-	numRunePositive
-	numRuneFraction
-	numRuneExponent
-)
-
-type floatStateMachine uint64
-
-func (stm floatStateMachine) state() floatStateMachineState {
-	return floatStateMachineState(stm & 0xFF)
-}
-
-// 最低一个字节用于 state
-func (stm floatStateMachine) withState(state floatStateMachineState) floatStateMachine {
-	stm = stm & 0xFFFFFFFFFFFFFF00
-	stm = stm | floatStateMachine(state)
-	return stm
-}
-
-// remain 高 uint31 用于 remain
-func (stm floatStateMachine) remain() int {
-	return int(stm & 0x7FFFFFFF00000000 >> 32)
-}
-
-func (stm floatStateMachine) withRemain(remain int) floatStateMachine {
-	return stm | (floatStateMachine(remain) << 32)
-}
-
-func (stm floatStateMachine) withRemainMinusOne() floatStateMachine {
-	return stm - 0x100000000
-}
-
-// offset 低 uint32 - uint8 用于 offset
-func (stm floatStateMachine) offset() int {
-	return int(stm & 0xFFFFFF00 >> 8)
-}
-
-func (stm floatStateMachine) withOffset(offset int) floatStateMachine {
-	return stm | (floatStateMachine(offset) << 8)
-}
-
-func (stm floatStateMachine) withOffsetAddOne() floatStateMachine {
-	return stm + 0x100
-}
-
-// negative 最高位用于 negative
-func (stm floatStateMachine) negative() bool {
-	return stm&(0x8000000000000000) != 0
-}
-
-func (stm floatStateMachine) withNegative() floatStateMachine {
-	return stm | 0x8000000000000000
-}
-
-func newFloatStateMachine(it iter, offset int) floatStateMachine {
-	remain := len(it) - offset
-	stm := floatStateMachine(0)
-	stm = stm.withRemain(remain)
-	stm = stm.withOffset(offset)
-
-	return stm
-}
-
-func (s floatStateMachine) pop(it iter) (_ floatStateMachine, b byte, typ numRuneType) {
-	remain := s.remain()
-	if remain == 0 {
-		return s, 0, numRuneInvalid
+	if edgeFound {
+		idx--
 	}
 
-	b = it[s.offset()]
+	if floated {
+		if dotGot && !intAfterDotGot {
+			err = it.numErrorf(offset, "integer after dot missing")
+			return
+		}
+		v, err = it.parseFloatResult(offset, idx)
+	} else {
+		if integer > 0 && it[offset] == '0' {
+			err = it.numErrorf(offset, "non-zero integer should not start with zero")
+			return
+		}
 
-	if typ = numRuneTypes[int(b)]; typ != numRuneInvalid {
-		s = s.withOffsetAddOne()
-		s = s.withRemainMinusOne()
-		return s, b, typ
+		firstB := it[offset]
+		if idx-offset == 1 {
+			if firstB >= '0' && firstB <= '9' {
+				// OK
+			} else {
+				err = it.numErrorf(offset, "invalid number format")
+				return
+			}
+		}
+
+		if negative {
+			v, err = it.parseNegativeIntResult(offset, idx, integer)
+		} else {
+			v, err = it.parsePositiveIntResult(offset, idx, integer)
+		}
 	}
-	return s, 0, numRuneInvalid
+
+	return v, idx, len(it)-idx == 0, err
 }
 
-// var (
-// 	lastBytes []byte
-// )
-
-func (s floatStateMachine) errorf(f string, a ...interface{}) error {
-	a = append([]interface{}{s.offset()}, a...)
+func (it iter) numErrorf(offset int, f string, a ...interface{}) error {
+	a = append([]interface{}{offset}, a...)
 	return fmt.Errorf("parsing number at index %d: "+f, a...)
 
-	// debug ONLY
+	// debug ONLY below
+
 	// getCaller := func(skip int) string {
 	// 	pc, _, _, ok := runtime.Caller(skip + 1)
 	// 	if !ok {
@@ -193,8 +146,8 @@ func (s floatStateMachine) errorf(f string, a ...interface{}) error {
 	// }
 	// ca := getCaller(1)
 
-	// a = append([]interface{}{ca, string(lastBytes), s.offset()}, a...)
-	// return fmt.Errorf("%s - parsing number ('%s') at index %d: "+f, a...)
+	// a = append([]interface{}{ca, string(it), offset}, a...)
+	// return fmt.Errorf("%s - parsing number \"%s\" at index %d: "+f, a...)
 }
 
 const (
@@ -205,29 +158,14 @@ const (
 	intMinAbs     = 9223372036854775808
 )
 
-func (s floatStateMachine) parseResult(start, end int, b []byte, integer uint64) (*V, error) {
-	switch s.state() {
-	case stateLeadingZero, stateLeadingDigit, stateIntegerDigit:
-		if s.negative() {
-			return s.parseNegativeIntResult(start, end, b, integer)
-		}
-		return s.parsePositiveIntResult(start, end, b, integer)
-	case stateFractionDigit, stateExponentDigit:
-		return s.parseFloatResult(start, end, b)
-	default:
-		return nil, s.errorf("invalid state: %v", s.state()) // TODO:
-	}
-}
-
-func (s floatStateMachine) parseFloatResult(start, end int, b []byte) (*V, error) {
-	str := string(b[start:end])
-	f, err := strconv.ParseFloat(str, 64)
+func (it iter) parseFloatResult(start, end int) (*V, error) {
+	f, err := strconv.ParseFloat(unsafeBtoS(it[start:end]), 64)
 	if err != nil {
-		return nil, s.errorf("%w", err)
+		return nil, it.numErrorf(start, "%w", err)
 	}
 
 	v := new(Number)
-	v.srcByte = b
+	v.srcByte = it
 	v.srcOffset, v.srcEnd = start, end
 
 	v.parsed = true
@@ -241,19 +179,19 @@ func (s floatStateMachine) parseFloatResult(start, end int, b []byte) (*V, error
 	return v, nil
 }
 
-func (s floatStateMachine) parsePositiveIntResult(start, end int, b []byte, integer uint64) (*V, error) {
+func (it iter) parsePositiveIntResult(start, end int, integer uint64) (*V, error) {
 	le := end - start
 
 	if le > len(uintMaxStr) {
-		return nil, s.errorf("value too large")
+		return nil, it.numErrorf(start, "value too large")
 	} else if le == len(uintMaxStr) {
 		if integer < uintMaxDigits {
-			return nil, s.errorf("value too large")
+			return nil, it.numErrorf(start, "value too large")
 		}
 	}
 
 	v := new(Number)
-	v.srcByte = b
+	v.srcByte = it
 	v.srcOffset, v.srcEnd = start, end
 
 	v.parsed = true
@@ -267,19 +205,19 @@ func (s floatStateMachine) parsePositiveIntResult(start, end int, b []byte, inte
 	return v, nil
 }
 
-func (s floatStateMachine) parseNegativeIntResult(start, end int, b []byte, integer uint64) (*V, error) {
+func (it iter) parseNegativeIntResult(start, end int, integer uint64) (*V, error) {
 	le := end - start
 
 	if le > len(intMinStr) {
-		return nil, s.errorf("absolute value too large")
+		return nil, it.numErrorf(start, "absolute value too large")
 	} else if le == len(intMinStr) {
 		if integer > intMinAbs {
-			return nil, s.errorf("absolute value too large")
+			return nil, it.numErrorf(start, "absolute value too large")
 		}
 	}
 
 	v := new(Number)
-	v.srcByte = b
+	v.srcByte = it
 	v.srcOffset, v.srcEnd = start, end
 
 	v.parsed = true
@@ -296,135 +234,4 @@ func (s floatStateMachine) parseNegativeIntResult(start, end int, b []byte, inte
 	v.num.f64 = float64(integer)
 
 	return v, nil
-}
-
-func (s floatStateMachine) stateStart(b byte, typ numRuneType) (floatStateMachine, uint64, error) {
-	integer := uint64(0)
-	switch typ {
-	case numRuneDigitZero:
-		s = s.withState(stateLeadingZero)
-	case numRuneDigitOneNine:
-		integer = uint64(b) - '0'
-		s = s.withState(stateLeadingDigit)
-	case numRuneNegative:
-		s = s.withNegative()
-		s = s.withState(stateLeadingNegative)
-	default:
-		return 0, 0, s.errorf("illegal character 0x%02x", b)
-	}
-	return s, integer, nil
-}
-
-func (s floatStateMachine) stateLeadingZero(b byte, typ numRuneType) (floatStateMachine, error) {
-	switch typ {
-	case numRuneExponent:
-		s = s.withState(stateExponent)
-	case numRuneFraction:
-		s = s.withState(stateFraction)
-	default:
-		return s, s.errorf("illegal character 0x%02x", b)
-	}
-	return s, nil
-}
-
-func (s floatStateMachine) stateLeadingDigit(
-	b byte, typ numRuneType, integer uint64,
-) (floatStateMachine, uint64, error) {
-	switch typ {
-	case numRuneDigitZero, numRuneDigitOneNine:
-		integer = integer*10 + uint64(b-'0')
-		s = s.withState(stateIntegerDigit)
-	case numRuneFraction:
-		s = s.withState(stateFraction)
-	case numRuneExponent:
-		s = s.withState(stateExponent)
-	default:
-		return s, 0, s.errorf("illegal character 0x%02x", b)
-	}
-	return s, integer, nil
-}
-
-func (s floatStateMachine) stateLeadingNegative(
-	b byte, typ numRuneType, integer uint64,
-) (floatStateMachine, uint64, error) {
-	switch typ {
-	case numRuneDigitOneNine:
-		integer = integer*10 + uint64(b-'0')
-		s = s.withState(stateLeadingDigit)
-	case numRuneDigitZero:
-		s = s.withState(stateLeadingZero)
-	default:
-		return s, integer, s.errorf("illegal character 0x%02x", b)
-	}
-	return s, integer, nil
-}
-
-func (s floatStateMachine) stateIntegerDigit(
-	b byte, typ numRuneType, integer uint64,
-) (floatStateMachine, uint64, error) {
-	switch typ {
-	case numRuneDigitOneNine, numRuneDigitZero:
-		integer = integer*10 + uint64(b-'0')
-	case numRuneFraction:
-		s = s.withState(stateFraction)
-	case numRuneExponent:
-		s = s.withState(stateExponent)
-	default:
-		return s, integer, s.errorf("illegal character 0x%02x", b)
-	}
-	return s, integer, nil
-}
-
-func (s floatStateMachine) stateFraction(b byte, typ numRuneType) (floatStateMachine, error) {
-	switch typ {
-	case numRuneDigitOneNine, numRuneDigitZero:
-		s = s.withState(stateFractionDigit)
-	default:
-		return s, s.errorf("illegal character 0x%02x", b)
-	}
-	return s, nil
-}
-
-func (s floatStateMachine) stateExponent(b byte, typ numRuneType) (floatStateMachine, error) {
-	switch typ {
-	case numRuneDigitOneNine, numRuneDigitZero:
-		s = s.withState(stateExponentDigit)
-	case numRunePositive, numRuneNegative:
-		s = s.withState(stateExponentSign)
-	default:
-		return s, s.errorf("illegal character 0x%02x", b)
-	}
-	return s, nil
-}
-
-func (s floatStateMachine) stateExponentSign(b byte, typ numRuneType) (floatStateMachine, error) {
-	switch typ {
-	case numRuneDigitOneNine, numRuneDigitZero:
-		s = s.withState(stateExponentDigit)
-	default:
-		return s, s.errorf("illegal character 0x%02x after exponent", b)
-	}
-	return s, nil
-}
-
-func (s floatStateMachine) stateFractionDigit(b byte, typ numRuneType) (floatStateMachine, error) {
-	switch typ {
-	case numRuneDigitOneNine, numRuneDigitZero:
-		// OK
-	case numRuneExponent:
-		s = s.withState(stateExponent)
-	default:
-		return s, s.errorf("illegal character 0x%02x", b)
-	}
-	return s, nil
-}
-
-func (s floatStateMachine) stateExponentDigit(b byte, typ numRuneType) error {
-	switch typ {
-	case numRuneDigitOneNine, numRuneDigitZero:
-		// OK
-	default:
-		return s.errorf("illegal character 0x%02x", b)
-	}
-	return nil
 }
