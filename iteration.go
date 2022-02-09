@@ -20,46 +20,30 @@ type ArrayIter struct {
 //
 // 在回调函数中返回 true 表示继续迭代，返回 false 表示退出迭代
 func (v *V) RangeObjects(callback func(k string, v *V) bool) {
-	if !v.IsObject() {
+	if v.impl == nil {
 		return
 	}
-	if nil == callback {
-		return
-	}
-
-	for k, v := range v.children.object {
-		ok := callback(k, v)
-		if !ok {
-			break
-		}
-	}
+	v.impl.RangeObjects(callback)
 }
 
 // Deprecated: IterObjects is deprecated, please Use ForRangeObj() instead.
 func (v *V) IterObjects() <-chan *ObjectIter {
-	c := make(chan *ObjectIter, len(v.children.object))
-
-	go func() {
-		for k, v := range v.children.object {
-			c <- &ObjectIter{
-				K: k,
-				V: v,
-			}
-		}
-		close(c)
-	}()
-	return c
+	if v.impl == nil {
+		ch := make(chan *ObjectIter)
+		close(ch)
+		return ch
+	}
+	return v.impl.IterObjects()
 }
 
 // ForRangeObj returns a map which can be used in for - range block to iteration KVs in a JSON object value.
 //
 // ForRangeObj 返回一个 map 类型，用于使用 for - range 块迭代 JSON 对象类型的子成员。
 func (v *V) ForRangeObj() map[string]*V {
-	res := make(map[string]*V, len(v.children.object))
-	for k, v := range v.children.object {
-		res[k] = v
+	if v.impl == nil {
+		return map[string]*V{}
 	}
-	return res
+	return v.impl.ForRangeObj()
 }
 
 // RangeArray goes through each children when this is an array value
@@ -70,40 +54,28 @@ func (v *V) ForRangeObj() map[string]*V {
 //
 // 在回调函数中返回 true 表示继续迭代，返回 false 表示退出迭代
 func (v *V) RangeArray(callback func(i int, v *V) bool) {
-	if !v.IsArray() {
+	if v.impl == nil {
 		return
 	}
-	if nil == callback {
-		return
-	}
-
-	for i, child := range v.children.array {
-		if ok := callback(i, child); !ok {
-			break
-		}
-	}
+	v.impl.RangeArray(callback)
 }
 
 // Deprecated: IterArray is deprecated, please Use ForRangeArr() instead.
 func (v *V) IterArray() <-chan *ArrayIter {
-	c := make(chan *ArrayIter, len(v.children.array))
-
-	go func() {
-		for i, child := range v.children.array {
-			c <- &ArrayIter{
-				I: i,
-				V: child,
-			}
-		}
-		close(c)
-	}()
-	return c
+	if v.impl == nil {
+		ch := make(chan *ArrayIter)
+		close(ch)
+		return ch
+	}
+	return v.impl.IterArray()
 }
 
 // ForRangeArr returns a slice which can be used in for - range block to iteration KVs in a JSON array value.
 //
 // ForRangeObj 返回一个切片，用于使用 for - range 块迭代 JSON 数组类型的子成员。
 func (v *V) ForRangeArr() []*V {
-	res := make([]*V, 0, len(v.children.array))
-	return append(res, v.children.array...)
+	if v.impl == nil {
+		return nil
+	}
+	return v.impl.ForRangeArr()
 }

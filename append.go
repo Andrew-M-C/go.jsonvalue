@@ -127,32 +127,15 @@ func (v *V) AppendArray() *Append {
 func (apd *Append) InTheBeginning(params ...interface{}) (*V, error) {
 	v := apd.v
 	c := apd.c
-	if nil == v || v.valueType == NotExist {
+	if nil == v || v.ValueType() == NotExist {
 		return &V{}, ErrValueUninitialized
 	}
 
-	// this is the last iteration
-	paramCount := len(params)
-	if paramCount == 0 {
-		if v.valueType != Array {
-			return &V{}, ErrNotArrayValue
-		}
-
-		v.children.array = append(v.children.array, c)
-		return c, nil
-	}
-
-	// this is not the last iterarion
-	child, err := v.GetArray(params[0], params[1:paramCount]...)
+	err := v.impl.appendInTheBeginning(c, params...)
 	if err != nil {
 		return &V{}, err
 	}
 
-	if child.Len() == 0 {
-		child.children.array = append(child.children.array, c)
-	} else {
-		child.insertToArr(0, c)
-	}
 	return c, nil
 }
 
@@ -162,27 +145,17 @@ func (apd *Append) InTheBeginning(params ...interface{}) (*V, error) {
 func (apd *Append) InTheEnd(params ...interface{}) (*V, error) {
 	v := apd.v
 	c := apd.c
-	if v.valueType == NotExist {
+	if nil == v || v.ValueType() == NotExist {
+		return &V{}, ErrValueUninitialized
+	}
+	if nil == c || c.ValueType() == NotExist {
 		return &V{}, ErrValueUninitialized
 	}
 
-	// this is the last iteration
-	paramCount := len(params)
-	if paramCount == 0 {
-		if v.valueType != Array {
-			return &V{}, ErrNotArrayValue
-		}
-
-		v.children.array = append(v.children.array, c)
-		return c, nil
-	}
-
-	// this is not the last iterarion
-	child, err := v.GetArray(params[0], params[1:paramCount]...)
+	err := v.impl.appendInTheEnd(c, params...)
 	if err != nil {
 		return &V{}, err
 	}
 
-	child.children.array = append(child.children.array, c)
 	return c, nil
 }

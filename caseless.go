@@ -35,14 +35,8 @@ var _ Caseless = (*V)(nil)
 //
 // 注意: 该函数不是协程安全的，如果在多协程场景下，调用该函数，需要加上写锁，而不能用读锁。
 func (v *V) Caseless() Caseless {
-	switch v.valueType {
-	default:
-		return v
-
-	case Array, Object:
-		return &caselessOper{
-			v: v,
-		}
+	return &caselessOper{
+		v: v,
 	}
 }
 
@@ -51,11 +45,11 @@ type caselessOper struct {
 }
 
 func (g *caselessOper) Get(firstParam interface{}, otherParams ...interface{}) (*V, error) {
-	return g.v.get(true, firstParam, otherParams...)
+	return g.v.impl.get(true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) MustGet(firstParam interface{}, otherParams ...interface{}) *V {
-	res, _ := g.v.get(true, firstParam, otherParams...)
+	res, _ := g.v.impl.get(true, firstParam, otherParams...)
 	return res
 }
 
@@ -116,5 +110,8 @@ func (g *caselessOper) GetArray(firstParam interface{}, otherParams ...interface
 }
 
 func (g *caselessOper) Delete(firstParam interface{}, otherParams ...interface{}) error {
-	return g.v.delete(true, firstParam, otherParams...)
+	if g.v.impl == nil {
+		return ErrValueUninitialized
+	}
+	return g.v.impl.delete(true, firstParam, otherParams...)
 }

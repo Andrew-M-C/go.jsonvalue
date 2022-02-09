@@ -129,6 +129,7 @@ func testSetMisc(t *testing.T) {
 
 	v.SetArray().At("data", "array")
 	v.AppendNull().InTheEnd("data", "array")
+	t.Log(v.MustMarshalString(OptDefaultStringSequence()))
 	a, err := v.Get("data", "array")
 	So(err, ShouldBeNil)
 	So(a.IsArray(), ShouldBeTrue)

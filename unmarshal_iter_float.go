@@ -164,19 +164,7 @@ func (it iter) parseFloatResult(start, end int) (*V, error) {
 		return nil, it.numErrorf(start, "%w", err)
 	}
 
-	v := new(Number)
-	v.srcByte = it
-	v.srcOffset, v.srcEnd = start, end
-
-	v.parsed = true
-
-	v.num.negative = f < 0
-	v.num.floated = true
-	v.num.i64 = int64(f)
-	v.num.u64 = uint64(f)
-	v.num.f64 = f
-
-	return v, nil
+	return newFloat64ByRaw(f, it[start:end]), nil
 }
 
 func (it iter) parsePositiveIntResult(start, end int, integer uint64) (*V, error) {
@@ -190,19 +178,7 @@ func (it iter) parsePositiveIntResult(start, end int, integer uint64) (*V, error
 		}
 	}
 
-	v := new(Number)
-	v.srcByte = it
-	v.srcOffset, v.srcEnd = start, end
-
-	v.parsed = true
-
-	v.num.negative = false
-	v.num.floated = false
-	v.num.i64 = int64(integer)
-	v.num.u64 = uint64(integer)
-	v.num.f64 = float64(integer)
-
-	return v, nil
+	return NewUint64(integer), nil
 }
 
 func (it iter) parseNegativeIntResult(start, end int, integer uint64) (*V, error) {
@@ -216,22 +192,6 @@ func (it iter) parseNegativeIntResult(start, end int, integer uint64) (*V, error
 		}
 	}
 
-	v := new(Number)
-	v.srcByte = it
-	v.srcOffset, v.srcEnd = start, end
-
-	v.parsed = true
-	v.num.negative = true
-	v.num.floated = false
-
-	if integer == intMinAbs {
-		v.num.i64 = intMin
-	} else {
-		v.num.i64 = -int64(integer)
-	}
-
-	v.num.u64 = uint64(v.num.i64)
-	v.num.f64 = float64(integer)
-
-	return v, nil
+	negative := -int64(integer)
+	return NewInt64(negative), nil
 }

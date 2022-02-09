@@ -93,11 +93,11 @@ func testIterParseNumber(t *testing.T) {
 		it := iter(b[:11])
 
 		v, end, reachEnd, err := it.parseNumber(0)
-		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
+		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.Int64(), v.Uint64(), v.Float64())
 		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
 		t.Logf(string(b[:end]))
 		So(err, ShouldBeNil)
-		So(v.num.f64, ShouldEqual, -12345.6789)
+		So(v.Float64(), ShouldEqual, -12345.6789)
 		So(reachEnd, ShouldBeTrue)
 	})
 
@@ -106,9 +106,9 @@ func testIterParseNumber(t *testing.T) {
 
 		v, end, reachEnd, err := it.parseNumber(0)
 		So(err, ShouldBeNil)
-		So(v.num.f64, ShouldEqual, -12345.6789)
+		So(v.Float64(), ShouldEqual, -12345.6789)
 		So(reachEnd, ShouldBeFalse)
-		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
+		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.Int64(), v.Uint64(), v.Float64())
 		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
 		t.Logf(string(b[:end]))
 	})

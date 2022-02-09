@@ -130,41 +130,16 @@ func (v *V) InsertArray() *Insert {
 func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*V, error) {
 	v := ins.v
 	c := ins.c
-	if v.valueType == NotExist {
+	if nil == v || v.ValueType() == NotExist {
 		return &V{}, ErrValueUninitialized
 	}
 
-	// this is the last iteration
-	paramCount := len(otherParams)
-	if paramCount == 0 {
-		if v.valueType != Array {
-			return &V{}, ErrNotArrayValue
-		}
-
-		pos, err := intfToInt(firstParam)
-		if err != nil {
-			return &V{}, err
-		}
-
-		pos = v.posAtIndexForInsertBefore(pos)
-		if pos < 0 {
-			return &V{}, ErrOutOfRange
-		}
-		v.insertToArr(pos, c)
-		return c, nil
-	}
-
-	// this is not the last iterarion
-	child, err := v.GetArray(firstParam, otherParams[:paramCount-1]...)
+	err := v.impl.insertBefore(c, firstParam, otherParams...)
 	if err != nil {
 		return &V{}, err
 	}
 
-	childIns := Insert{
-		v: child,
-		c: c,
-	}
-	return childIns.Before(otherParams[paramCount-1])
+	return c, err
 }
 
 // After completes the following operation of Insert(). It inserts value AFTER specified position.
@@ -183,49 +158,14 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V, error) {
 	v := ins.v
 	c := ins.c
-	if nil == v || v.valueType == NotExist {
+	if nil == v || v.ValueType() == NotExist {
 		return &V{}, ErrValueUninitialized
 	}
 
-	// this is the last iteration
-	paramCount := len(otherParams)
-	if paramCount == 0 {
-		if v.valueType != Array {
-			return &V{}, ErrNotArrayValue
-		}
-
-		pos, err := intfToInt(firstParam)
-		if err != nil {
-			return &V{}, err
-		}
-
-		pos, appendToEnd := v.posAtIndexForInsertAfter(pos)
-		if pos < 0 {
-			return &V{}, ErrOutOfRange
-		}
-		if appendToEnd {
-			v.children.array = append(v.children.array, c)
-		} else {
-			v.insertToArr(pos, c)
-		}
-		return c, nil
-	}
-
-	// this is not the last iterarion
-	child, err := v.GetArray(firstParam, otherParams[:paramCount-1]...)
+	err := v.impl.insertAfter(c, firstParam, otherParams...)
 	if err != nil {
 		return &V{}, err
 	}
 
-	childIns := Insert{
-		v: child,
-		c: c,
-	}
-	return childIns.After(otherParams[paramCount-1])
-}
-
-func (v *V) insertToArr(pos int, child *V) {
-	v.children.array = append(v.children.array, nil)
-	copy(v.children.array[pos+1:], v.children.array[pos:])
-	v.children.array[pos] = child
+	return c, err
 }

@@ -1,29 +1,30 @@
 package jsonvalue
 
-import (
-	"fmt"
-	"strings"
-)
-
 // Len returns length of an object or array type JSON value.
 //
 // Len 返回当前对象类型或数组类型的 JSON 的成员长度。如果不是这两种类型，那么会返回 0。
 func (v *V) Len() int {
-	switch v.valueType {
-	case Array:
-		return len(v.children.array)
-	case Object:
-		return len(v.children.object)
-	default:
+	if v.impl == nil {
 		return 0
 	}
+	return v.impl.Len()
 }
 
 // Get returns JSON value in specified position. Param formats are like At().
 //
 // Get 返回按照参数指定的位置的 JSON 成员值。参数格式与 At() 函数相同
 func (v *V) Get(firstParam interface{}, otherParams ...interface{}) (*V, error) {
-	return v.get(false, firstParam, otherParams...)
+	if v.impl == nil {
+		return &V{}, ErrValueUninitialized
+	}
+	return v.impl.get(false, firstParam, otherParams...)
+}
+
+func (v *V) get(caseless bool, firstParam interface{}, otherParams ...interface{}) (*V, error) {
+	if v.impl == nil {
+		return &V{}, ErrValueUninitialized
+	}
+	return v.impl.get(caseless, firstParam, otherParams...)
 }
 
 // MustGet is same as Get(), but does not return error. If error occurs, a JSON value with
@@ -32,88 +33,8 @@ func (v *V) Get(firstParam interface{}, otherParams ...interface{}) (*V, error) 
 // MustGet 与 Get() 函数相同，不过不返回错误。如果发生错误了，那么会返回一个 ValueType() 返回值为 NotExist
 // 的 JSON 值对象。
 func (v *V) MustGet(firstParam interface{}, otherParams ...interface{}) *V {
-	res, _ := v.get(false, firstParam, otherParams...)
+	res, _ := v.Get(firstParam, otherParams...)
 	return res
-}
-
-func (v *V) get(caseless bool, firstParam interface{}, otherParams ...interface{}) (*V, error) {
-	child, err := v.getInCurrValue(caseless, firstParam)
-	if err != nil {
-		return &V{}, err
-	}
-
-	if len(otherParams) == 0 {
-		return child, nil
-	}
-	return child.get(caseless, otherParams[0], otherParams[1:]...)
-}
-
-func (v *V) initCaselessStorage() {
-	if v.children.lowerCaseKeys != nil {
-		return
-	}
-	v.children.lowerCaseKeys = make(map[string]map[string]struct{}, len(v.children.object))
-	for k := range v.children.object {
-		v.addCaselessKey(k)
-	}
-}
-
-func (v *V) getFromObjectChildren(caseless bool, key string) (child *V, exist bool) {
-	child, exist = v.children.object[key]
-	if exist {
-		return child, true
-	}
-
-	if !caseless {
-		return &V{}, false
-	}
-
-	v.initCaselessStorage()
-
-	lowerCaseKey := strings.ToLower(key)
-	keys, exist := v.children.lowerCaseKeys[lowerCaseKey]
-	if !exist {
-		return &V{}, false
-	}
-
-	for actualKey := range keys {
-		child, exist = v.children.object[actualKey]
-		if exist {
-			return child, true
-		}
-	}
-
-	return &V{}, false
-}
-
-func (v *V) getInCurrValue(caseless bool, param interface{}) (*V, error) {
-	if v.valueType == Array {
-		// integer expected
-		pos, err := intfToInt(param)
-		if err != nil {
-			return &V{}, err
-		}
-		child, ok := v.childAtIndex(pos)
-		if !ok {
-			return &V{}, ErrOutOfRange
-		}
-		return child, nil
-
-	} else if v.valueType == Object {
-		// string expected
-		key, err := intfToString(param)
-		if err != nil {
-			return &V{}, err
-		}
-		child, exist := v.getFromObjectChildren(caseless, key)
-		if !exist {
-			return &V{}, ErrNotFound
-		}
-		return child, nil
-
-	} else {
-		return &V{}, fmt.Errorf("%v type does not supports Get()", v.valueType)
-	}
 }
 
 // GetBytes is similar with v, err := Get(...); v.Bytes(). But if error occurs or Base64 decode error, returns error.
@@ -128,10 +49,10 @@ func (v *V) getBytes(caseless bool, firstParam interface{}, otherParams ...inter
 	if err != nil {
 		return []byte{}, err
 	}
-	if ret.valueType != String {
+	if ret.ValueType() != String {
 		return []byte{}, ErrTypeNotMatch
 	}
-	b, err := b64.DecodeString(ret.valueStr)
+	b, err := b64.DecodeString(ret.String())
 	if err != nil {
 		return []byte{}, err
 	}
@@ -150,7 +71,7 @@ func (v *V) getString(caseless bool, firstParam interface{}, otherParams ...inte
 	if err != nil {
 		return "", err
 	}
-	if ret.valueType != String {
+	if ret.ValueType() != String {
 		return "", ErrTypeNotMatch
 	}
 	return ret.String(), nil
@@ -164,12 +85,8 @@ func (v *V) GetInt(firstParam interface{}, otherParams ...interface{}) (int, err
 }
 
 func (v *V) getInt(caseless bool, firstParam interface{}, otherParams ...interface{}) (int, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
-	if err != nil {
-		return 0, err
-	}
-	ret, err = getNumberAndErrorFromValue(ret)
-	return ret.Int(), err
+	i, err := v.getInt64(caseless, firstParam, otherParams...)
+	return int(i), err
 }
 
 // GetUint is equalivent to v, err := Get(...); v.Uint(). If error occurs, returns 0.
@@ -180,12 +97,8 @@ func (v *V) GetUint(firstParam interface{}, otherParams ...interface{}) (uint, e
 }
 
 func (v *V) getUint(caseless bool, firstParam interface{}, otherParams ...interface{}) (uint, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
-	if err != nil {
-		return 0, err
-	}
-	ret, err = getNumberAndErrorFromValue(ret)
-	return ret.Uint(), err
+	u, err := v.getUint64(caseless, firstParam, otherParams...)
+	return uint(u), err
 }
 
 // GetInt64 is equalivent to v, err := Get(...); v.Int64(). If error occurs, returns 0.
@@ -196,12 +109,15 @@ func (v *V) GetInt64(firstParam interface{}, otherParams ...interface{}) (int64,
 }
 
 func (v *V) getInt64(caseless bool, firstParam interface{}, otherParams ...interface{}) (int64, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+	if v.impl == nil {
+		return 0, ErrValueUninitialized
+	}
+
+	v, err := v.impl.get(caseless, firstParam, otherParams...)
 	if err != nil {
 		return 0, err
 	}
-	ret, err = getNumberAndErrorFromValue(ret)
-	return ret.Int64(), err
+	return v.impl.Int64()
 }
 
 // GetUint64 is equalivent to v, err := Get(...); v.Unt64(). If error occurs, returns 0.
@@ -212,12 +128,15 @@ func (v *V) GetUint64(firstParam interface{}, otherParams ...interface{}) (uint6
 }
 
 func (v *V) getUint64(caseless bool, firstParam interface{}, otherParams ...interface{}) (uint64, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+	if v.impl == nil {
+		return 0, ErrValueUninitialized
+	}
+
+	v, err := v.impl.get(caseless, firstParam, otherParams...)
 	if err != nil {
 		return 0, err
 	}
-	ret, err = getNumberAndErrorFromValue(ret)
-	return ret.Uint64(), err
+	return v.impl.Uint64()
 }
 
 // GetInt32 is equalivent to v, err := Get(...); v.Int32(). If error occurs, returns 0.
@@ -228,12 +147,8 @@ func (v *V) GetInt32(firstParam interface{}, otherParams ...interface{}) (int32,
 }
 
 func (v *V) getInt32(caseless bool, firstParam interface{}, otherParams ...interface{}) (int32, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
-	if err != nil {
-		return 0, err
-	}
-	ret, err = getNumberAndErrorFromValue(ret)
-	return ret.Int32(), err
+	i, err := v.getInt64(caseless, firstParam, otherParams...)
+	return int32(i), err
 }
 
 // GetUint32 is equalivent to v, err := Get(...); v.Uint32(). If error occurs, returns 0.
@@ -244,12 +159,8 @@ func (v *V) GetUint32(firstParam interface{}, otherParams ...interface{}) (uint3
 }
 
 func (v *V) getUint32(caseless bool, firstParam interface{}, otherParams ...interface{}) (uint32, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
-	if err != nil {
-		return 0, err
-	}
-	ret, err = getNumberAndErrorFromValue(ret)
-	return ret.Uint32(), err
+	u, err := v.getUint64(caseless, firstParam, otherParams...)
+	return uint32(u), err
 }
 
 // GetFloat64 is equalivent to v, err := Get(...); v.Float64(). If error occurs, returns 0.0.
@@ -260,12 +171,15 @@ func (v *V) GetFloat64(firstParam interface{}, otherParams ...interface{}) (floa
 }
 
 func (v *V) getFloat64(caseless bool, firstParam interface{}, otherParams ...interface{}) (float64, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+	if v.impl == nil {
+		return 0, ErrValueUninitialized
+	}
+
+	v, err := v.impl.get(caseless, firstParam, otherParams...)
 	if err != nil {
 		return 0, err
 	}
-	ret, err = getNumberAndErrorFromValue(ret)
-	return ret.Float64(), err
+	return v.impl.Float64()
 }
 
 // GetFloat32 is equalivent to v, err := Get(...); v.Float32(). If error occurs, returns 0.0.
@@ -276,12 +190,8 @@ func (v *V) GetFloat32(firstParam interface{}, otherParams ...interface{}) (floa
 }
 
 func (v *V) getFloat32(caseless bool, firstParam interface{}, otherParams ...interface{}) (float32, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
-	if err != nil {
-		return 0, err
-	}
-	ret, err = getNumberAndErrorFromValue(ret)
-	return ret.Float32(), err
+	f, err := v.getFloat64(caseless, firstParam, otherParams...)
+	return float32(f), err
 }
 
 // GetBool is equalivent to v, err := Get(...); v.Bool(). If error occurs, returns false.
@@ -292,12 +202,15 @@ func (v *V) GetBool(firstParam interface{}, otherParams ...interface{}) (bool, e
 }
 
 func (v *V) getBool(caseless bool, firstParam interface{}, otherParams ...interface{}) (bool, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+	if v.impl == nil {
+		return false, ErrValueUninitialized
+	}
+
+	v, err := v.impl.get(caseless, firstParam, otherParams...)
 	if err != nil {
 		return false, err
 	}
-	ret, err = getBoolAndErrorFromValue(ret)
-	return ret.Bool(), err
+	return v.impl.Bool()
 }
 
 // GetNull is equalivent to v, err := Get(...); raise err if error occurs or v.IsNull() == false.
@@ -312,7 +225,7 @@ func (v *V) getNull(caseless bool, firstParam interface{}, otherParams ...interf
 	if err != nil {
 		return err
 	}
-	if ret.valueType != Null {
+	if ret.ValueType() != Null {
 		return ErrTypeNotMatch
 	}
 	return nil
@@ -330,7 +243,7 @@ func (v *V) getObject(caseless bool, firstParam interface{}, otherParams ...inte
 	if err != nil {
 		return &V{}, err
 	}
-	if ret.valueType != Object {
+	if ret.ValueType() != Object {
 		return &V{}, ErrTypeNotMatch
 	}
 	return ret, nil
@@ -348,7 +261,7 @@ func (v *V) getArray(caseless bool, firstParam interface{}, otherParams ...inter
 	if err != nil {
 		return &V{}, err
 	}
-	if ret.valueType != Array {
+	if ret.ValueType() != Array {
 		return &V{}, ErrTypeNotMatch
 	}
 	return ret, nil

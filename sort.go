@@ -20,46 +20,23 @@ type ArrayLessFunc func(v1, v2 *V) bool
 // SortArray 用于对 array 类型的 JSON 的子成员进行重新排序。基本逻辑与 sort.Sort 函数相同。当 lessFunc 为 nil，或者当前 JSON 不是一个
 // array 类型时，什么变化都不会发生。
 func (v *V) SortArray(lessFunc ArrayLessFunc) {
+	if v.impl == nil {
+		return
+	}
 	if nil == lessFunc {
 		return
 	}
+
 	if !v.IsArray() {
 		return
 	}
 
-	sav := newSortV(v, lessFunc)
-	sav.Sort()
-}
-
-type sortArrayV struct {
-	v        *V
-	lessFunc ArrayLessFunc
-}
-
-func newSortV(v *V, lessFunc ArrayLessFunc) *sortArrayV {
-	sav := sortArrayV{
-		v:        v,
-		lessFunc: lessFunc,
-	}
-	return &sav
-}
-
-func (v *sortArrayV) Sort() {
-	sort.Sort(v)
-}
-
-func (v *sortArrayV) Len() int {
-	return len(v.v.children.array)
-}
-
-func (v *sortArrayV) Less(i, j int) bool {
-	v1 := v.v.children.array[i]
-	v2 := v.v.children.array[j]
-	return v.lessFunc(v1, v2)
-}
-
-func (v *sortArrayV) Swap(i, j int) {
-	v.v.children.array[i], v.v.children.array[j] = v.v.children.array[j], v.v.children.array[i]
+	arr := (v.impl).(*arrayValue)
+	sort.Slice(arr.children, func(i, j int) bool {
+		vI := arr.children[i]
+		vJ := arr.children[j]
+		return lessFunc(vI, vJ)
+	})
 }
 
 // ---------------- marshal sorting ----------------
@@ -182,152 +159,4 @@ type MarshalLessFunc func(nilableParent *ParentInfo, key1, key2 string, v1, v2 *
 // DefaultStringSequence 使用 strings.Compare() 函数来判断键值对的顺序。用于 Opt.MarshalLessFunc。
 func DefaultStringSequence(parent *ParentInfo, key1, key2 string, v1, v2 *V) bool {
 	return strings.Compare(key1, key2) <= 0
-}
-
-func (sov *sortObjectV) marshalObjectWithLessFunc(buf *bytes.Buffer, opt *Opt) {
-	buf.WriteRune('{')
-	defer buf.WriteRune('}')
-
-	// sort
-	sort.Sort(sov)
-
-	// marshal
-	marshaledCount := 0
-	for i, key := range sov.keys {
-		child := sov.values[i]
-		if child.IsNull() && opt.OmitNull {
-			continue
-		}
-		if marshaledCount > 0 {
-			buf.WriteRune(',')
-		}
-
-		buf.WriteRune('"')
-		escapeStringToBuff(key, buf, opt)
-		buf.WriteString("\":")
-
-		child.marshalToBuffer(child.newParentInfo(sov.parentInfo, stringKey(key)), buf, opt)
-		marshaledCount++
-	}
-}
-
-type sortObjectV struct {
-	parentInfo *ParentInfo
-	lessFunc   MarshalLessFunc
-	keys       []string
-	values     []*V
-}
-
-func (sov *sortObjectV) Len() int {
-	return len(sov.values)
-}
-
-func (sov *sortObjectV) Less(i, j int) bool {
-	return sov.lessFunc(sov.parentInfo, sov.keys[i], sov.keys[j], sov.values[i], sov.values[j])
-}
-
-func (sov *sortObjectV) Swap(i, j int) {
-	sov.keys[i], sov.keys[j] = sov.keys[j], sov.keys[i]
-	sov.values[i], sov.values[j] = sov.values[j], sov.values[i]
-}
-
-func (v *V) newSortObjectV(parentInfo *ParentInfo, opt *Opt) *sortObjectV {
-	sov := sortObjectV{
-		parentInfo: parentInfo,
-		lessFunc:   opt.MarshalLessFunc,
-		keys:       make([]string, 0, len(v.children.object)),
-		values:     make([]*V, 0, len(v.children.object)),
-	}
-	for k, child := range v.children.object {
-		sov.keys = append(sov.keys, k)
-		sov.values = append(sov.values, child)
-	}
-
-	return &sov
-}
-
-// marshalObjectWithStringSlice use a slice to determine sequence of object
-func (sssv *sortStringSliceV) marshalObjectWithStringSlice(buf *bytes.Buffer, opt *Opt) {
-	buf.WriteRune('{')
-	defer buf.WriteRune('}')
-
-	// sort
-	sort.Sort(sssv)
-
-	// marshal
-	marshaledCount := 0
-	for i, key := range sssv.keys {
-		child := sssv.values[i]
-		if child.IsNull() && opt.OmitNull {
-			continue
-		}
-		if marshaledCount > 0 {
-			buf.WriteRune(',')
-		}
-
-		buf.WriteRune('"')
-		escapeStringToBuff(key, buf, opt)
-		buf.WriteString("\":")
-
-		child.marshalToBuffer(nil, buf, opt)
-		marshaledCount++
-	}
-}
-
-type sortStringSliceV struct {
-	v      *V
-	seq    map[string]int
-	keys   []string
-	values []*V
-}
-
-func (v *V) newSortStringSliceV(opt *Opt) *sortStringSliceV {
-	if nil == opt.keySequence {
-		opt.keySequence = make(map[string]int, len(opt.MarshalKeySequence))
-		for i, str := range opt.MarshalKeySequence {
-			opt.keySequence[str] = i
-		}
-	}
-
-	sssv := sortStringSliceV{
-		v:      v,
-		seq:    opt.keySequence,
-		keys:   make([]string, 0, v.Len()),
-		values: make([]*V, 0, v.Len()),
-	}
-	for k, child := range v.children.object {
-		sssv.keys = append(sssv.keys, k)
-		sssv.values = append(sssv.values, child)
-	}
-
-	return &sssv
-}
-
-func (sssv *sortStringSliceV) Len() int {
-	return len(sssv.values)
-}
-
-func (sssv *sortStringSliceV) Less(i, j int) bool {
-	k1 := sssv.keys[i]
-	k2 := sssv.keys[j]
-
-	seq1, exist1 := sssv.seq[k1]
-	seq2, exist2 := sssv.seq[k2]
-
-	if exist1 {
-		if exist2 {
-			return seq1 < seq2
-		}
-		return true
-	}
-	if exist2 {
-		return false
-	}
-
-	return k1 <= k2
-}
-
-func (sssv *sortStringSliceV) Swap(i, j int) {
-	sssv.keys[i], sssv.keys[j] = sssv.keys[j], sssv.keys[i]
-	sssv.values[i], sssv.values[j] = sssv.values[j], sssv.values[i]
 }

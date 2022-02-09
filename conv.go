@@ -6,13 +6,6 @@ import (
 	"reflect"
 )
 
-func formatBool(b bool) string {
-	if b {
-		return "true"
-	}
-	return "false"
-}
-
 // reference:
 // - [UTF-16](https://zh.wikipedia.org/zh-cn/UTF-16)
 // - [JavaScript has a Unicode problem](https://mathiasbynens.be/notes/javascript-unicode)

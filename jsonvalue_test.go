@@ -3,6 +3,7 @@ package jsonvalue
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"testing"
 
@@ -31,6 +32,8 @@ func printBytes(t *testing.T, b []byte, prefix ...string) {
 }
 
 func TestJsonvalue(t *testing.T) {
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
+
 	test(t, "jsonvalue basic function", testBasicFunction)
 	test(t, "misc strange characters", testMiscCharacters)
 	test(t, "MustUnmarshalXxxx errors", testMustUnmarshalErrors)
@@ -148,7 +151,6 @@ func testMiscCharacters(t *testing.T) {
 
 	Convey("unmarshal illegal escaped ASCII string", func() {
 		So(ValueType(56636).String(), ShouldEqual, NotExist.String())
-		So(ValueType(-1).String(), ShouldEqual, NotExist.String())
 
 		v, err := UnmarshalString(`"\`)
 		So(err, ShouldBeError)

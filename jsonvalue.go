@@ -35,11 +35,8 @@
 package jsonvalue
 
 import (
-	"bytes"
 	"encoding/base64"
 	"fmt"
-	"strconv"
-	"strings"
 )
 
 var (
@@ -47,7 +44,7 @@ var (
 )
 
 // ValueType identifying JSON value type
-type ValueType int
+type ValueType uint
 
 const (
 	// NotExist type tells that this JSON value is not exist or legal
@@ -83,15 +80,16 @@ var typeStr = [Unknown + 1]string{
 func (t ValueType) String() string {
 	if t > Unknown {
 		t = NotExist
-	} else if t < 0 {
-		t = NotExist
 	}
 	return typeStr[int(t)]
 }
 
 // ValueType returns the type of this JSON value.
 func (v *V) ValueType() ValueType {
-	return v.valueType
+	if v.impl == nil {
+		return NotExist
+	}
+	return v.impl.ValueType()
 }
 
 // test:
@@ -101,90 +99,7 @@ func (v *V) ValueType() ValueType {
 //
 // V 是 jsonvalue 的主类型，表示一个 JSON 值。
 type V struct {
-	valueType ValueType
-
-	srcByte   []byte
-	srcOffset int
-	srcEnd    int
-
-	parsed bool
-
-	num       num
-	valueStr  string
-	valueBool bool
-	children  children
-}
-
-type num struct {
-	negative bool
-	floated  bool
-	i64      int64
-	u64      uint64
-	f64      float64
-}
-
-type children struct {
-	array  []*V
-	object map[string]*V
-
-	// As official json package supports caseless key accessing, I decide to do it as well
-	lowerCaseKeys map[string]map[string]struct{}
-}
-
-func new(t ValueType) *V {
-	v := V{}
-	v.valueType = t
-	return &v
-}
-
-func newObject() *V {
-	v := new(Object)
-	v.children.object = make(map[string]*V)
-	v.children.lowerCaseKeys = nil
-	return v
-}
-
-func newArray() *V {
-	v := new(Array)
-	v.children.array = []*V{}
-	return v
-}
-
-func (v *V) addCaselessKey(k string) {
-	if v.children.lowerCaseKeys == nil {
-		return
-	}
-	lowerK := strings.ToLower(k)
-	keys, exist := v.children.lowerCaseKeys[lowerK]
-	if !exist {
-		keys = make(map[string]struct{})
-		v.children.lowerCaseKeys[lowerK] = keys
-	}
-	keys[k] = struct{}{}
-}
-
-func (v *V) delCaselessKey(k string) {
-	if v.children.lowerCaseKeys == nil {
-		return
-	}
-	lowerK := strings.ToLower(k)
-	keys, exist := v.children.lowerCaseKeys[lowerK]
-	if !exist {
-		return
-	}
-
-	delete(keys, k)
-
-	if len(keys) == 0 {
-		delete(v.children.lowerCaseKeys, lowerK)
-	}
-}
-
-func (v *V) valueBytes() []byte {
-	if v.srcOffset == 0 && v.srcEnd == len(v.srcByte) {
-		return v.srcByte
-	}
-	return v.srcByte[v.srcOffset:v.srcEnd]
+	impl value
 }
 
 // MustUnmarshalString just like UnmarshalString(). If error occurres, a JSON value with "NotExist" type would be returned, which
@@ -233,9 +148,6 @@ func unmarshalWithIter(it iter, offset int) (v *V, err error) {
 		var n *V
 		n, offset, _, err = it.parseNumber(offset)
 		if err == nil {
-			n.srcByte = it
-			n.srcOffset, n.srcEnd = offset, end
-			n.parsed = true
 			v = n
 		}
 
@@ -285,7 +197,8 @@ func unmarshalWithIter(it iter, offset int) (v *V, err error) {
 // but it does not known where its ']' is
 func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int, err error) {
 	offset++
-	arr := newArray()
+
+	arr, impl := newArray()
 
 	reachEnd := false
 
@@ -310,7 +223,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, v)
+			impl.children = append(impl.children, v)
 			offset = sectEnd
 
 		case '[':
@@ -318,7 +231,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, v)
+			impl.children = append(impl.children, v)
 			offset = sectEnd
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
@@ -327,9 +240,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			v.srcByte = it
-			v.srcOffset, v.srcEnd = offset, sectEnd
-			arr.children.array = append(arr.children.array, v)
+			impl.children = append(impl.children, v)
 			offset = sectEnd
 
 		case '"':
@@ -338,7 +249,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 				return nil, -1, err
 			}
 			v := NewString(unsafeBtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
-			arr.children.array = append(arr.children.array, v)
+			impl.children = append(impl.children, v)
 			offset = sectEnd
 
 		case 't':
@@ -346,7 +257,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, NewBool(true))
+			arr.impl.appendInTheEnd(NewBool(true))
 			offset = sectEnd
 
 		case 'f':
@@ -354,7 +265,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, NewBool(false))
+			arr.impl.appendInTheEnd(NewBool(false))
 			offset = sectEnd
 
 		case 'n':
@@ -362,11 +273,13 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, NewNull())
+			arr.impl.appendInTheEnd(NewNull())
 			offset = sectEnd
 
 		default:
-			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+			return nil, -1, fmt.Errorf(
+				"%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset,
+			)
 		}
 	}
 
@@ -376,7 +289,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 // unmarshalObjectWithIterUnknownEnd unmarshal object from raw bytes. it[offset] must be '{'
 func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int, err error) {
 	offset++
-	obj := newObject()
+	obj, objImpl := newObject()
 
 	keyStart, keyEnd := 0, 0
 	colonFound := false
@@ -448,7 +361,7 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
+			objImpl.children[unsafeBtoS(it[keyStart:keyEnd])] = v
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -460,7 +373,7 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
+			objImpl.children[unsafeBtoS(it[keyStart:keyEnd])] = v
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -473,9 +386,7 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			v.srcByte = it
-			v.srcOffset, v.srcEnd = offset, sectEnd
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
+			objImpl.children[unsafeBtoS(it[keyStart:keyEnd])] = v
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -492,7 +403,7 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 					return nil, -1, err
 				}
 				v := NewString(unsafeBtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
-				obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
+				objImpl.children[unsafeBtoS(it[keyStart:keyEnd])] = v
 				keyEnd, colonFound = 0, false
 				offset = sectEnd
 
@@ -514,7 +425,7 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), NewBool(true))
+			objImpl.children[unsafeBtoS(it[keyStart:keyEnd])] = NewBool(true)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -526,7 +437,7 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), NewBool(false))
+			objImpl.children[unsafeBtoS(it[keyStart:keyEnd])] = NewBool(true)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -538,7 +449,7 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), NewNull())
+			objImpl.children[unsafeBtoS(it[keyStart:keyEnd])] = NewNull()
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -599,61 +510,34 @@ func UnmarshalNoCopy(b []byte) (ret *V, err error) {
 	return unmarshalWithIter(iter(b), 0)
 }
 
-// parseNumber parse a number string. Reference:
-//
-// - [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html)
-func (v *V) parseNumber() (err error) {
-	it := iter(v.srcByte[v.srcOffset:v.srcEnd])
-
-	parsed, end, reachEnd, err := it.parseNumber(0)
-	if err != nil {
-		return err
-	}
-	if !reachEnd {
-		return fmt.Errorf("invalid character: 0x%02x", v.srcByte[end])
-	}
-
-	*v = *parsed
-	return nil
-}
-
-// ==== simple object parsing ====
-func newFromNumber(b []byte) (ret *V, err error) {
-	v := new(Number)
-	v.srcByte = b
-	v.srcOffset = 0
-	v.srcEnd = len(b)
-	return v, nil
-}
-
 // ==== type access ====
 
 // IsObject tells whether value is an object
 //
 // IsObject 判断当前值是不是一个对象类型
 func (v *V) IsObject() bool {
-	return v.valueType == Object
+	return v.ValueType() == Object
 }
 
 // IsArray tells whether value is an array
 //
 // IsArray 判断当前值是不是一个数组类型
 func (v *V) IsArray() bool {
-	return v.valueType == Array
+	return v.ValueType() == Array
 }
 
 // IsString tells whether value is a string
 //
 // IsString 判断当前值是不是一个字符串类型
 func (v *V) IsString() bool {
-	return v.valueType == String
+	return v.ValueType() == String
 }
 
 // IsNumber tells whether value is a number
 //
 // IsNumber 判断当前值是不是一个数字类型
 func (v *V) IsNumber() bool {
-	return v.valueType == Number
+	return v.ValueType() == Number
 }
 
 // IsFloat tells whether value is a float point number. If there is no decimal point in original text, it returns false
@@ -661,40 +545,45 @@ func (v *V) IsNumber() bool {
 //
 // IsFloat 判断当前值是不是一个浮点数类型。如果给定的数不包含小数点，那么即便是数字类型，该函数也会返回 false.
 func (v *V) IsFloat() bool {
-	if v.valueType != Number {
+	if v.ValueType() != Number {
 		return false
 	}
-	return v.num.floated
+
+	n := v.impl.(numberAsserter)
+	return n.IsFloat()
 }
 
 // IsInteger tells whether value is a fix point interger
 //
 // IsNumber 判断当前值是不是一个定点数整型
 func (v *V) IsInteger() bool {
-	if v.valueType != Number {
+	if v.ValueType() != Number {
 		return false
 	}
-	return !(v.num.floated)
+	n := v.impl.(numberAsserter)
+	return n.IsInteger()
 }
 
 // IsNegative tells whether value is a negative number
 //
 // IsNegative 判断当前值是不是一个负数
 func (v *V) IsNegative() bool {
-	if v.valueType != Number {
+	if v.ValueType() != Number {
 		return false
 	}
-	return v.num.negative
+	n := v.impl.(numberAsserter)
+	return n.IsNegative()
 }
 
 // IsPositive tells whether value is a positive number
 //
 // IsPositive 判断当前值是不是一个正数
 func (v *V) IsPositive() bool {
-	if v.valueType != Number {
+	if v.ValueType() != Number {
 		return false
 	}
-	return !(v.num.negative)
+	n := v.impl.(numberAsserter)
+	return n.IsPositive()
 }
 
 // GreaterThanInt64Max return true when ALL conditions below are met:
@@ -707,165 +596,104 @@ func (v *V) IsPositive() bool {
 // 	2. 是一个正整型数字.
 // 	3. 该正整数的值大于 0x7fffffffffffffff.
 func (v *V) GreaterThanInt64Max() bool {
-	if v.valueType != Number {
+	if v.ValueType() != Number {
 		return false
 	}
-	if v.num.negative {
-		return false
-	}
-	return v.num.u64 > 0x7fffffffffffffff
+	n := v.impl.(numberAsserter)
+	return n.GreaterThanInt64Max()
 }
 
 // IsBoolean tells whether value is a boolean
 //
 // IsBoolean 判断当前值是不是一个布尔类型
 func (v *V) IsBoolean() bool {
-	return v.valueType == Boolean
+	return v.ValueType() == Boolean
 }
 
 // IsNull tells whether value is a null
 //
 // IsBoolean 判断当前值是不是一个空类型
 func (v *V) IsNull() bool {
-	return v.valueType == Null
-}
-
-// ==== value access ====
-
-func getNumberFromNotNumberValue(v *V) *V {
-	if !v.IsString() {
-		return NewInt(0)
-	}
-	ret, _ := newFromNumber(bytes.TrimSpace([]byte(v.valueStr)))
-	err := ret.parseNumber()
-	if err != nil {
-		return NewInt64(0)
-	}
-	return ret
-}
-
-func getNumberAndErrorFromValue(v *V) (*V, error) {
-	switch v.valueType {
-	default:
-		return NewInt(0), ErrTypeNotMatch
-
-	case Number:
-		return v, nil
-
-	case String:
-		ret, _ := newFromNumber(bytes.TrimSpace([]byte(v.valueStr)))
-		err := ret.parseNumber()
-		if err != nil {
-			return NewInt(0), fmt.Errorf("%w: %v", ErrParseNumberFromString, err)
-		}
-		return ret, ErrTypeNotMatch
-	}
-}
-
-func getBoolAndErrorFromValue(v *V) (*V, error) {
-	switch v.valueType {
-	default:
-		return NewBool(false), ErrTypeNotMatch
-
-	case Number:
-		return NewBool(v.Float64() != 0), ErrTypeNotMatch
-
-	case String:
-		if v.valueStr == "true" {
-			return NewBool(true), ErrTypeNotMatch
-		}
-		return NewBool(false), ErrTypeNotMatch
-
-	case Boolean:
-		return v, nil
-	}
+	return v.ValueType() == Null
 }
 
 // Bool returns represented bool value. If value is not boolean, returns false.
 //
 // Bool 返回布尔类型值。如果当前值不是布尔类型，则返回 false。
 func (v *V) Bool() bool {
-	return v.valueBool
+	if v.impl == nil {
+		return false
+	}
+	b, _ := v.impl.Bool()
+	return b
 }
 
 // Int returns represented int value. If value is not a number, returns zero.
 //
 // Int 返回 int 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int() int {
-	if v.valueType != Number {
-		return getNumberFromNotNumberValue(v).Int()
-	}
-	return int(v.num.i64)
+	return int(v.Int64())
 }
 
 // Uint returns represented uint value. If value is not a number, returns zero.
 //
 // Uint 返回 uint 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint() uint {
-	if v.valueType != Number {
-		return getNumberFromNotNumberValue(v).Uint()
-	}
-	return uint(v.num.u64)
+	return uint(v.Uint64())
 }
 
 // Int64 returns represented int64 value. If value is not a number, returns zero.
 //
 // Int64 返回 int64 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int64() int64 {
-	if v.valueType != Number {
-		return getNumberFromNotNumberValue(v).Int64()
+	if v.impl == nil {
+		return 0
 	}
-	return int64(v.num.i64)
+	i, _ := v.impl.Int64()
+	return i
 }
 
 // Uint64 returns represented uint64 value. If value is not a number, returns zero.
 //
 // Uint64 返回 uint64 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint64() uint64 {
-	if v.valueType != Number {
-		return getNumberFromNotNumberValue(v).Uint64()
+	if v.impl == nil {
+		return 0
 	}
-	return uint64(v.num.u64)
+	u, _ := v.impl.Uint64()
+	return u
 }
 
 // Int32 returns represented int32 value. If value is not a number, returns zero.
 //
 // Int32 返回 int32 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int32() int32 {
-	if v.valueType != Number {
-		return getNumberFromNotNumberValue(v).Int32()
-	}
-	return int32(v.num.i64)
+	return int32(v.Int64())
 }
 
 // Uint32 returns represented uint32 value. If value is not a number, returns zero.
 //
 // Uint32 返回 uint32 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint32() uint32 {
-	if v.valueType != Number {
-		return getNumberFromNotNumberValue(v).Uint32()
-	}
-	return uint32(v.num.u64)
+	return uint32(v.Uint64())
 }
 
 // Float64 returns represented float64 value. If value is not a number, returns zero.
 //
 // Float64 返回 float64 类型值。如果当前值不是数字类型，则返回 0.0。
 func (v *V) Float64() float64 {
-	if v.valueType != Number {
-		return getNumberFromNotNumberValue(v).Float64()
+	if v.impl == nil {
+		return 0
 	}
-	return v.num.f64
+	f, _ := v.impl.Float64()
+	return f
 }
 
 // Float32 returns represented float32 value. If value is not a number, returns zero.
 //
 // Float32 返回 float32 类型值。如果当前值不是数字类型，则返回 0.0。
 func (v *V) Float32() float32 {
-	if v.valueType != Number {
-		return getNumberFromNotNumberValue(v).Float32()
-	}
-	return float32(v.num.f64)
+	return float32(v.Float64())
 }
 
 // Bytes returns represented binary data which is encoede as Base64 string. []byte{} would be returned if value is
@@ -873,10 +701,10 @@ func (v *V) Float32() float32 {
 //
 // Bytes 返回以 Base64 编码在 string 类型中的二进制数据。如果当前值不是字符串类型，或者是 base64 编码失败，则返回 []byte{}。
 func (v *V) Bytes() []byte {
-	if v.valueType != String {
+	if v.ValueType() != String {
 		return []byte{}
 	}
-	b, err := b64.DecodeString(v.valueStr)
+	b, err := b64.DecodeString(v.impl.String())
 	if err != nil {
 		return []byte{}
 	}
@@ -887,66 +715,9 @@ func (v *V) Bytes() []byte {
 //
 // String 返回 string 类型值。如果当前值不是字符串类型，则返回当前 *V 类型的描述说明。
 func (v *V) String() string {
-	if v == nil {
+	if v == nil || v.impl == nil {
 		return ""
 	}
-	switch v.valueType {
-	default:
-		return ""
-	case Null:
-		return "null"
-	case Number:
-		if len(v.valueBytes()) > 0 {
-			return unsafeBtoS(v.valueBytes())
-		}
-		return strconv.FormatFloat(v.num.f64, 'g', -1, 64)
-	case String:
-		return v.valueStr
-	case Boolean:
-		return formatBool(v.valueBool)
-	case Object:
-		return v.packObjChildren()
-	case Array:
-		return v.packArrChildren()
-	}
-}
 
-func (v *V) packObjChildren() string {
-	buf := bytes.Buffer{}
-	v.bufObjChildren(&buf)
-	return buf.String()
-}
-
-func (v *V) bufObjChildren(buf *bytes.Buffer) {
-	buf.WriteByte('{')
-	i := 0
-	for k, v := range v.children.object {
-		if i > 0 {
-			buf.WriteString(", ")
-		}
-		buf.WriteString(k)
-		buf.WriteString(": ")
-		buf.WriteString(v.String())
-		i++
-	}
-	buf.WriteByte('}')
-}
-
-func (v *V) packArrChildren() string {
-	buf := bytes.Buffer{}
-	v.bufArrChildren(&buf)
-	return buf.String()
-}
-
-func (v *V) bufArrChildren(buf *bytes.Buffer) {
-	buf.WriteByte('[')
-	v.RangeArray(func(i int, v *V) bool {
-		if i > 0 {
-			buf.WriteString(", ")
-		}
-		buf.WriteString(v.String())
-		i++
-		return true
-	})
-	buf.WriteByte(']')
+	return v.impl.String()
 }

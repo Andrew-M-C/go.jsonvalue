@@ -17,8 +17,8 @@ func ExampleV_String() {
 	child, _ = v.Get("object", "message")
 	fmt.Println(child)
 	// Output:
-	// {object: {message: Hello, string}}
-	// {message: Hello, string}
+	// {object:{message:Hello, string}}
+	// {message:Hello, string}
 	// Hello, string
 }
 
