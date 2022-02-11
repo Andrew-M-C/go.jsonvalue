@@ -204,7 +204,7 @@ func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V
 			return &V{}, ErrOutOfRange
 		}
 		if appendToEnd {
-			v.children.array = append(v.children.array, c)
+			v.appendToArr(c)
 		} else {
 			v.insertToArr(pos, c)
 		}
@@ -225,7 +225,10 @@ func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V
 }
 
 func (v *V) insertToArr(pos int, child *V) {
-	v.children.array = append(v.children.array, nil)
-	copy(v.children.array[pos+1:], v.children.array[pos:])
-	v.children.array[pos] = child
+	if v.children.arr == nil {
+		v.children.arr = make([]*V, 0, initialArrayCapacity)
+	}
+	v.children.arr = append(v.children.arr, nil)
+	copy(v.children.arr[pos+1:], v.children.arr[pos:])
+	v.children.arr[pos] = child
 }

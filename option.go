@@ -1,5 +1,9 @@
 package jsonvalue
 
+const (
+	initialArrayCapacity = 32
+)
+
 // Deprecated: Opt is the option of jsonvalue in marshaling. This type is deprecated,
 // please use OptXxxx() functions instead.
 //

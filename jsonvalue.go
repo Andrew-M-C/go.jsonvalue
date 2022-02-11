@@ -120,7 +120,7 @@ type num struct {
 }
 
 type children struct {
-	array  []*V
+	arr    []*V
 	object map[string]*V
 
 	// As official json package supports caseless key accessing, I decide to do it as well
@@ -142,7 +142,6 @@ func newObject() *V {
 
 func newArray() *V {
 	v := new(Array)
-	v.children.array = []*V{}
 	return v
 }
 
@@ -297,7 +296,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, v)
+			arr.appendToArr(v)
 			offset = sectEnd
 
 		case '[':
@@ -305,7 +304,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, v)
+			arr.appendToArr(v)
 			offset = sectEnd
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
@@ -315,7 +314,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 				return nil, -1, err
 			}
 			v.srcByte = it[offset:sectEnd]
-			arr.children.array = append(arr.children.array, v)
+			arr.appendToArr(v)
 			offset = sectEnd
 
 		case '"':
@@ -324,7 +323,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 				return nil, -1, err
 			}
 			v := NewString(unsafeBtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
-			arr.children.array = append(arr.children.array, v)
+			arr.appendToArr(v)
 			offset = sectEnd
 
 		case 't':
@@ -332,7 +331,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, NewBool(true))
+			arr.appendToArr(NewBool(true))
 			offset = sectEnd
 
 		case 'f':
@@ -340,7 +339,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, NewBool(false))
+			arr.appendToArr(NewBool(false))
 			offset = sectEnd
 
 		case 'n':
@@ -348,7 +347,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, NewNull())
+			arr.appendToArr(NewNull())
 			offset = sectEnd
 
 		default:
@@ -357,6 +356,13 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 	}
 
 	return nil, -1, fmt.Errorf("%w, cannot find ']'", ErrNotArrayValue)
+}
+
+func (v *V) appendToArr(child *V) {
+	if v.children.arr == nil {
+		v.children.arr = make([]*V, 0, initialArrayCapacity)
+	}
+	v.children.arr = append(v.children.arr, child)
 }
 
 // unmarshalObjectWithIterUnknownEnd unmarshal object from raw bytes. it[offset] must be '{'

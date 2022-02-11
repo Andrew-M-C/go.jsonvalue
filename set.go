@@ -247,7 +247,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 		}
 		// OK to add this object
 		if isNewChild {
-			v.children.array = append(v.children.array, child)
+			v.appendToArr(child)
 		}
 		return c, nil
 	}
@@ -257,7 +257,7 @@ func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 }
 
 func (v *V) posAtIndexForSet(pos int) (newPos int, appendToEnd bool) {
-	if pos == len(v.children.array) {
+	if pos == len(v.children.arr) {
 		return pos, true
 	}
 	pos = v.posAtIndexForRead(pos)
@@ -265,7 +265,7 @@ func (v *V) posAtIndexForSet(pos int) (newPos int, appendToEnd bool) {
 }
 
 func (v *V) posAtIndexForInsertBefore(pos int) (newPos int) {
-	le := len(v.children.array)
+	le := len(v.children.arr)
 	if le == 0 {
 		return -1
 	}
@@ -290,7 +290,7 @@ func (v *V) posAtIndexForInsertBefore(pos int) (newPos int) {
 }
 
 func (v *V) posAtIndexForInsertAfter(pos int) (newPos int, appendToEnd bool) {
-	le := len(v.children.array)
+	le := len(v.children.arr)
 	if le == 0 {
 		return -1, false
 	}
@@ -315,7 +315,7 @@ func (v *V) posAtIndexForInsertAfter(pos int) (newPos int, appendToEnd bool) {
 }
 
 func (v *V) posAtIndexForRead(pos int) int {
-	le := len(v.children.array)
+	le := len(v.children.arr)
 	if le == 0 {
 		return -1
 	}
@@ -340,7 +340,7 @@ func (v *V) childAtIndex(pos int) (*V, bool) { // if nil returned, means that ju
 	if pos < 0 {
 		return &V{}, false
 	}
-	return v.children.array[pos], true
+	return v.children.arr[pos], true
 }
 
 func (v *V) setAtIndex(child *V, pos int) error {
@@ -349,9 +349,9 @@ func (v *V) setAtIndex(child *V, pos int) error {
 		return ErrOutOfRange
 	}
 	if appendToEnd {
-		v.children.array = append(v.children.array, child)
+		v.children.arr = append(v.children.arr, child)
 	} else {
-		v.children.array[pos] = child
+		v.children.arr[pos] = child
 	}
 	return nil
 }

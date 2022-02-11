@@ -49,17 +49,17 @@ func (v *sortArrayV) Sort() {
 }
 
 func (v *sortArrayV) Len() int {
-	return len(v.v.children.array)
+	return len(v.v.children.arr)
 }
 
 func (v *sortArrayV) Less(i, j int) bool {
-	v1 := v.v.children.array[i]
-	v2 := v.v.children.array[j]
+	v1 := v.v.children.arr[i]
+	v2 := v.v.children.arr[j]
 	return v.lessFunc(v1, v2)
 }
 
 func (v *sortArrayV) Swap(i, j int) {
-	v.v.children.array[i], v.v.children.array[j] = v.v.children.array[j], v.v.children.array[i]
+	v.v.children.arr[i], v.v.children.arr[j] = v.v.children.arr[j], v.v.children.arr[i]
 }
 
 // ---------------- marshal sorting ----------------
