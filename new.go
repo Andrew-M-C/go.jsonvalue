@@ -39,7 +39,6 @@ func NewInt64(i int64) *V {
 	v.num.u64 = uint64(i)
 	s := strconv.FormatInt(v.num.i64, 10)
 	v.srcByte = []byte(s)
-	v.srcOffset, v.srcEnd = 0, len(s)
 	v.parsed = true
 	return v
 }
@@ -57,7 +56,6 @@ func NewUint64(u uint64) *V {
 	v.num.u64 = u
 	s := strconv.FormatUint(v.num.u64, 10)
 	v.srcByte = []byte(s)
-	v.srcOffset, v.srcEnd = 0, len(s)
 	v.parsed = true
 	return v
 }
@@ -236,7 +234,6 @@ func newFloat64f(f float64, format byte, prec, bitsize int) *V {
 	if isValidFloat(f) {
 		s := strconv.FormatFloat(f, format, prec, bitsize)
 		v.srcByte = []byte(s)
-		v.srcOffset, v.srcEnd = 0, len(s)
 	}
 
 	v.parsed = true
