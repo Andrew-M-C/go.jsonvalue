@@ -14,7 +14,6 @@ import (
 func NewString(s string) *V {
 	v := new(String)
 	v.valueStr = s
-	v.parsed = true
 	return v
 }
 
@@ -39,7 +38,6 @@ func NewInt64(i int64) *V {
 	v.num.u64 = uint64(i)
 	s := strconv.FormatInt(v.num.i64, 10)
 	v.srcByte = []byte(s)
-	v.parsed = true
 	return v
 }
 
@@ -56,7 +54,6 @@ func NewUint64(u uint64) *V {
 	v.num.u64 = u
 	s := strconv.FormatUint(v.num.u64, 10)
 	v.srcByte = []byte(s)
-	v.parsed = true
 	return v
 }
 
@@ -94,7 +91,6 @@ func NewUint32(u uint32) *V {
 func NewBool(b bool) *V {
 	v := new(Boolean)
 	v.valueBool = b
-	v.parsed = true
 	return v
 }
 
@@ -103,7 +99,6 @@ func NewBool(b bool) *V {
 // NewNull 返回一个初始化好的 null 类型的 jsonvalue 值
 func NewNull() *V {
 	v := new(Null)
-	v.parsed = true
 	return v
 }
 
@@ -115,7 +110,6 @@ func NewNull() *V {
 // 不过目前只支持基础类型，也就是: int/uint, int/int8/int16/int32/int64, uint/uint8/uint16/uint32/uint64, string, bool, nil。
 func NewObject(keyValues ...M) *V {
 	v := newObject()
-	v.parsed = true
 
 	if len(keyValues) > 0 {
 		kv := keyValues[0]
@@ -165,9 +159,7 @@ func (v *V) parseNewObjectKV(kv M) {
 //
 // NewArray 返回一个初始化好的 array 类型的 jsonvalue 值。
 func NewArray() *V {
-	v := newArray()
-	v.parsed = true
-	return v
+	return newArray()
 }
 
 // NewFloat64 returns an initialied num jsonvalue value by float64 type. The format and precision control is the same
@@ -236,7 +228,6 @@ func newFloat64f(f float64, format byte, prec, bitsize int) *V {
 		v.srcByte = []byte(s)
 	}
 
-	v.parsed = true
 	return v
 }
 

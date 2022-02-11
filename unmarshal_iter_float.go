@@ -167,8 +167,6 @@ func (it iter) parseFloatResult(start, end int) (*V, error) {
 	v := new(Number)
 	v.srcByte = it[start:end]
 
-	v.parsed = true
-
 	v.num.negative = f < 0
 	v.num.floated = true
 	v.num.i64 = int64(f)
@@ -191,8 +189,6 @@ func (it iter) parsePositiveIntResult(start, end int, integer uint64) (*V, error
 
 	v := new(Number)
 	v.srcByte = it[start:end]
-
-	v.parsed = true
 
 	v.num.negative = false
 	v.num.floated = false
@@ -217,7 +213,6 @@ func (it iter) parseNegativeIntResult(start, end int, integer uint64) (*V, error
 	v := new(Number)
 	v.srcByte = it[start:end]
 
-	v.parsed = true
 	v.num.negative = true
 	v.num.floated = false
 

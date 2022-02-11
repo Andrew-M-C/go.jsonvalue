@@ -105,8 +105,6 @@ type V struct {
 
 	srcByte []byte
 
-	parsed bool
-
 	num       num
 	valueStr  string
 	valueBool bool
@@ -225,7 +223,6 @@ func unmarshalWithIter(it iter, offset int) (v *V, err error) {
 		n, offset, _, err = it.parseNumber(offset)
 		if err == nil {
 			n.srcByte = it[offset:end]
-			n.parsed = true
 			v = n
 		}
 
