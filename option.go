@@ -1,5 +1,7 @@
 package jsonvalue
 
+import "bytes"
+
 const (
 	initialArrayCapacity = 32
 )
@@ -87,13 +89,13 @@ type Opt struct {
 	// 不允许指定为 NaN, +Inf 或 -Inf。如果不指定，则映射为 0
 	FloatInfToFloat float64
 
-	// escapeHTML tells what do deal with &, <, > character. Default value is nil, which tells using the default value,
-	// which should be 'true'.
-	escapeHTML *bool
-}
+	// stringMarshalFunc defines how to marshal a string. ASCII escaping is the default behavior.
+	//
+	// stringMarshalFunc 表示如何序列化字符串。默认逻辑是 ASCII 转义。
+	stringMarshalFunc func(s string, buf *bytes.Buffer, opt *Opt)
 
-func (o *Opt) shouldEscapeHTML() bool {
-	return o.escapeHTML == nil || *o.escapeHTML
+	// unicodeEscapingFunc defines how to escaping a unicode to buffer. ASCII escaping is the default behavior.
+	unicodeEscapingFunc func(r rune, buf *bytes.Buffer)
 }
 
 type FloatNaNHandleType uint8
@@ -152,6 +154,13 @@ type Option interface {
 }
 
 func (o Opt) mergeTo(tgt *Opt) {
+	// capability: assign default values
+	if o.stringMarshalFunc == nil {
+		o.stringMarshalFunc = defaultOptions().stringMarshalFunc
+	}
+	if o.unicodeEscapingFunc == nil {
+		o.unicodeEscapingFunc = defaultOptions().unicodeEscapingFunc
+	}
 	*tgt = o
 }
 
@@ -163,8 +172,15 @@ func CombineOptions(opts []Option) *Opt {
 	return combineOptions(opts)
 }
 
+func defaultOptions() *Opt {
+	return &Opt{
+		stringMarshalFunc:   escapeStringToAsciiToBuff,
+		unicodeEscapingFunc: escapeUnicodeToBuff,
+	}
+}
+
 func combineOptions(opts []Option) *Opt {
-	opt := &Opt{}
+	opt := defaultOptions()
 	for _, o := range opts {
 		o.mergeTo(opt)
 	}
@@ -368,15 +384,44 @@ func (o *optFloatInfConvertToString) mergeTo(opt *Opt) {
 // The default behavior is to escape &, <, and > to \u0026, \u003c, and \u003e to avoid certain safety problems that
 // can arise when embedding JSON in HTML.
 func OptEscapeHTML(on bool) Option {
+	if on {
+		return &optEscapeHTML{
+			stringMarshalFunc: escapeStringToAsciiToBuff,
+		}
+	}
+
 	return &optEscapeHTML{
-		escapeHTML: on,
+		stringMarshalFunc: escapeStringWithoutHTMLToBuff,
 	}
 }
 
 type optEscapeHTML struct {
-	escapeHTML bool
+	stringMarshalFunc func(string, *bytes.Buffer, *Opt)
 }
 
 func (o *optEscapeHTML) mergeTo(opt *Opt) {
-	opt.escapeHTML = &o.escapeHTML
+	opt.stringMarshalFunc = o.stringMarshalFunc
+}
+
+// ==== do or do not not use ASCII escaping ====
+
+// OptUTF8 specifies that all unicodes greater than 0x7F, will NOT be escaped by \uXXXX format but UTF-8.
+// But default escaping with characters within range 0 to 0x7F will prior to this option.
+//
+// For example, although with OptUTF8(), but OptEscapeHTML(false) also specified, '<' will still me escaped
+// into '\u003C'
+//
+// OptUTF8 指定使用 UTF-8 编码。也就是说针对大于 0x7F 的 unicode 字符，将不会使用默认的 \uXXXX 格式进行编码，而是直接使用
+// UTF-8。但是对于那些 JSON 明确规定必须转义的字符，则优先于此规则。
+//
+// 举个例子，虽然指定了 OptUTF8()，但同时又指定了 OptEscapeHTML(false)，那么针对 '<' 字符，将依然按照 JSON 标准规范，
+// 转义为 '\u003C'
+func OptUTF8() Option {
+	return &optUTF8{}
+}
+
+type optUTF8 struct{}
+
+func (o *optUTF8) mergeTo(opt *Opt) {
+	opt.unicodeEscapingFunc = escapeUnicodeToUTF8ToBuff
 }

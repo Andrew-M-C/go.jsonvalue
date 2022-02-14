@@ -17,7 +17,7 @@ func formatBool(b bool) string {
 // - [UTF-16](https://zh.wikipedia.org/zh-cn/UTF-16)
 // - [JavaScript has a Unicode problem](https://mathiasbynens.be/notes/javascript-unicode)
 // - [Meaning of escaped unicode characters in JSON](https://stackoverflow.com/questions/21995410/meaning-of-escaped-unicode-characters-in-json)
-func escapeUnicodeToBuff(buf *bytes.Buffer, r rune) {
+func escapeUnicodeToBuff(r rune, buf *bytes.Buffer) {
 	if r <= 0x7F {
 		buf.WriteRune(r)
 		return
@@ -39,6 +39,11 @@ func escapeUnicodeToBuff(buf *bytes.Buffer, r rune) {
 	buf.WriteString(fmt.Sprintf("\\u%04X", lo+0xDC00))
 }
 
+// escapeUnicodeToUTF8ToBuff
+func escapeUnicodeToUTF8ToBuff(r rune, buf *bytes.Buffer) {
+	buf.WriteRune(r)
+}
+
 var (
 	escDoubleQuote = []byte{'\\', '"'}
 	escSlash       = []byte{'\\', '/'}
@@ -55,6 +60,10 @@ var (
 )
 
 func escapeStringToBuff(s string, buf *bytes.Buffer, opt *Opt) {
+	opt.stringMarshalFunc(s, buf, opt)
+}
+
+func escapeStringToAsciiToBuff(s string, buf *bytes.Buffer, opt *Opt) {
 	for _, chr := range s {
 		switch chr {
 		case '"':
@@ -82,31 +91,55 @@ func escapeStringToBuff(s string, buf *bytes.Buffer, opt *Opt) {
 			// buf.WriteString("\\r")
 			buf.Write(escReturn)
 		case '<':
-			if opt.shouldEscapeHTML() {
-				// buf.WriteString("\\u003C")
-				buf.Write(escLeftAngle)
-			} else {
-				escapeUnicodeToBuff(buf, chr)
-			}
+			// buf.WriteString("\\u003C")
+			buf.Write(escLeftAngle)
 		case '>':
-			if opt.shouldEscapeHTML() {
-				// buf.WriteString("\\u003E")
-				buf.Write(escRightAngle)
-			} else {
-				escapeUnicodeToBuff(buf, chr)
-			}
+			// buf.WriteString("\\u003E")
+			buf.Write(escRightAngle)
 		case '&':
-			if opt.shouldEscapeHTML() {
-				// buf.WriteString("\\u0026")
-				buf.Write(escAnd)
-			} else {
-				escapeUnicodeToBuff(buf, chr)
-			}
+			// buf.WriteString("\\u0026")
+			buf.Write(escAnd)
 		case '%': // not standard JSON encoding
 			// buf.WriteString("\\u0025")
 			buf.Write(escPercent)
 		default:
-			escapeUnicodeToBuff(buf, chr)
+			opt.unicodeEscapingFunc(chr, buf)
+		}
+	}
+}
+
+func escapeStringWithoutHTMLToBuff(s string, buf *bytes.Buffer, opt *Opt) {
+	for _, chr := range s {
+		switch chr {
+		case '"':
+			// buf.WriteString("\\\"")
+			buf.Write(escDoubleQuote)
+		case '/':
+			// buf.WriteString("\\/")
+			buf.Write(escSlash)
+		case '\\':
+			// buf.WriteString("\\\\")
+			buf.Write(escBaskslash)
+		case '\b':
+			// buf.WriteString("\\b")
+			buf.Write(escBaskspace)
+		case '\f':
+			// buf.WriteString("\\f")
+			buf.Write(escVertTab)
+		case '\t':
+			// buf.WriteString("\\t")
+			buf.Write(escTab)
+		case '\n':
+			// buf.WriteString("\\n")
+			buf.Write(escNewLine)
+		case '\r':
+			// buf.WriteString("\\r")
+			buf.Write(escReturn)
+		case '%': // not standard JSON encoding
+			// buf.WriteString("\\u0025")
+			buf.Write(escPercent)
+		default:
+			opt.unicodeEscapingFunc(chr, buf)
 		}
 	}
 }
