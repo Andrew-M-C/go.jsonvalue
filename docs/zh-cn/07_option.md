@@ -18,9 +18,9 @@
 我们来回顾一下前文介绍的 `Marshal` 函数原型：
 
 ```go
-func (v *V) Marshal(opts ...Option) (b []byte, err error)
-func (v *V) MarshalString(opts ...Option) (s string, err error)
-func (v *V) MustMarshal(opts ...Option) []byte
+func (v *V) Marshal          (opts ...Option) (b []byte, err error)
+func (v *V) MarshalString    (opts ...Option) (s string, err error)
+func (v *V) MustMarshal      (opts ...Option) []byte
 func (v *V) MustMarshalString(opts ...Option) string
 ```
 
@@ -127,7 +127,7 @@ func OptFloatNaNToNull() Option
 ### 转换成字符串
 
 ```go
-func OptFloatNaNToString(s string) Option
+func OptFloatNaNToString   (s string) Option
 func OptFloatNaNToStringNaN() Option
 ```
 
@@ -158,7 +158,7 @@ func OptFloatInfToNull() Option
 ### 转换成字符串
 
 ```go
-func OptFloatInfToString(positiveInf, negativeInf string) Option
+func OptFloatInfToString   (positiveInf, negativeInf string) Option
 func OptFloatInfToStringInf() Option
 ```
 
