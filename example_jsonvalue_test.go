@@ -270,3 +270,16 @@ func ExampleV_ForRangeObj() {
 	// Output:
 	// message - Hello, JSON!
 }
+
+func ExampleOptUTF8() {
+	v := jsonvalue.NewObject()
+	v.SetString("🇺🇸🇨🇳🇷🇺🇬🇧🇫🇷").At("UN_leaderships")
+
+	asciiString := v.MustMarshalString()
+	utf8String := v.MustMarshalString(jsonvalue.OptUTF8())
+	fmt.Println("ASCII -", asciiString)
+	fmt.Println("UTF-8 -", utf8String)
+	// Output:
+	// ASCII - {"UN_leaderships":"\uD83C\uDDFA\uD83C\uDDF8\uD83C\uDDE8\uD83C\uDDF3\uD83C\uDDF7\uD83C\uDDFA\uD83C\uDDEC\uD83C\uDDE7\uD83C\uDDEB\uD83C\uDDF7"}
+	// UTF-8 - {"UN_leaderships":"🇺🇸🇨🇳🇷🇺🇬🇧🇫🇷"}
+}
