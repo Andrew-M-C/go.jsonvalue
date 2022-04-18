@@ -95,8 +95,8 @@ func (v *V) marshalBoolean(buf *bytes.Buffer) {
 }
 
 func (v *V) marshalNumber(buf *bytes.Buffer, opt *Opt) error {
-	if b := v.valueBytes(); len(b) > 0 {
-		buf.Write(v.valueBytes())
+	if b := v.srcByte; len(b) > 0 {
+		buf.Write(b)
 		return nil
 	}
 	// else, +Inf or -Inf or NaN

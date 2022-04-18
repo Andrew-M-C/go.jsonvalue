@@ -23,10 +23,10 @@ anArr := jsonvalue.NewArray()
 也可以创建其他的基础类型值，如：
 
 ```go
-func NewInt(i int) *V
-func NewString(s string) *V
+func NewInt    (i int)     *V
+func NewString (s string)  *V
 func NewFloat64(f float64) *V
-func NewBool(b bool) *V
+func NewBool   (b bool)    *V
 func NewNull() *V
 ```
 
@@ -122,10 +122,10 @@ v.SetString("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, 
 ```go
 func (v *V) Append(child *V) *Append
 func (apd *Append) InTheBeginning(params ...interface{}) (*V, error)
-func (apd *Append) InTheEnd(params ...interface{}) (*V, error)
+func (apd *Append) InTheEnd      (params ...interface{}) (*V, error)
 
 func (v *V) Insert(child *V) *Insert
-func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V, error)
+func (ins *Insert) After (firstParam interface{}, otherParams ...interface{}) (*V, error)
 func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*V, error)
 ```
 
@@ -143,9 +143,9 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 与 Unmarshal 对应，jsonvalue 的序列化函数也采用其相对的 marshal 语义。提供了以下四个方法：
 
 ```go
-func (v *V) Marshal(opts ...Option) (b []byte, err error)
-func (v *V) MarshalString(opts ...Option) (s string, err error)
-func (v *V) MustMarshal(opts ...Option) []byte
+func (v *V) Marshal          (opts ...Option) (b []byte, err error)
+func (v *V) MarshalString    (opts ...Option) (s string, err error)
+func (v *V) MustMarshal      (opts ...Option) []byte
 func (v *V) MustMarshalString(opts ...Option) string
 ```
 

@@ -97,8 +97,8 @@ func (v *V) deleteInCurrValue(caseless bool, param interface{}) error {
 }
 
 func (v *V) deleteInArr(pos int) {
-	le := len(v.children.array)
-	v.children.array[pos] = nil
-	copy(v.children.array[pos:], v.children.array[pos+1:])
-	v.children.array = v.children.array[:le-1]
+	le := len(v.children.arr)
+	v.children.arr[pos] = nil
+	copy(v.children.arr[pos:], v.children.arr[pos+1:])
+	v.children.arr = v.children.arr[:le-1]
 }

@@ -1,6 +1,7 @@
 package jsonvalue
 
 import (
+	"bytes"
 	"fmt"
 	"math"
 	"strings"
@@ -13,6 +14,8 @@ func TestMarshal(t *testing.T) {
 	test(t, "NaN", testMarshalFloat64NaN)
 	test(t, "Inf", testMarshalFloat64Inf)
 	test(t, "escapeHTML", testMarshalEscapeHTML)
+	test(t, "UTF-8", testMarshalEscapeUTF8)
+	test(t, "slash", testMarshalEscapeSlash)
 }
 
 func testMarshalFloat64NaN(t *testing.T) {
@@ -303,5 +306,146 @@ func testMarshalEscapeHTML(t *testing.T) {
 		vv, err := UnmarshalString(s)
 		So(err, ShouldBeNil)
 		So(vv.MustGet(key).String(), ShouldEqual, value)
+	})
+}
+
+func testMarshalEscapeUTF8(t *testing.T) {
+	htmlRunes := map[rune]struct{}{
+		'<': {},
+		'>': {},
+		'&': {},
+	}
+
+	esc := func(buf *bytes.Buffer, r rune) {
+		s := fmt.Sprintf("\\u%04X", r)
+		buf.WriteString(s)
+	}
+
+	key := "<一>&<二>"
+	value := "<12, 34> & <56, 78>"
+
+	v := NewObject(M{
+		key: value,
+	})
+
+	Convey("default escape", func() {
+		str := func(s string) string {
+			buf := &bytes.Buffer{}
+			for _, r := range s {
+				if r > 0x7F {
+					esc(buf, r)
+				} else if _, exist := htmlRunes[r]; exist {
+					esc(buf, r)
+				} else {
+					buf.WriteRune(r)
+				}
+			}
+			return buf.String()
+		}
+
+		s := v.MustMarshalString()
+		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, str(key), str(value)))
+
+		vv, err := UnmarshalString(s)
+		So(err, ShouldBeNil)
+		So(vv.MustGet(key).String(), ShouldEqual, value)
+	})
+
+	Convey("escapeHTML on, ascii", func() {
+		str := func(s string) string {
+			buf := &bytes.Buffer{}
+			for _, r := range s {
+				if r > 0x7F {
+					esc(buf, r)
+				} else if _, exist := htmlRunes[r]; exist {
+					esc(buf, r)
+				} else {
+					buf.WriteRune(r)
+				}
+			}
+			return buf.String()
+		}
+
+		s := v.MustMarshalString(OptEscapeHTML(true))
+		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, str(key), str(value)))
+
+		vv, err := UnmarshalString(s)
+		So(err, ShouldBeNil)
+		So(vv.MustGet(key).String(), ShouldEqual, value)
+	})
+
+	Convey("escapeHTML off, ascii", func() {
+		str := func(s string) string {
+			buf := &bytes.Buffer{}
+			for _, r := range s {
+				if r > 0x7F {
+					esc(buf, r)
+				} else {
+					buf.WriteRune(r)
+				}
+			}
+			return buf.String()
+		}
+
+		s := v.MustMarshalString(OptEscapeHTML(false))
+		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, str(key), str(value)))
+
+		vv, err := UnmarshalString(s)
+		So(err, ShouldBeNil)
+		So(vv.MustGet(key).String(), ShouldEqual, value)
+	})
+
+	Convey("escapeHTML on, UTF-8 on", func() {
+		str := func(s string) string {
+			buf := &bytes.Buffer{}
+			for _, r := range s {
+				if _, exist := htmlRunes[r]; exist {
+					esc(buf, r)
+				} else {
+					buf.WriteRune(r)
+				}
+			}
+			return buf.String()
+		}
+
+		s := v.MustMarshalString(OptEscapeHTML(true), OptUTF8())
+		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, str(key), str(value)))
+
+		vv, err := UnmarshalString(s)
+		So(err, ShouldBeNil)
+		So(vv.MustGet(key).String(), ShouldEqual, value)
+	})
+
+	Convey("escapeHTML off, UTF-8 on", func() {
+		s := v.MustMarshalString(OptEscapeHTML(false), OptUTF8())
+		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, key, value))
+
+		vv, err := UnmarshalString(s)
+		So(err, ShouldBeNil)
+		So(vv.MustGet(key).String(), ShouldEqual, value)
+	})
+}
+
+func testMarshalEscapeSlash(t *testing.T) {
+	v := NewString("https://google.com")
+	dflt := `"https:\/\/google.com"`
+	nonesc := `"https://google.com"`
+
+	Convey("default", func() {
+		s := v.MustMarshalString()
+		So(s, ShouldEqual, dflt)
+		So(MustUnmarshalString(s).String(), ShouldEqual, v.String())
+	})
+
+	Convey("escape slash", func() {
+		s := v.MustMarshalString(OptEscapeSlash(true))
+		So(s, ShouldEqual, dflt)
+		So(MustUnmarshalString(s).String(), ShouldEqual, v.String())
+	})
+
+	Convey("non-escape slash", func() {
+		s := v.MustMarshalString(OptEscapeSlash(false))
+		So(s, ShouldEqual, nonesc)
+		So(MustUnmarshalString(s).String(), ShouldEqual, v.String())
 	})
 }

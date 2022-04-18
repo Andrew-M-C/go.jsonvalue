@@ -11,7 +11,7 @@ import (
 func (v *V) Len() int {
 	switch v.valueType {
 	case Array:
-		return len(v.children.array)
+		return len(v.children.arr)
 	case Object:
 		return len(v.children.object)
 	default:

@@ -57,17 +57,21 @@ func MustUnmarshalString(s string) *V
 
 - 一个有效的 JSON 值，称为一个 JSON 的 `value`。在本工具包中，则使用一个 `*V` 来表示一个 JSON value
 - JSON 值的类型有以下几种：
-  - `object`，也就是一个对象，对应着一个 K-V 格式的值。其中 K 必然是一个 string，而 V 则是有效的 JSON `value`；
-  - `array`，一个数组，对应着一系列 `value` 的有序组合；
-  - `string`, 字符串类型，这很好理解；
-  - `number`，数字型——由于 JSON 是基于 JavaScript 定义的，因此 number 的标准定义是 JavaScript 中唯一的一种 number 类型：双精度浮点数；
-  - `"true"`，表示布尔 “真”；
-  - `"false"`，表示布尔 “假”；
-  - `"null"`，表示空值。
+
+|类型|说明|
+|:---:|:---|
+|`object`|也就是一个对象，对应着一个 K-V 格式的值。其中 K 必然是一个 string，而 V 则是有效的 JSON `value`|
+|`array`|一个数组，对应着一系列 `value` 的有序组合|
+|`string`|字符串类型，这很好理解|
+|`number`|数字型，准确地说，是双精度浮点数|
+||由于 JSON 是基于 JavaScript 定义的，而 JS 中只有 double 这一种数字，所以 number 实际上就是 double。这是个小坑|
+|`"true"`|表示布尔 “真”|
+|`"false"`|表示布尔 “假”|
+|`"null"`|表示空值|
 
 ### jsonvalue 基础属性
 
-在 `*jsonvalue.V` 对象中，参照绝大多数 JSON 工具包的做法，将 `"true"` 和 `"false"` 合并为一个类型，称为 `Boolean` 类型。此外，将 `"null"` 也映射为一个 Null 类型。
+在 `*jsonvalue.V` 对象中，参照绝大多数 JSON 工具包的做法，将 `"true"` 和 `"false"` 合并为一个 `Boolean` 类型。此外，将 `"null"` 也映射为一个 `Null` 类型。
 
 此外，还定义了一个 `NotExist` 类型，表示当前不是一个合法的 JSON 对象。此外还有一个 `Unknown`，开发者可以不用关心，使用中不会出现这个值。
 
@@ -75,12 +79,12 @@ func MustUnmarshalString(s string) *V
 
 ```go
 func (v *V) ValueType() ValueType
-func (v *V) IsObject() bool
-func (v *V) IsArray() bool
-func (v *V) IsString() bool
-func (v *V) IsNumber() bool
+func (v *V) IsObject()  bool
+func (v *V) IsArray()   bool
+func (v *V) IsString()  bool
+func (v *V) IsNumber()  bool
 func (v *V) IsBoolean() bool
-func (v *V) IsNull() bool
+func (v *V) IsNull()    bool
 ```
 
 ---
@@ -189,7 +193,7 @@ err = not match given type
 ### 回调函数风格
 
 ```go
-func (v *V) RangeArray(callback func(i int, v *V) bool)
+func (v *V) RangeArray  (callback func(i int, v *V) bool)
 func (v *V) RangeObjects(callback func(k string, v *V) bool)
 ```
 

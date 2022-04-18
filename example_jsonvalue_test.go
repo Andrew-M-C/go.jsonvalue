@@ -270,3 +270,50 @@ func ExampleV_ForRangeObj() {
 	// Output:
 	// message - Hello, JSON!
 }
+
+func ExampleOptUTF8() {
+	v := jsonvalue.NewObject()
+	v.SetString("🇺🇸🇨🇳🇷🇺🇬🇧🇫🇷").At("UN_leaderships")
+
+	asciiString := v.MustMarshalString()
+	utf8String := v.MustMarshalString(jsonvalue.OptUTF8())
+	fmt.Println("ASCII -", asciiString)
+	fmt.Println("UTF-8 -", utf8String)
+	// Output:
+	// ASCII - {"UN_leaderships":"\uD83C\uDDFA\uD83C\uDDF8\uD83C\uDDE8\uD83C\uDDF3\uD83C\uDDF7\uD83C\uDDFA\uD83C\uDDEC\uD83C\uDDE7\uD83C\uDDEB\uD83C\uDDF7"}
+	// UTF-8 - {"UN_leaderships":"🇺🇸🇨🇳🇷🇺🇬🇧🇫🇷"}
+}
+
+func ExmapleOptEscapeHTML() {
+	v := jsonvalue.NewObject()
+	v.SetString("https://hahaha.com?para1=<&para2=>").At("url")
+
+	defaultStr := v.MustMarshalString()
+	htmlOn := v.MustMarshalString(jsonvalue.OptEscapeHTML(true))
+	htmlOff := v.MustMarshalString(jsonvalue.OptEscapeHTML(false))
+
+	fmt.Println("default  -", defaultStr)
+	fmt.Println("HTML ON  -", htmlOn)
+	fmt.Println("HTML OFF -", htmlOff)
+	// Output:
+	// default  - {"url":"https:\/\/hahaha.com?para1=\u003C\u0026para2=\u0025"}
+	// HTML ON  - {"url":"https:\/\/hahaha.com?para1=\u003C\u0026para2=\u0025"}
+	// HTML OFF - {"url":"https:\/\/hahaha.com?para1=<&para2=>"}
+}
+
+func ExampleOptEscapeSlash() {
+	v := jsonvalue.NewObject()
+	v.SetString("https://google.com").At("google")
+
+	defaultStr := v.MustMarshalString()
+	escapeStr := v.MustMarshalString(jsonvalue.OptEscapeSlash(true))
+	nonEscape := v.MustMarshalString(jsonvalue.OptEscapeSlash(false))
+
+	fmt.Println("default -", defaultStr)
+	fmt.Println("escape  -", escapeStr)
+	fmt.Println("non-esc -", nonEscape)
+	// Output:
+	// default - {"google":"https:\/\/google.com"}
+	// escape  - {"google":"https:\/\/google.com"}
+	// non-esc - {"google":"https://google.com"}
+}

@@ -17,11 +17,7 @@ func formatBool(b bool) string {
 // - [UTF-16](https://zh.wikipedia.org/zh-cn/UTF-16)
 // - [JavaScript has a Unicode problem](https://mathiasbynens.be/notes/javascript-unicode)
 // - [Meaning of escaped unicode characters in JSON](https://stackoverflow.com/questions/21995410/meaning-of-escaped-unicode-characters-in-json)
-func escapeUnicodeToBuff(buf *bytes.Buffer, r rune) {
-	if r <= 0x7F {
-		buf.WriteRune(r)
-		return
-	}
+func escapeGreaterUnicodeToBuffByUTF16(r rune, buf *bytes.Buffer) {
 	if r <= '\uffff' {
 		buf.WriteString(fmt.Sprintf("\\u%04X", r))
 		return
@@ -39,74 +35,69 @@ func escapeUnicodeToBuff(buf *bytes.Buffer, r rune) {
 	buf.WriteString(fmt.Sprintf("\\u%04X", lo+0xDC00))
 }
 
-var (
-	escDoubleQuote = []byte{'\\', '"'}
-	escSlash       = []byte{'\\', '/'}
-	escBaskslash   = []byte{'\\', '\\'}
-	escBaskspace   = []byte{'\\', 'b'}
-	escVertTab     = []byte{'\\', 'f'}
-	escTab         = []byte{'\\', 't'}
-	escNewLine     = []byte{'\\', 'n'}
-	escReturn      = []byte{'\\', 'r'}
-	escLeftAngle   = []byte{'\\', 'u', '0', '0', '3', 'C'}
-	escRightAngle  = []byte{'\\', 'u', '0', '0', '3', 'E'}
-	escAnd         = []byte{'\\', 'u', '0', '0', '2', '6'}
-	escPercent     = []byte{'\\', 'u', '0', '0', '2', '5'}
-)
+func escapeGreaterUnicodeToBuffByUTF8(r rune, buf *bytes.Buffer) {
+	buf.WriteRune(r)
+}
+
+func escapeNothing(b byte, buf *bytes.Buffer) {
+	buf.WriteByte(b)
+}
+
+func escDoubleQuote(_ byte, buf *bytes.Buffer) {
+	buf.Write([]byte{'\\', '"'})
+}
+
+func escSlash(_ byte, buf *bytes.Buffer) {
+	buf.Write([]byte{'\\', '/'})
+}
+
+func escBaskslash(_ byte, buf *bytes.Buffer) {
+	buf.Write([]byte{'\\', '\\'})
+}
+
+func escBaskspace(_ byte, buf *bytes.Buffer) {
+	buf.Write([]byte{'\\', 'b'})
+}
+
+func escVertTab(_ byte, buf *bytes.Buffer) {
+	buf.Write([]byte{'\\', 'f'})
+}
+
+func escTab(_ byte, buf *bytes.Buffer) {
+	buf.Write([]byte{'\\', 't'})
+}
+
+func escNewLine(_ byte, buf *bytes.Buffer) {
+	buf.Write([]byte{'\\', 'n'})
+}
+
+func escReturn(_ byte, buf *bytes.Buffer) {
+	buf.Write([]byte{'\\', 'r'})
+}
+
+func escLeftAngle(_ byte, buf *bytes.Buffer) {
+	buf.Write([]byte{'\\', 'u', '0', '0', '3', 'C'})
+}
+
+func escRightAngle(_ byte, buf *bytes.Buffer) {
+	buf.Write([]byte{'\\', 'u', '0', '0', '3', 'E'})
+}
+
+func escAnd(_ byte, buf *bytes.Buffer) {
+	buf.Write([]byte{'\\', 'u', '0', '0', '2', '6'})
+}
+
+func escPercent(_ byte, buf *bytes.Buffer) {
+	buf.Write([]byte{'\\', 'u', '0', '0', '2', '5'})
+}
 
 func escapeStringToBuff(s string, buf *bytes.Buffer, opt *Opt) {
-	for _, chr := range s {
-		switch chr {
-		case '"':
-			// buf.WriteString("\\\"")
-			buf.Write(escDoubleQuote)
-		case '/':
-			// buf.WriteString("\\/")
-			buf.Write(escSlash)
-		case '\\':
-			// buf.WriteString("\\\\")
-			buf.Write(escBaskslash)
-		case '\b':
-			// buf.WriteString("\\b")
-			buf.Write(escBaskspace)
-		case '\f':
-			// buf.WriteString("\\f")
-			buf.Write(escVertTab)
-		case '\t':
-			// buf.WriteString("\\t")
-			buf.Write(escTab)
-		case '\n':
-			// buf.WriteString("\\n")
-			buf.Write(escNewLine)
-		case '\r':
-			// buf.WriteString("\\r")
-			buf.Write(escReturn)
-		case '<':
-			if opt.shouldEscapeHTML() {
-				// buf.WriteString("\\u003C")
-				buf.Write(escLeftAngle)
-			} else {
-				escapeUnicodeToBuff(buf, chr)
-			}
-		case '>':
-			if opt.shouldEscapeHTML() {
-				// buf.WriteString("\\u003E")
-				buf.Write(escRightAngle)
-			} else {
-				escapeUnicodeToBuff(buf, chr)
-			}
-		case '&':
-			if opt.shouldEscapeHTML() {
-				// buf.WriteString("\\u0026")
-				buf.Write(escAnd)
-			} else {
-				escapeUnicodeToBuff(buf, chr)
-			}
-		case '%': // not standard JSON encoding
-			// buf.WriteString("\\u0025")
-			buf.Write(escPercent)
-		default:
-			escapeUnicodeToBuff(buf, chr)
+	for _, r := range s {
+		if r <= 0x7F {
+			b := byte(r)
+			opt.asciiCharEscapingFunc[b](b, buf)
+		} else {
+			opt.unicodeEscapingFunc(r, buf)
 		}
 	}
 }

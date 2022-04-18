@@ -103,11 +103,7 @@ func (v *V) ValueType() ValueType {
 type V struct {
 	valueType ValueType
 
-	srcByte   []byte
-	srcOffset int
-	srcEnd    int
-
-	parsed bool
+	srcByte []byte
 
 	num       num
 	valueStr  string
@@ -124,7 +120,7 @@ type num struct {
 }
 
 type children struct {
-	array  []*V
+	arr    []*V
 	object map[string]*V
 
 	// As official json package supports caseless key accessing, I decide to do it as well
@@ -146,7 +142,6 @@ func newObject() *V {
 
 func newArray() *V {
 	v := new(Array)
-	v.children.array = []*V{}
 	return v
 }
 
@@ -178,13 +173,6 @@ func (v *V) delCaselessKey(k string) {
 	if len(keys) == 0 {
 		delete(v.children.lowerCaseKeys, lowerK)
 	}
-}
-
-func (v *V) valueBytes() []byte {
-	if v.srcOffset == 0 && v.srcEnd == len(v.srcByte) {
-		return v.srcByte
-	}
-	return v.srcByte[v.srcOffset:v.srcEnd]
 }
 
 // MustUnmarshalString just like UnmarshalString(). If error occurres, a JSON value with "NotExist" type would be returned, which
@@ -233,9 +221,7 @@ func unmarshalWithIter(it iter, offset int) (v *V, err error) {
 		var n *V
 		n, offset, _, err = it.parseNumber(offset)
 		if err == nil {
-			n.srcByte = it
-			n.srcOffset, n.srcEnd = offset, end
-			n.parsed = true
+			n.srcByte = it[offset:end]
 			v = n
 		}
 
@@ -310,7 +296,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, v)
+			arr.appendToArr(v)
 			offset = sectEnd
 
 		case '[':
@@ -318,7 +304,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, v)
+			arr.appendToArr(v)
 			offset = sectEnd
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
@@ -327,9 +313,8 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			v.srcByte = it
-			v.srcOffset, v.srcEnd = offset, sectEnd
-			arr.children.array = append(arr.children.array, v)
+			v.srcByte = it[offset:sectEnd]
+			arr.appendToArr(v)
 			offset = sectEnd
 
 		case '"':
@@ -338,7 +323,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 				return nil, -1, err
 			}
 			v := NewString(unsafeBtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
-			arr.children.array = append(arr.children.array, v)
+			arr.appendToArr(v)
 			offset = sectEnd
 
 		case 't':
@@ -346,7 +331,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, NewBool(true))
+			arr.appendToArr(NewBool(true))
 			offset = sectEnd
 
 		case 'f':
@@ -354,7 +339,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, NewBool(false))
+			arr.appendToArr(NewBool(false))
 			offset = sectEnd
 
 		case 'n':
@@ -362,7 +347,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.children.array = append(arr.children.array, NewNull())
+			arr.appendToArr(NewNull())
 			offset = sectEnd
 
 		default:
@@ -371,6 +356,13 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 	}
 
 	return nil, -1, fmt.Errorf("%w, cannot find ']'", ErrNotArrayValue)
+}
+
+func (v *V) appendToArr(child *V) {
+	if v.children.arr == nil {
+		v.children.arr = make([]*V, 0, initialArrayCapacity)
+	}
+	v.children.arr = append(v.children.arr, child)
 }
 
 // unmarshalObjectWithIterUnknownEnd unmarshal object from raw bytes. it[offset] must be '{'
@@ -473,8 +465,7 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			v.srcByte = it
-			v.srcOffset, v.srcEnd = offset, sectEnd
+			v.srcByte = it[offset:sectEnd]
 			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
@@ -603,7 +594,7 @@ func UnmarshalNoCopy(b []byte) (ret *V, err error) {
 //
 // - [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html)
 func (v *V) parseNumber() (err error) {
-	it := iter(v.srcByte[v.srcOffset:v.srcEnd])
+	it := iter(v.srcByte)
 
 	parsed, end, reachEnd, err := it.parseNumber(0)
 	if err != nil {
@@ -621,8 +612,6 @@ func (v *V) parseNumber() (err error) {
 func newFromNumber(b []byte) (ret *V, err error) {
 	v := new(Number)
 	v.srcByte = b
-	v.srcOffset = 0
-	v.srcEnd = len(b)
 	return v, nil
 }
 
@@ -896,8 +885,8 @@ func (v *V) String() string {
 	case Null:
 		return "null"
 	case Number:
-		if len(v.valueBytes()) > 0 {
-			return unsafeBtoS(v.valueBytes())
+		if len(v.srcByte) > 0 {
+			return unsafeBtoS(v.srcByte)
 		}
 		return strconv.FormatFloat(v.num.f64, 'g', -1, 64)
 	case String:

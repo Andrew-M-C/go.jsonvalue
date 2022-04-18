@@ -1,6 +1,7 @@
 package jsonvalue
 
 import (
+	"log"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -10,6 +11,7 @@ func TestInsertAppendDelete(t *testing.T) {
 	test(t, "insert/append", testInsertAppend)
 	test(t, "delete", testDelete)
 	test(t, "test misc append functions", testMiscAppend)
+	test(t, "test append and auto generate functions", testAppendAndAutoGeneratePath)
 	test(t, "test misc insert functions", testMiscInsert)
 	test(t, "test misc insert errors", testMiscInsertError)
 	test(t, "test misc append errors", testMiscAppendError)
@@ -150,6 +152,18 @@ func testMiscAppend(t *testing.T) {
 
 	s, _ := a.MarshalString()
 	So(s, ShouldEqual, expected)
+}
+
+func testAppendAndAutoGeneratePath(t *testing.T) {
+	expected := `{"arr":[1]}`
+
+	log.Printf("======== MARK ========")
+
+	o := NewObject()
+	_, err := o.AppendInt(1).InTheEnd("arr")
+	So(err, ShouldBeNil)
+
+	So(o.MustMarshalString(), ShouldEqual, expected)
 }
 
 func testMiscInsert(t *testing.T) {
@@ -332,23 +346,51 @@ func testMiscAppendError(t *testing.T) {
 		So(err, ShouldBeError)
 	})
 
-	Convey("misc error", func() {
+	Convey("append non exist data", func() {
 		raw := `{"object":{"object":{"array":[[]],"object":{}}}}`
 		v, err := UnmarshalString(raw)
 		So(err, ShouldBeNil)
 
-		_, err = v.AppendNull().InTheBeginning("object", "object", "arrayNotExist")
-		So(err, ShouldBeError)
-		t.Logf("expected error: %v", err)
+		_, err = v.AppendNull().InTheBeginning("object", "arrayNotExist", "arrayNotExistForTheBeginning")
+		So(err, ShouldBeNil)
 
-		_, err = v.AppendNull().InTheEnd("object", "object", "arrayNotExist")
-		So(err, ShouldBeError)
-		t.Logf("expected error: %v", err)
+		t.Logf("========== MARK ==========")
+		_, err = v.AppendNull().InTheEnd("object", "arrayNotExist", "arrayNotExistForTheEnd")
+		So(err, ShouldBeNil)
 
 		_, err = v.AppendNull().InTheBeginning("object", "object")
 		So(err, ShouldBeError)
-		t.Logf("expected error: %v", err)
 
+		_, err = v.AppendNull().InTheEnd("object", "object")
+		So(err, ShouldBeError)
+
+		err = v.GetNull("object", "arrayNotExist", "arrayNotExistForTheBeginning", 0)
+		So(err, ShouldBeNil)
+
+		err = v.GetNull("object", "arrayNotExist", "arrayNotExistForTheEnd", 0)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("append/insert to error type", func() {
+		raw := `{"object":{"object":{"array":[[]],"object":{}}}}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+
+		_, err = v.AppendNull().InTheBeginning("object", "object")
+		So(err, ShouldBeError)
+
+		_, err = v.AppendNull().InTheBeginning("object", "object")
+		So(err, ShouldBeError)
+
+		_, err = v.InsertNull().After("object", "object", "object", 0)
+		So(err, ShouldBeError)
+		t.Logf("expected error: %v", err)
+	})
+
+	Convey("insert non-exist data", func() {
+		raw := `{"object":{"object":{"array":[[]],"object":{}}}}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
 		o, _ := v.Get("object", "object", "object")
 		_, err = o.AppendNull().InTheEnd()
 		So(err, ShouldBeError)

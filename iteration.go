@@ -77,7 +77,7 @@ func (v *V) RangeArray(callback func(i int, v *V) bool) {
 		return
 	}
 
-	for i, child := range v.children.array {
+	for i, child := range v.children.arr {
 		if ok := callback(i, child); !ok {
 			break
 		}
@@ -86,10 +86,10 @@ func (v *V) RangeArray(callback func(i int, v *V) bool) {
 
 // Deprecated: IterArray is deprecated, please Use ForRangeArr() instead.
 func (v *V) IterArray() <-chan *ArrayIter {
-	c := make(chan *ArrayIter, len(v.children.array))
+	c := make(chan *ArrayIter, len(v.children.arr))
 
 	go func() {
-		for i, child := range v.children.array {
+		for i, child := range v.children.arr {
 			c <- &ArrayIter{
 				I: i,
 				V: child,
@@ -104,6 +104,6 @@ func (v *V) IterArray() <-chan *ArrayIter {
 //
 // ForRangeObj 返回一个切片，用于使用 for - range 块迭代 JSON 数组类型的子成员。
 func (v *V) ForRangeArr() []*V {
-	res := make([]*V, 0, len(v.children.array))
-	return append(res, v.children.array...)
+	res := make([]*V, 0, len(v.children.arr))
+	return append(res, v.children.arr...)
 }

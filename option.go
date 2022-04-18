@@ -1,5 +1,14 @@
 package jsonvalue
 
+import (
+	"bytes"
+)
+
+const (
+	initialArrayCapacity = 32
+	asciiSize            = 128
+)
+
 // Deprecated: Opt is the option of jsonvalue in marshaling. This type is deprecated,
 // please use OptXxxx() functions instead.
 //
@@ -83,13 +92,14 @@ type Opt struct {
 	// 不允许指定为 NaN, +Inf 或 -Inf。如果不指定，则映射为 0
 	FloatInfToFloat float64
 
-	// escapeHTML tells what do deal with &, <, > character. Default value is nil, which tells using the default value,
-	// which should be 'true'.
-	escapeHTML *bool
-}
+	// unicodeEscapingFunc defines how to escaping a unicode greater than 0x7F to buffer.
+	unicodeEscapingFunc func(r rune, buf *bytes.Buffer)
 
-func (o *Opt) shouldEscapeHTML() bool {
-	return o.escapeHTML == nil || *o.escapeHTML
+	// asciiCharEscapingFunc defines how to marshal bytes lower than 0x80.
+	asciiCharEscapingFunc [asciiSize]func(b byte, buf *bytes.Buffer)
+
+	// escProperties
+	escProperties escapingProperties
 }
 
 type FloatNaNHandleType uint8
@@ -159,11 +169,16 @@ func CombineOptions(opts []Option) *Opt {
 	return combineOptions(opts)
 }
 
+func defaultOptions() *Opt {
+	return &Opt{}
+}
+
 func combineOptions(opts []Option) *Opt {
-	opt := &Opt{}
+	opt := defaultOptions()
 	for _, o := range opts {
 		o.mergeTo(opt)
 	}
+	opt.parseEscapingFuncs()
 	return opt
 }
 
@@ -362,17 +377,122 @@ func (o *optFloatInfConvertToString) mergeTo(opt *Opt) {
 
 // OptEscapeHTML specifies whether problematic HTML characters should be escaped inside JSON quoted strings.
 // The default behavior is to escape &, <, and > to \u0026, \u003c, and \u003e to avoid certain safety problems that
-// can arise when embedding JSON in HTML.
+// can arise when embedding JSON in HTML. If not specified, HTML symbols above will be escaped by default.
+//
+// OptEscapeHTML 指定部分 HTML 符号是否会被转义。相关的 HTML 符号为 &, <, > 三个。如无指定，则默认会被转义
 func OptEscapeHTML(on bool) Option {
-	return &optEscapeHTML{
-		escapeHTML: on,
+	return optEscapeHTML(on)
+}
+
+type optEscapeHTML bool
+
+func (o optEscapeHTML) mergeTo(opt *Opt) {
+	if o {
+		opt.escProperties = opt.escProperties.clear(escapeWithoutHTML)
+	} else {
+		opt.escProperties = opt.escProperties.set(escapeWithoutHTML)
 	}
 }
 
-type optEscapeHTML struct {
-	escapeHTML bool
+// ==== do or do not not use ASCII escaping ====
+
+// OptUTF8 specifies that all unicodes greater than 0x7F, will NOT be escaped by \uXXXX format but UTF-8.
+//
+// OptUTF8 指定使用 UTF-8 编码。也就是说针对大于 0x7F 的 unicode 字符，将不会使用默认的 \uXXXX 格式进行编码，而是直接使用
+// UTF-8。
+func OptUTF8() Option {
+	return optUTF8(true)
 }
 
-func (o *optEscapeHTML) mergeTo(opt *Opt) {
-	opt.escapeHTML = &o.escapeHTML
+type optUTF8 bool
+
+func (o optUTF8) mergeTo(opt *Opt) {
+	opt.escProperties = opt.escProperties.set(escapeUTF8)
+}
+
+// ==== ignore slash ====
+
+// OptEscapeSlash specifies whether we should escape slash (/) symbol. In JSON standard, this character
+// should be escaped as '\/'. But non-escaping will not affect anything. If not specfied, slash will be
+// escaped by default.
+//
+//  OptEscapeSlash 指定是否需要转移斜杠 (/) 符号。在 JSON 标准中这个符号是需要被转移为 '\/' 的,
+// 但是不转义这个符号也不会带来什么问题。如无明确指定，如无指定，默认情况下，斜杠是会被转义的。
+func OptEscapeSlash(on bool) Option {
+	return optEscSlash(on)
+}
+
+type optEscSlash bool
+
+func (o optEscSlash) mergeTo(opt *Opt) {
+	if o {
+		opt.escProperties = opt.escProperties.clear(escapeIgnoreSlash)
+	} else {
+		opt.escProperties = opt.escProperties.set(escapeIgnoreSlash)
+	}
+}
+
+// escapingProperties is a bit mask, showing the option for escaping
+// characters.
+//
+// escapingProperties 是一个位掩码，表明转义特殊字符的方法
+type escapingProperties uint8
+
+const (
+	escapeUTF8        = 0
+	escapeWithoutHTML = 1
+	escapeIgnoreSlash = 2
+)
+
+func (esc escapingProperties) set(mask escapingProperties) escapingProperties {
+	return esc | (1 << mask)
+}
+
+func (esc escapingProperties) clear(mask escapingProperties) escapingProperties {
+	return esc & ^(1 << mask)
+}
+
+func (esc escapingProperties) has(mask escapingProperties) bool {
+	return esc == esc.set(mask)
+}
+
+// parseEscapingFuncs parse escaping functions by escapingProperties.
+func (o *Opt) parseEscapingFuncs() {
+	// init bytes lower than 0x80
+	for i := range o.asciiCharEscapingFunc {
+		o.asciiCharEscapingFunc[i] = escapeNothing
+	}
+
+	// special unicodes
+	o.asciiCharEscapingFunc['"'] = escDoubleQuote
+	o.asciiCharEscapingFunc['/'] = escSlash
+	o.asciiCharEscapingFunc['\\'] = escBaskslash
+	o.asciiCharEscapingFunc['\b'] = escBaskspace
+	o.asciiCharEscapingFunc['\f'] = escVertTab
+	o.asciiCharEscapingFunc['\t'] = escTab
+	o.asciiCharEscapingFunc['\n'] = escNewLine
+	o.asciiCharEscapingFunc['\r'] = escReturn
+	o.asciiCharEscapingFunc['<'] = escLeftAngle
+	o.asciiCharEscapingFunc['>'] = escRightAngle
+	o.asciiCharEscapingFunc['&'] = escAnd
+	o.asciiCharEscapingFunc['%'] = escPercent
+
+	// unicodes >= 0x80
+	if o.escProperties.has(escapeUTF8) {
+		o.unicodeEscapingFunc = escapeGreaterUnicodeToBuffByUTF8
+	} else {
+		o.unicodeEscapingFunc = escapeGreaterUnicodeToBuffByUTF16
+	}
+
+	// ignore slash?
+	if o.escProperties.has(escapeIgnoreSlash) {
+		o.asciiCharEscapingFunc['/'] = escapeNothing
+	}
+
+	// without HTML?
+	if o.escProperties.has(escapeWithoutHTML) {
+		o.asciiCharEscapingFunc['<'] = escapeNothing
+		o.asciiCharEscapingFunc['>'] = escapeNothing
+		o.asciiCharEscapingFunc['&'] = escapeNothing
+	}
 }
