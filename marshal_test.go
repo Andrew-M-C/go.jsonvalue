@@ -15,6 +15,7 @@ func TestMarshal(t *testing.T) {
 	test(t, "Inf", testMarshalFloat64Inf)
 	test(t, "escapeHTML", testMarshalEscapeHTML)
 	test(t, "UTF-8", testMarshalEscapeUTF8)
+	test(t, "slash", testMarshalEscapeSlash)
 }
 
 func testMarshalFloat64NaN(t *testing.T) {
@@ -422,5 +423,29 @@ func testMarshalEscapeUTF8(t *testing.T) {
 		vv, err := UnmarshalString(s)
 		So(err, ShouldBeNil)
 		So(vv.MustGet(key).String(), ShouldEqual, value)
+	})
+}
+
+func testMarshalEscapeSlash(t *testing.T) {
+	v := NewString("https://google.com")
+	dflt := `"https:\/\/google.com"`
+	nonesc := `"https://google.com"`
+
+	Convey("default", func() {
+		s := v.MustMarshalString()
+		So(s, ShouldEqual, dflt)
+		So(MustUnmarshalString(s).String(), ShouldEqual, v.String())
+	})
+
+	Convey("escape slash", func() {
+		s := v.MustMarshalString(OptEscapeSlash(true))
+		So(s, ShouldEqual, dflt)
+		So(MustUnmarshalString(s).String(), ShouldEqual, v.String())
+	})
+
+	Convey("non-escape slash", func() {
+		s := v.MustMarshalString(OptEscapeSlash(false))
+		So(s, ShouldEqual, nonesc)
+		So(MustUnmarshalString(s).String(), ShouldEqual, v.String())
 	})
 }

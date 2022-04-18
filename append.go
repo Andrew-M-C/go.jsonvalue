@@ -1,6 +1,8 @@
 package jsonvalue
 
-import "errors"
+import (
+	"errors"
+)
 
 // Append type is for InTheEnd() or InTheBeginning() function. Please refer to related functions.
 //

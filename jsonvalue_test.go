@@ -3,6 +3,7 @@ package jsonvalue
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"math"
 	"testing"
 
@@ -28,6 +29,10 @@ func printBytes(t *testing.T, b []byte, prefix ...string) {
 	}
 	s = s + string(b[:])
 	t.Log(s)
+}
+
+func init() {
+	log.SetFlags(log.Lshortfile | log.LstdFlags)
 }
 
 func TestJsonvalue(t *testing.T) {

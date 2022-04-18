@@ -225,9 +225,6 @@ func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V
 }
 
 func (v *V) insertToArr(pos int, child *V) {
-	if v.children.arr == nil {
-		v.children.arr = make([]*V, 0, initialArrayCapacity)
-	}
 	v.children.arr = append(v.children.arr, nil)
 	copy(v.children.arr[pos+1:], v.children.arr[pos:])
 	v.children.arr[pos] = child

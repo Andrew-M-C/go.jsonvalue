@@ -86,7 +86,7 @@ func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt)
 
 func (v *V) marshalString(buf *bytes.Buffer, opt *Opt) {
 	buf.WriteByte('"')
-	opt.stringMarshalFunc(v.valueStr, buf, opt)
+	escapeStringToBuff(v.valueStr, buf, opt)
 	buf.WriteByte('"')
 }
 

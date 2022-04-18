@@ -1,6 +1,7 @@
 package jsonvalue
 
 import (
+	"log"
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -155,6 +156,8 @@ func testMiscAppend(t *testing.T) {
 
 func testAppendAndAutoGeneratePath(t *testing.T) {
 	expected := `{"arr":[1]}`
+
+	log.Printf("======== MARK ========")
 
 	o := NewObject()
 	_, err := o.AppendInt(1).InTheEnd("arr")
@@ -348,13 +351,38 @@ func testMiscAppendError(t *testing.T) {
 		v, err := UnmarshalString(raw)
 		So(err, ShouldBeNil)
 
-		_, err = v.AppendNull().InTheBeginning("object", "object", "arrayNotExist")
+		_, err = v.AppendNull().InTheBeginning("object", "arrayNotExist", "arrayNotExistForTheBeginning")
 		So(err, ShouldBeNil)
 
-		_, err = v.AppendNull().InTheEnd("object", "object", "arrayNotExist")
+		t.Logf("========== MARK ==========")
+		_, err = v.AppendNull().InTheEnd("object", "arrayNotExist", "arrayNotExistForTheEnd")
 		So(err, ShouldBeNil)
 
 		_, err = v.AppendNull().InTheBeginning("object", "object")
+		So(err, ShouldBeError)
+
+		_, err = v.AppendNull().InTheEnd("object", "object")
+		So(err, ShouldBeError)
+
+		err = v.GetNull("object", "arrayNotExist", "arrayNotExistForTheBeginning", 0)
+		So(err, ShouldBeNil)
+
+		err = v.GetNull("object", "arrayNotExist", "arrayNotExistForTheEnd", 0)
+		So(err, ShouldBeNil)
+	})
+
+	Convey("append/insert to error type", func() {
+		raw := `{"object":{"object":{"array":[[]],"object":{}}}}`
+		v, err := UnmarshalString(raw)
+		So(err, ShouldBeNil)
+
+		_, err = v.AppendNull().InTheBeginning("object", "object")
+		So(err, ShouldBeError)
+
+		_, err = v.AppendNull().InTheBeginning("object", "object")
+		So(err, ShouldBeError)
+
+		_, err = v.InsertNull().After("object", "object", "object", 0)
 		So(err, ShouldBeError)
 		t.Logf("expected error: %v", err)
 	})
