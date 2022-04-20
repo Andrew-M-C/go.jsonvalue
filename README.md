@@ -1,6 +1,6 @@
 # Jsonvalue - A Go package for fast and convient JSON marshal and unmarshaling
 
-[![Travis](https://travis-ci.org/Andrew-M-C/go.jsonvalue.svg?branch=master)](https://travis-ci.org/Andrew-M-C/go.jsonvalue)
+[![Workflow](https://github.com/Andrew-M-C/go.jsonvalue/actions/workflows/go_test_general.yml/badge.svg)](https://github.com/Andrew-M-C/go.jsonvalue/actions/workflows/go_test_general.yml)
 [![Coveralls](https://coveralls.io/repos/github/Andrew-M-C/go.jsonvalue/badge.svg?branch=master)](https://coveralls.io/github/Andrew-M-C/go.jsonvalue)
 [![Go report](https://goreportcard.com/badge/github.com/Andrew-M-C/go.jsonvalue)](https://goreportcard.com/report/github.com/Andrew-M-C/go.jsonvalue)
 [![Codebeat](https://codebeat.co/badges/ecf87760-2987-48a7-a6dd-4d9fcad57256)](https://codebeat.co/projects/github-com-andrew-m-c-go-jsonvalue-master)<br>
