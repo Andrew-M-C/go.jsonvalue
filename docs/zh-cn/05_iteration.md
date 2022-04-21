@@ -4,10 +4,7 @@
 
 ---
 
-- [概述](./05_iteration.md#概述)
-- [遍历 array 类型值](./05_iteration.md#遍历-array-类型值)
-- [遍历 object 类型值](./05_iteration.md#遍历-object-类型值)
-- [已弃用的函数](./05_iteration.md#已弃用的函数)
+[TOC]
 
 ---
 

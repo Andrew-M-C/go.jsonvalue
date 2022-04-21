@@ -4,11 +4,7 @@
 
 ---
 
-- [反序列化: Unmarshal 系列函数](./03_get.md#unmarshal-系列函数)
-- [jsonvalue.V 对象的属性](./03_get.md#jsonvaluev-对象的属性)
-- [Get 系列函数](./03_get.md#get-系列函数)
-- [迭代 Object 和 Array 的成员](./03_get.md#迭代-object-和-array-的成员)
-- [MustGet 和相关函数](./03_get.md#mustget-和相关函数)
+[TOC]
 
 ---
 

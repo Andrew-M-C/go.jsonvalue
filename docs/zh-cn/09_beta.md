@@ -4,10 +4,6 @@
 
 ---
 
-- [struct 转 jsonvalue](./09_beta.md#struct-转-jsonvalue)
-
----
-
 ## struct 转 jsonvalue
 
 在 jsonvalue 正篇中，提供了两个函数:

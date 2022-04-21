@@ -4,8 +4,7 @@
 
 ---
 
-- [Go 原生 json 的问题](./05_caseless.md#go-原生-json-的问题)
-- [在 jsonvalue 中忽略大小写](./05_caseless.md#在-jsonvalue-中忽略大小写)
+[TOC]
 
 ---
 

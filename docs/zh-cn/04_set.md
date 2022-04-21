@@ -4,10 +4,7 @@
 
 ---
 
-- [创建 JSON 值](./04_set.md#创建-json-值)
-- [Set 系列函数](./04_set.md#set-系列函数)
-- [Append 和 Insert 系列函数](./04_set.md#append-和-insert-系列函数)
-- [序列化: Marshal 系列函数](./04_set.md#marshal-系列函数)
+[TOC]
 
 ---
 

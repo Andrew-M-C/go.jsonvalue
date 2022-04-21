@@ -4,12 +4,7 @@
 
 ---
 
-- [选项概述](./07_option.md#选项概述)
-- [忽略 null 值](./07_option.md#忽略-null-值)
-- [处理浮点数 NaN](./07_option.md#处理浮点数-nan)
-- [处理浮点数 +/-Inf](./07_option.md#处理浮点数--inf)
-- [原生 json SetEscapeHTML 支持](./07_option.md#原生-json-SetEscapeHTML-支持)
-- [旧版 options](./07_option.md#旧版-options)
+[TOC]
 
 ---
 
@@ -64,7 +59,7 @@ fmt.Println(v.MustMarshalString(jsonvalue.OptOmitNull(true)))
 - 调试期间便于快速找到指定的 K-V 对
 - 对 JSON 的 object 进行了不规范的使用，对 key 的顺序有强要求
 
-### 使用回调函数指定
+### 使用回调排序
 
 ```go
 func OptKeySequenceWithLessFunc(f MarshalLessFunc) Option
@@ -83,6 +78,8 @@ type MarshalLessFunc func(nilableParent *ParentInfo, key1, key2 string, v1, v2 *
 - `key2`, `v2` - 表示需要排序的第二个 K-V 值
 
 回调函数中返回 bool 值表示 v1 是否应该在 v2 的前面。逻辑与 `sort` 包的 `Less` 函数逻辑相同。
+
+### 使用字母序
 
 在 jsonvalue 中也提供了一个最简单的回调函数，仅使用字母序进行排序：
 
@@ -170,7 +167,14 @@ func OptFloatInfToStringInf() Option
 
 `OptFloatInfToStringInf()` 函数等效于 `OptFloatInfToString("+Inf", "-Inf")`
 
-## 原生 json SetEscapeHTML 支持
+## 非敏感字符的转义控制
+
+在 JSON 标准中，规定了一些字符转义的规则，这主要包含两类:
+
+1. 部分重要的格式字符或保留字符，需要进行转义
+1. 字面值大于 127 的 unicode 字符，如果要避免编码格式不统一而导致的错误，可以统一转义为 `\uXXXX` 的格式
+
+### 原生 json SetEscapeHTML 支持
 
 ```go
 func OptEscapeHTML(on bool) Option
@@ -179,6 +183,22 @@ func OptEscapeHTML(on bool) Option
 该功能对应原生 `encoding/json` 的 [`Encoder`](https://pkg.go.dev/encoding/json#Encoder.SetEscapeHTML) 类型的 [`SetEscapeHTML`](https://pkg.go.dev/encoding/json#Encoder.SetEscapeHTML) 函数。
 
 按照 JSON 标准，`&`, `<` 和 `>` 三个字符是需要转义为 `\u00XX` 格式的。但在实际使用中，这三个字符即使不转义，也是安全的。默认逻辑中，jsonvalue 进行序列化时会将这三个字符转义，但是可以通过在选项中传入 `OptEscapeHTML(false)` 来关闭该转义。
+
+### 斜杠符号 `/`
+
+在 JSON 标准中，斜杠符号是需要转义的。但是实际操作中，该符号不转义也不会带来什么问题。序列化时使用以下函数可以指定斜杠符号的转义开关:
+
+```go
+func OptEscapeSlash(on bool) Option
+```
+
+### 启用/禁用大于 `\u00FF` unicode 的转义
+
+```go
+func OptUTF8() Option
+```
+
+默认情况下，jsonvalue 在序列化时，针对所有大于 `\u00FF` 的 unicode 字符，均进行转义。但如果调用方可以确保对端解析时没有编码错误的话，那么可以在 Marshal 时采用该配置，直接将 string 序列化为 Go 原生所使用的 UTF-8 编码格式，特别是在 unicode 占数据的大头时，可以节省网络流量。
 
 ## 旧版 options
 

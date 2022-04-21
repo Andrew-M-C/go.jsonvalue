@@ -9,6 +9,6 @@
 - [额外选项配置](./07_option.md)
 - [值的自动转换](./08_conversion.md)
 - [实验性功能](./09_beta.md)
-- [v1.2.0 新特性](./10_new_feature.md)
+- [v1.2.x 新特性](./10_new_feature.md)
 - [性能](./11_benchmark.md)（未完成）
 

@@ -4,9 +4,7 @@
 
 ---
 
-- [自动转换简介](./08_conversion.md#自动转换简介)
-- [String 转 number](./08_conversion.md#string-转-number)
-- [GetString 和 MustGet(...).String() 的区别](./08_conversion.md#getstring-和-mustget(...).string()-的区别)
+[TOC]
 
 ---
 

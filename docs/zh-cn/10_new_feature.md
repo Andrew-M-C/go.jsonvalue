@@ -1,11 +1,10 @@
-# v1.2.0 新特性
+# v1.2.x 新特性
 
 [上一页](./09_beta.md) | [总目录](./README.md) | [下一页](./11_benchmark.md)
 
 ---
 
-- [NewFloat64 和 NewFloat32 功能变更](./10_new_feature.md#newfloat64-和-newfloat32-功能变更)
-- [使用函数形式配置序列化的额外参数](./10_new_feature.md#使用函数形式配置序列化的额外参数)
+[TOC]
 
 ---
 
@@ -38,7 +37,7 @@ func NewFloat32(f float32, prec int) *V
 
 ## 使用函数形式配置序列化的额外参数
 
-这一点请参见[额外选项配置](./06_option.md)小节，正如其最后一部分所说的，之前的配置模式是通过传入一个 struct 实现的，现在改为使用 `OptXxx` 系列函数创建配置值。
+这一点请参见[额外选项配置](./08_option.md)小节，正如其最后一部分所说的，之前的配置模式是通过传入一个 struct 实现的，现在改为使用 `OptXxx` 系列函数创建配置值。
 
 ---
 
