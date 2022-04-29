@@ -9,6 +9,10 @@ const (
 	asciiSize            = 128
 )
 
+var (
+	defaultMarshalOption = emptyOptions()
+)
+
 // Deprecated: Opt is the option of jsonvalue in marshaling. This type is deprecated,
 // please use OptXxxx() functions instead.
 //
@@ -161,25 +165,64 @@ func (o Opt) mergeTo(tgt *Opt) {
 	*tgt = o
 }
 
-// CombineOptions is a function for internal use, which combine severial Options together. Please
-// do not use this.
+// Deprecated: CombineOptions is a function for internal use, which combine
+// severial Options together. Please do not use this.
 //
-// CombineOptions 用于 jsonvalue 内部使用，合并入参的多个额外选项。
+// CombineOptions 用于 jsonvalue 内部使用，合并入参的多个额外选项，请不要使用。
 func CombineOptions(opts []Option) *Opt {
 	return combineOptions(opts)
 }
 
-func defaultOptions() *Opt {
+// SetDefaultMarshalOptions set default option for marshaling. It is quite
+// useful to invoke this function once in certern init funciton. Or you can
+// invoke it after main entry. It is goroutine-safe.
+//
+// Please keep in mind that it takes effect globally and affects ALL marshaling
+// behaviors in the future until the process ends. Please ensure that these
+// options are acceptable for ALL future marshaling.
+//
+// However, you can still add additional options in later marshaling.
+//
+// SetDefaultMarshalOptions 设置序列化时的默认参数。使用方可以在 init 函数阶段，或者是
+// main 函数启动后立刻调用该函数，以调整序列化时的默认行为。这个函数是协程安全的。
+//
+// 请记住，这个函数影响的是后续所有的序列化行为，请确保这个配置对后续的其他操作是可行的。
+//
+// 当然，你也可以在后续的操作中，基于原先配置的默认选项基础上，添加其他附加选项。
+func SetDefaultMarshalOptions(opts ...Option) {
+	opt := emptyOptions()
+	opt.combineOptionsFrom(opts)
+	defaultMarshalOption = opt
+}
+
+// ResetDefaultMarshalOptions reset default marshaling options to system default.
+//
+// ResetDefaultMarshalOptions 重设序列化时的默认选项为系统最原始的版本。
+func ResetDefaultMarshalOptions() {
+	defaultMarshalOption = emptyOptions()
+}
+
+func emptyOptions() *Opt {
 	return &Opt{}
 }
 
+func getDefaultOptions() *Opt {
+	res := Opt{}
+	res = *defaultMarshalOption
+	return &res
+}
+
 func combineOptions(opts []Option) *Opt {
-	opt := defaultOptions()
+	opt := getDefaultOptions()
+	opt.combineOptionsFrom(opts)
+	return opt
+}
+
+func (opt *Opt) combineOptionsFrom(opts []Option) {
 	for _, o := range opts {
 		o.mergeTo(opt)
 	}
 	opt.parseEscapingFuncs()
-	return opt
 }
 
 // ==== OmitNull ====

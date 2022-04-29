@@ -7,7 +7,25 @@ import (
 	"math"
 	"testing"
 
-	. "github.com/smartystreets/goconvey/convey"
+	"github.com/smartystreets/goconvey/convey"
+)
+
+var (
+	cv = convey.Convey
+	so = convey.So
+
+	eq = convey.ShouldEqual
+	ne = convey.ShouldNotEqual
+
+	isNil   = convey.ShouldBeNil
+	notNil  = convey.ShouldNotBeNil
+	isErr   = convey.ShouldBeError
+	isTrue  = convey.ShouldBeTrue
+	isFalse = convey.ShouldBeFalse
+	isZero  = convey.ShouldBeZeroValue
+
+	hasSubStr   = convey.ShouldContainSubstring
+	shouldPanic = convey.ShouldPanic
 )
 
 // go test -v -failfast -cover -coverprofile cover.out && go tool cover -html cover.out -o cover.html
@@ -16,7 +34,7 @@ func test(t *testing.T, scene string, f func(*testing.T)) {
 	if t.Failed() {
 		return
 	}
-	Convey(scene, t, func() {
+	cv(scene, t, func() {
 		f(t)
 	})
 }
@@ -36,6 +54,10 @@ func init() {
 }
 
 func TestJsonvalue(t *testing.T) {
+	test(t, "test options", testOption)
+	test(t, "test Get", testGet)
+	test(t, "test Set", testSet)
+	test(t, "test NewXxx", testNewXxx)
 	test(t, "jsonvalue basic function", testBasicFunction)
 	test(t, "misc strange characters", testMiscCharacters)
 	test(t, "MustUnmarshalXxxx errors", testMustUnmarshalErrors)
@@ -44,169 +66,176 @@ func TestJsonvalue(t *testing.T) {
 	test(t, "percentage symbol", testPercentage)
 	test(t, "misc number typed parameter", testMiscInt)
 	test(t, "test an internal struct", testUnmarshalWithIter)
+	test(t, "test iteration", testIteration)
+	test(t, "test iteration internally", testIter)
+	test(t, "test iterate float internally", testIterFloat)
+	test(t, "test marshaling", testMarshal)
+	test(t, "test sort", testSort)
+	test(t, "test insert, append, delete", testInsertAppendDelete)
+	test(t, "test structconv", testStructConv)
 }
 
 func testBasicFunction(t *testing.T) {
 	raw := `{"message":"hello, 世界","float":1234.123456789123456789,"true":true,"false":false,"null":null,"obj":{"msg":"hi"},"arr":["你好","world",null],"uint":1234,"int":-1234}`
 
 	v, err := Unmarshal([]byte(raw))
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	t.Logf("OK: %+v", v)
 
 	b, err := v.Marshal()
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	t.Logf("marshal: '%s'", string(b))
 
 	// can it be unmarshal back?
 	j := make(map[string]interface{})
 	err = json.Unmarshal(b, &j)
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	b, _ = json.Marshal(&j)
 	t.Logf("marshal back: %v", string(b))
 
 	v = NewFloat64(math.NaN())
-	So(v.String(), ShouldEqual, "NaN")
+	so(v.String(), eq, "NaN")
 
 	v = NewFloat64(math.Inf(1))
-	So(v.String(), ShouldEqual, "+Inf")
+	so(v.String(), eq, "+Inf")
 
 	v = NewFloat64(math.Inf(-1))
-	So(v.String(), ShouldEqual, "-Inf")
+	so(v.String(), eq, "-Inf")
 }
 
 func testMiscCharacters(t *testing.T) {
 
-	Convey("unmarshal and marshal back", func() {
+	cv("unmarshal and marshal back", func() {
 		s := "\"/\b\f\t\r\n<>&你好世界Café\\n"
 		expected := "\"\\\"\\/\\b\\f\\t\\r\\n\\u003C\\u003E\\u0026\\u4F60\\u597D\\u4E16\\u754CCaf\\u00E9\\\\n\""
 		v := NewString(s)
 		raw, err := v.MarshalString()
-		So(err, ShouldBeNil)
+		so(err, isNil)
 
 		printBytes(t, []byte(raw), "marshaled")
 		printBytes(t, []byte(expected), "expected")
-		So(raw, ShouldEqual, expected)
+		so(raw, eq, expected)
 
 		v, err = UnmarshalString(raw)
-		So(err, ShouldBeNil)
+		so(err, isNil)
 
 		printBytes(t, []byte(s), "Original string")
 		printBytes(t, []byte(v.String()), "Got string")
 
 		raw, err = v.MarshalString()
-		So(err, ShouldBeNil)
-		So(raw, ShouldEqual, expected)
+		so(err, isNil)
+		so(raw, eq, expected)
 	})
 
-	Convey("unmarshal and marshal /", func() {
+	cv("unmarshal and marshal /", func() {
 		s := `"/"`
 		v, err := UnmarshalString(s)
-		So(err, ShouldBeNil)
-		So(v.IsString(), ShouldBeTrue)
-		So(v.String(), ShouldEqual, "/")
+		so(err, isNil)
+		so(v.IsString(), isTrue)
+		so(v.String(), eq, "/")
 
 		s = `"\/"`
 		v, err = UnmarshalString(s)
-		So(err, ShouldBeNil)
-		So(v.IsString(), ShouldBeTrue)
-		So(v.String(), ShouldEqual, "/")
+		so(err, isNil)
+		so(v.IsString(), isTrue)
+		so(v.String(), eq, "/")
 	})
 
-	Convey("unmashal UTF-8 string", func() {
+	cv("unmashal UTF-8 string", func() {
 		s := "你好, Café😊"
 		raw := `"` + s + `"`
 
 		printBytes(t, []byte(raw))
 
 		v, err := UnmarshalString(raw)
-		So(err, ShouldBeNil)
-		So(v.IsString(), ShouldBeTrue)
-		So(v.String(), ShouldEqual, s)
+		so(err, isNil)
+		so(v.IsString(), isTrue)
+		so(v.String(), eq, s)
 	})
 
-	Convey("unmarshal illegal UTF-8 string", func() {
+	cv("unmarshal illegal UTF-8 string", func() {
 		s := `"😊"`
 		b := []byte(s)
 
 		printBytes(t, b, "correct bytes")
 		_, err := Unmarshal(b)
-		So(err, ShouldBeNil)
+		so(err, isNil)
 
 		incompleteB := b[:2]
 		printBytes(t, incompleteB, "incomplete bytes")
 		_, err = Unmarshal(incompleteB)
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		b[1] |= 0x08
 		printBytes(t, b, "error bytes")
 		_, err = Unmarshal(b)
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		v, err := UnmarshalString(s)
-		So(err, ShouldBeNil)
+		so(err, isNil)
 		res := v.MustMarshal()
 		printBytes(t, res, "correct marshaled string")
 	})
 
-	Convey("unmarshal illegal escaped ASCII string", func() {
-		So(ValueType(56636).String(), ShouldEqual, NotExist.String())
-		So(ValueType(-1).String(), ShouldEqual, NotExist.String())
+	cv("unmarshal illegal escaped ASCII string", func() {
+		so(ValueType(56636).String(), eq, NotExist.String())
+		so(ValueType(-1).String(), eq, NotExist.String())
 
 		v, err := UnmarshalString(`"\`)
-		So(err, ShouldBeError)
-		So(v.ValueType(), ShouldEqual, NotExist)
+		so(err, isErr)
+		so(v.ValueType(), eq, NotExist)
 
 		v, err = UnmarshalString(`"\u00`)
-		So(err, ShouldBeError)
-		So(v.ValueType(), ShouldEqual, NotExist)
+		so(err, isErr)
+		so(v.ValueType(), eq, NotExist)
 
 		v, err = UnmarshalString(`"\u0GAB`)
-		So(err, ShouldBeError)
-		So(v.ValueType(), ShouldEqual, NotExist)
+		so(err, isErr)
+		so(v.ValueType(), eq, NotExist)
 
 		v, err = UnmarshalString(`"\U1234`)
-		So(err, ShouldBeError)
-		So(v.ValueType(), ShouldEqual, NotExist)
+		so(err, isErr)
+		so(v.ValueType(), eq, NotExist)
 
 		v, err = UnmarshalString(`"\uD83d\uDE0A你好Café😊"`) // should be "\uD83D\uDE0A" ==> 😊
-		So(err, ShouldBeNil)
-		So(v.String(), ShouldEqual, "😊你好Café😊")
-		So(v.ValueType(), ShouldNotEqual, NotExist)
+		so(err, isNil)
+		so(v.String(), eq, "😊你好Café😊")
+		so(v.ValueType(), ne, NotExist)
 
 		v, err = UnmarshalString(`"\uD83D\uDE0A, smile!"`) // should be "\uD83D\uDE0A" ==> 😊
-		So(err, ShouldBeNil)
-		So(v.ValueType(), ShouldNotEqual, NotExist)
+		so(err, isNil)
+		so(v.ValueType(), ne, NotExist)
 
 		v, err = UnmarshalString(`"\uD83D\uDE0"`) // should be "\uD83D\uDE0A" ==> 😊
-		So(err, ShouldBeError)
-		So(v.ValueType(), ShouldEqual, NotExist)
+		so(err, isErr)
+		so(v.ValueType(), eq, NotExist)
 
 		v, err = UnmarshalString(`"\uD83D\UDE0A"`) // should be "\uD83D\uDE0A" ==> 😊
-		So(err, ShouldBeError)
-		So(v.ValueType(), ShouldEqual, NotExist)
+		so(err, isErr)
+		so(v.ValueType(), eq, NotExist)
 
 		v, err = UnmarshalString(`"\uD83D/uDE0A"`) // should be "\uD83D\uDE0A" ==> 😊
-		So(err, ShouldBeError)
-		So(v.ValueType(), ShouldEqual, NotExist)
+		so(err, isErr)
+		so(v.ValueType(), eq, NotExist)
 
 		v, err = UnmarshalString(`"\uD83D\uHE0A"`) // should be "\uD83D\uDE0A" ==> 😊
-		So(err, ShouldBeError)
-		So(v.ValueType(), ShouldEqual, NotExist)
+		so(err, isErr)
+		so(v.ValueType(), eq, NotExist)
 
 		v, err = UnmarshalString(`"\uH83D\uDE0A"`) // should be "\uD83D\uDE0A" ==> 😊
-		So(err, ShouldBeError)
-		So(v.ValueType(), ShouldEqual, NotExist)
+		so(err, isErr)
+		so(v.ValueType(), eq, NotExist)
 
 		v, err = UnmarshalString(`"\uD83D\u000A"`) // should be "\uD83D\uDE0A" ==> 😊
-		So(err, ShouldBeError)
-		So(v.ValueType(), ShouldEqual, NotExist)
+		so(err, isErr)
+		so(v.ValueType(), eq, NotExist)
 
 		v, err = UnmarshalString(`"\uD83D\uFFFF"`) // should be "\uD83D\uDE0A" ==> 😊
-		So(err, ShouldBeError)
-		So(v.ValueType(), ShouldEqual, NotExist)
+		so(err, isErr)
+		so(v.ValueType(), eq, NotExist)
 	})
 }
 
@@ -214,31 +243,31 @@ func testMustUnmarshalErrors(t *testing.T) {
 	const illegal = `:\`
 
 	v := MustUnmarshalString(illegal)
-	So(v, ShouldNotBeNil)
-	So(v.ValueType(), ShouldEqual, NotExist)
+	so(v, notNil)
+	so(v.ValueType(), eq, NotExist)
 
 	v = nil
 	v = MustUnmarshal([]byte(illegal))
-	So(v, ShouldNotBeNil)
-	So(v.ValueType(), ShouldEqual, NotExist)
+	so(v, notNil)
+	so(v.ValueType(), eq, NotExist)
 
 	v = nil
 	v = MustUnmarshalNoCopy([]byte(illegal))
-	So(v, ShouldNotBeNil)
-	So(v.ValueType(), ShouldEqual, NotExist)
+	so(v, notNil)
+	so(v.ValueType(), eq, NotExist)
 }
 
 func testMiscUnmarshalErrors(t *testing.T) {
 	var err error
 
 	_, err = UnmarshalString(`tru`)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	_, err = UnmarshalString(`fals`)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	_, err = UnmarshalString(`nul`)
-	So(err, ShouldBeError)
+	so(err, isErr)
 }
 
 func testUTF16(t *testing.T) {
@@ -257,12 +286,12 @@ func testUTF16(t *testing.T) {
 
 	s := v.MustMarshalString()
 	t.Logf("marshaled string '%s': '%s'", orig, s)
-	So(orig, ShouldNotEqual, s)
+	so(orig, ne, s)
 
 	b := v.MustMarshal()
 	err := json.Unmarshal(b, &data)
-	So(err, ShouldBeNil)
-	So(data.String, ShouldEqual, orig)
+	so(err, isNil)
+	so(data.String, eq, orig)
 }
 
 func testPercentage(t *testing.T) {
@@ -271,10 +300,10 @@ func testPercentage(t *testing.T) {
 	expectedB := "\"%\""
 	v := NewString(s)
 	raw, err := v.MarshalString()
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	t.Log("marshaled: '" + raw + "'")
-	So(raw != expectedA && raw != expectedB, ShouldBeFalse)
+	so(raw != expectedA && raw != expectedB, isFalse)
 }
 
 func testMiscInt(t *testing.T) {
@@ -282,93 +311,93 @@ func testMiscInt(t *testing.T) {
 
 	raw := `[1,2,3,4,5,6,7]`
 	v, err := UnmarshalString(raw)
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	i, err := v.GetInt(uint(2))
-	So(err, ShouldBeNil)
-	So(i, ShouldEqual, 3)
+	so(err, isNil)
+	so(i, eq, 3)
 
 	_, err = v.GetInt(int64(2))
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	_, err = v.GetInt(uint64(2))
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	_, err = v.GetInt(int32(2))
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	_, err = v.GetInt(uint32(2))
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	_, err = v.GetInt(int16(2))
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	_, err = v.GetInt(uint16(2))
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	_, err = v.GetInt(int8(2))
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	_, err = v.GetInt(uint8(2))
-	So(err, ShouldBeNil)
+	so(err, isNil)
 }
 
 func testUnmarshalWithIter(t *testing.T) {
-	Convey("string", func() {
+	cv("string", func() {
 		raw := []byte("hello, 世界")
 		rawWithQuote := []byte(fmt.Sprintf("\"%s\"", raw))
 
 		v, err := unmarshalWithIter(iter(rawWithQuote), 0)
-		So(err, ShouldBeNil)
-		So(v.String(), ShouldEqual, string(raw))
+		so(err, isNil)
+		so(v.String(), eq, string(raw))
 	})
 
-	Convey("true", func() {
+	cv("true", func() {
 		raw := []byte("  true  ")
 		v, err := unmarshalWithIter(iter(raw), 0)
-		So(err, ShouldBeNil)
-		So(v.Bool(), ShouldBeTrue)
-		So(v.IsBoolean(), ShouldBeTrue)
+		so(err, isNil)
+		so(v.Bool(), isTrue)
+		so(v.IsBoolean(), isTrue)
 	})
 
-	Convey("false", func() {
+	cv("false", func() {
 		raw := []byte("  false  ")
 		v, err := unmarshalWithIter(iter(raw), 0)
-		So(err, ShouldBeNil)
-		So(v.Bool(), ShouldBeFalse)
-		So(v.IsBoolean(), ShouldBeTrue)
+		so(err, isNil)
+		so(v.Bool(), isFalse)
+		so(v.IsBoolean(), isTrue)
 	})
 
-	Convey("null", func() {
+	cv("null", func() {
 		raw := []byte("\r\t\n  null \r\t\b  ")
 		v, err := unmarshalWithIter(iter(raw), 0)
-		So(err, ShouldBeNil)
-		So(v.IsNull(), ShouldBeTrue)
+		so(err, isNil)
+		so(v.IsNull(), isTrue)
 	})
 
-	Convey("int number", func() {
+	cv("int number", func() {
 		raw := []byte(" 1234567890 ")
 		v, err := unmarshalWithIter(iter(raw), 0)
-		So(err, ShouldBeNil)
-		So(v.Int64(), ShouldEqual, 1234567890)
+		so(err, isNil)
+		so(v.Int64(), eq, 1234567890)
 	})
 
-	Convey("array with basic type", func() {
+	cv("array with basic type", func() {
 		raw := []byte(" [123, true, false, null, [\"array in array\"], \"Hello, world!\" ] ")
 		v, err := unmarshalWithIter(iter(raw), 0)
-		So(err, ShouldBeNil)
-		So(v.IsArray(), ShouldBeTrue)
+		so(err, isNil)
+		so(v.IsArray(), isTrue)
 
 		t.Logf("res: %v", v)
 	})
 
-	Convey("object with basic type", func() {
+	cv("object with basic type", func() {
 		raw := []byte(`  {"message": "Hello, world!"}	`)
 		printBytes(t, raw)
 
 		v, err := unmarshalWithIter(iter(raw), 0)
-		So(err, ShouldBeNil)
-		So(v.IsObject(), ShouldBeTrue)
+		so(err, isNil)
+		so(v.IsObject(), isTrue)
 
 		t.Logf("res: %v", v)
 
@@ -378,25 +407,25 @@ func testUnmarshalWithIter(t *testing.T) {
 		}
 
 		s, err := v.Get("message")
-		So(err, ShouldBeNil)
-		So(v, ShouldNotBeNil)
-		So(s.IsString(), ShouldBeTrue)
-		So(s.String(), ShouldEqual, "Hello, world!")
+		so(err, isNil)
+		so(v, notNil)
+		so(s.IsString(), isTrue)
+		so(s.String(), eq, "Hello, world!")
 	})
 
-	Convey("object with complex type", func() {
+	cv("object with complex type", func() {
 		raw := []byte(` {"arr": [1234, true , null, false, {"obj":"empty object"}]}  `)
 		printBytes(t, raw)
 
 		v, err := unmarshalWithIter(iter(raw), 0)
-		So(err, ShouldBeNil)
-		So(v.IsObject(), ShouldBeTrue)
+		so(err, isNil)
+		so(v.IsObject(), isTrue)
 
 		t.Logf("res: %v", v)
 
 		child, err := v.Get("arr", 4, "obj")
-		So(err, ShouldBeNil)
-		So(child.IsString(), ShouldBeTrue)
-		So(child.String(), ShouldEqual, "empty object")
+		so(err, isNil)
+		so(child.IsString(), isTrue)
+		so(child.String(), eq, "empty object")
 	})
 }

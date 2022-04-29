@@ -6,132 +6,130 @@ import (
 	"math"
 	"strings"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestMarshal(t *testing.T) {
-	test(t, "NaN", testMarshalFloat64NaN)
-	test(t, "Inf", testMarshalFloat64Inf)
-	test(t, "escapeHTML", testMarshalEscapeHTML)
-	test(t, "UTF-8", testMarshalEscapeUTF8)
-	test(t, "slash", testMarshalEscapeSlash)
+func testMarshal(t *testing.T) {
+	cv("NaN", func() { testMarshalFloat64NaN(t) })
+	cv("Inf", func() { testMarshalFloat64Inf(t) })
+	cv("escapeHTML", func() { testMarshalEscapeHTML(t) })
+	cv("UTF-8", func() { testMarshalEscapeUTF8(t) })
+	cv("slash", func() { testMarshalEscapeSlash(t) })
 }
 
 func testMarshalFloat64NaN(t *testing.T) {
-	Convey("with error", func() {
+	cv("with error", func() {
 		v := NewFloat64(math.NaN())
 		_, err := v.Marshal()
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		v = NewFloat32(float32(math.NaN()))
 		_, err = v.MarshalString()
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		v = NewFloat64(math.NaN())
 		_, err = v.Marshal(Opt{
 			FloatNaNHandleType: FloatNaNHandleType(80),
 		})
-		So(err, ShouldBeError)
+		so(err, isErr)
 	})
 
-	Convey("to float", func() {
+	cv("to float", func() {
 		v := NewFloat64(math.NaN())
 		b, err := v.Marshal(Opt{
 			FloatNaNHandleType: FloatNaNConvertToFloat,
 			FloatNaNToFloat:    1.5,
 		})
-		So(err, ShouldBeNil)
-		So(string(b), ShouldEqual, "1.5")
+		so(err, isNil)
+		so(string(b), eq, "1.5")
 
 		b, err = v.Marshal(OptFloatNaNToFloat(1.5))
-		So(err, ShouldBeNil)
-		So(string(b), ShouldEqual, "1.5")
+		so(err, isNil)
+		so(string(b), eq, "1.5")
 	})
 
-	Convey("to string", func() {
+	cv("to string", func() {
 		v := NewFloat64(math.NaN())
 		s, err := v.MarshalString(Opt{
 			FloatNaNHandleType: FloatNaNConvertToString,
 		})
-		So(err, ShouldBeNil)
-		So(s, ShouldEqual, `"NaN"`)
+		so(err, isNil)
+		so(s, eq, `"NaN"`)
 
 		s, err = v.MarshalString(OptFloatNaNToStringNaN())
-		So(err, ShouldBeNil)
-		So(s, ShouldEqual, `"NaN"`)
+		so(err, isNil)
+		so(s, eq, `"NaN"`)
 
 		s, err = v.MarshalString(Opt{
 			FloatNaNHandleType: FloatNaNConvertToString,
 			FloatNaNToString:   "not a number",
 		})
-		So(err, ShouldBeNil)
-		So(s, ShouldEqual, `"not a number"`)
+		so(err, isNil)
+		so(s, eq, `"not a number"`)
 
 		s, err = v.MarshalString(OptFloatNaNToString("not a number"))
-		So(err, ShouldBeNil)
-		So(s, ShouldEqual, `"not a number"`)
+		so(err, isNil)
+		so(s, eq, `"not a number"`)
 	})
 
-	Convey("to null", func() {
+	cv("to null", func() {
 		v := NewFloat64(math.NaN())
 		s, err := v.MarshalString(Opt{
 			FloatNaNHandleType: FloatNaNNull,
 		})
-		So(err, ShouldBeNil)
-		So(s, ShouldEqual, "null")
+		so(err, isNil)
+		so(s, eq, "null")
 
 		s, err = v.MarshalString(OptFloatNaNToNull())
-		So(err, ShouldBeNil)
-		So(s, ShouldEqual, "null")
+		so(err, isNil)
+		so(s, eq, "null")
 	})
 
-	Convey("to float error", func() {
+	cv("to float error", func() {
 		v := NewFloat64(math.NaN())
 		_, err := v.Marshal(Opt{
 			FloatNaNHandleType: FloatNaNConvertToFloat,
 			FloatNaNToFloat:    math.NaN(),
 		})
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		_, err = v.Marshal(Opt{
 			FloatNaNHandleType: FloatNaNConvertToFloat,
 			FloatNaNToFloat:    math.Inf(1),
 		})
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		_, err = v.Marshal(Opt{
 			FloatNaNHandleType: FloatNaNConvertToFloat,
 			FloatNaNToFloat:    math.Inf(-1),
 		})
-		So(err, ShouldBeError)
+		so(err, isErr)
 	})
 }
 
 func testMarshalFloat64Inf(t *testing.T) {
-	Convey("with error", func() {
+	cv("with error", func() {
 		v := NewFloat64(math.Inf(1))
 		_, err := v.Marshal()
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		v = NewFloat32(float32(math.Inf(-1)))
 		_, err = v.MarshalString()
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		v = NewFloat64(math.Inf(1))
 		_, err = v.Marshal(Opt{
 			FloatInfHandleType: FloatInfHandleType(80),
 		})
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		v = NewFloat64(math.Inf(-1))
 		_, err = v.Marshal(Opt{
 			FloatInfHandleType: FloatInfHandleType(80),
 		})
-		So(err, ShouldBeError)
+		so(err, isErr)
 	})
 
-	Convey("to float", func() {
+	cv("to float", func() {
 		opt := Opt{
 			FloatInfHandleType: FloatInfConvertToFloat,
 			FloatInfToFloat:    2.25,
@@ -141,38 +139,38 @@ func testMarshalFloat64Inf(t *testing.T) {
 			"-inf": math.Inf(-1),
 		})
 		s, err := v.MarshalString(opt)
-		So(err, ShouldBeNil)
-		So(s, ShouldContainSubstring, `"+inf":2.25`)
-		So(s, ShouldContainSubstring, `"-inf":-2.25`)
+		so(err, isNil)
+		so(s, hasSubStr, `"+inf":2.25`)
+		so(s, hasSubStr, `"-inf":-2.25`)
 
 		s, err = v.MarshalString(OptFloatInfToFloat(2.25))
-		So(err, ShouldBeNil)
-		So(s, ShouldContainSubstring, `"+inf":2.25`)
-		So(s, ShouldContainSubstring, `"-inf":-2.25`)
+		so(err, isNil)
+		so(s, hasSubStr, `"+inf":2.25`)
+		so(s, hasSubStr, `"-inf":-2.25`)
 	})
 
-	Convey("to string", func() {
+	cv("to string", func() {
 		v := NewFloat64(math.Inf(1))
 		s, err := v.MarshalString(Opt{
 			FloatInfHandleType: FloatInfConvertToString,
 		})
-		So(err, ShouldBeNil)
-		So(s, ShouldEqual, `"+Inf"`)
+		so(err, isNil)
+		so(s, eq, `"+Inf"`)
 
 		s, err = v.MarshalString(OptFloatInfToStringInf())
-		So(err, ShouldBeNil)
-		So(s, ShouldEqual, `"+Inf"`)
+		so(err, isNil)
+		so(s, eq, `"+Inf"`)
 
 		v = NewFloat64(math.Inf(-1))
 		s, err = v.MarshalString(Opt{
 			FloatInfHandleType: FloatInfConvertToString,
 		})
-		So(err, ShouldBeNil)
-		So(s, ShouldEqual, `"-Inf"`)
+		so(err, isNil)
+		so(s, eq, `"-Inf"`)
 
 		s, err = v.MarshalString(OptFloatInfToStringInf())
-		So(err, ShouldBeNil)
-		So(s, ShouldEqual, `"-Inf"`)
+		so(err, isNil)
+		so(s, eq, `"-Inf"`)
 
 		v = NewObject(map[string]interface{}{
 			"+inf": math.Inf(1),
@@ -183,44 +181,44 @@ func testMarshalFloat64Inf(t *testing.T) {
 			FloatInfHandleType:       FloatInfConvertToString,
 			FloatInfPositiveToString: "infinity",
 		})
-		So(err, ShouldBeNil)
-		So(s, ShouldContainSubstring, `"+inf":"infinity"`)
-		So(s, ShouldContainSubstring, `"-inf":"-infinity"`)
+		so(err, isNil)
+		so(s, hasSubStr, `"+inf":"infinity"`)
+		so(s, hasSubStr, `"-inf":"-infinity"`)
 
 		s, err = v.MarshalString(OptFloatInfToString("infinity", ""))
-		So(err, ShouldBeNil)
-		So(s, ShouldContainSubstring, `"+inf":"infinity"`)
-		So(s, ShouldContainSubstring, `"-inf":"-infinity"`)
+		so(err, isNil)
+		so(s, hasSubStr, `"+inf":"infinity"`)
+		so(s, hasSubStr, `"-inf":"-infinity"`)
 
 		s, err = v.MarshalString(Opt{
 			FloatInfHandleType:       FloatInfConvertToString,
 			FloatInfPositiveToString: "+mugen",
 		})
-		So(err, ShouldBeNil)
-		So(s, ShouldContainSubstring, `"+inf":"+mugen"`)
-		So(s, ShouldContainSubstring, `"-inf":"-mugen"`)
+		so(err, isNil)
+		so(s, hasSubStr, `"+inf":"+mugen"`)
+		so(s, hasSubStr, `"-inf":"-mugen"`)
 
 		s, err = v.MarshalString(OptFloatInfToString("+mugen", ""))
-		So(err, ShouldBeNil)
-		So(s, ShouldContainSubstring, `"+inf":"+mugen"`)
-		So(s, ShouldContainSubstring, `"-inf":"-mugen"`)
+		so(err, isNil)
+		so(s, hasSubStr, `"+inf":"+mugen"`)
+		so(s, hasSubStr, `"-inf":"-mugen"`)
 
 		s, err = v.MarshalString(Opt{
 			FloatInfHandleType:       FloatInfConvertToString,
 			FloatInfPositiveToString: "heaven",
 			FloatInfNegativeToString: "hell",
 		})
-		So(err, ShouldBeNil)
-		So(s, ShouldContainSubstring, `"+inf":"heaven"`)
-		So(s, ShouldContainSubstring, `"-inf":"hell"`)
+		so(err, isNil)
+		so(s, hasSubStr, `"+inf":"heaven"`)
+		so(s, hasSubStr, `"-inf":"hell"`)
 
 		s, err = v.MarshalString(OptFloatInfToString("heaven", "hell"))
-		So(err, ShouldBeNil)
-		So(s, ShouldContainSubstring, `"+inf":"heaven"`)
-		So(s, ShouldContainSubstring, `"-inf":"hell"`)
+		so(err, isNil)
+		so(s, hasSubStr, `"+inf":"heaven"`)
+		so(s, hasSubStr, `"-inf":"hell"`)
 	})
 
-	Convey("to null", func() {
+	cv("to null", func() {
 		v := NewObject(map[string]interface{}{
 			"+inf": math.Inf(1),
 			"-inf": math.Inf(-1),
@@ -228,36 +226,36 @@ func testMarshalFloat64Inf(t *testing.T) {
 		s, err := v.MarshalString(Opt{
 			FloatInfHandleType: FloatInfNull,
 		})
-		So(err, ShouldBeNil)
-		So(s, ShouldContainSubstring, `"+inf":null`)
-		So(s, ShouldContainSubstring, `"-inf":null`)
+		so(err, isNil)
+		so(s, hasSubStr, `"+inf":null`)
+		so(s, hasSubStr, `"-inf":null`)
 
 		s, err = v.MarshalString(OptFloatInfToNull())
-		So(err, ShouldBeNil)
-		So(s, ShouldContainSubstring, `"+inf":null`)
-		So(s, ShouldContainSubstring, `"-inf":null`)
+		so(err, isNil)
+		so(s, hasSubStr, `"+inf":null`)
+		so(s, hasSubStr, `"-inf":null`)
 	})
 
-	Convey("to float error", func() {
+	cv("to float error", func() {
 		iter := func(f float64) {
 			v := NewFloat64(f)
 			_, err := v.Marshal(Opt{
 				FloatInfHandleType: FloatInfConvertToFloat,
 				FloatInfToFloat:    math.NaN(),
 			})
-			So(err, ShouldBeError)
+			so(err, isErr)
 
 			_, err = v.Marshal(Opt{
 				FloatInfHandleType: FloatInfConvertToFloat,
 				FloatInfToFloat:    math.Inf(1),
 			})
-			So(err, ShouldBeError)
+			so(err, isErr)
 
 			_, err = v.Marshal(Opt{
 				FloatInfHandleType: FloatInfConvertToFloat,
 				FloatInfToFloat:    math.Inf(-1),
 			})
-			So(err, ShouldBeError)
+			so(err, isErr)
 		}
 
 		iter(math.Inf(1))
@@ -281,31 +279,31 @@ func testMarshalEscapeHTML(t *testing.T) {
 		key: value,
 	})
 
-	Convey("default escape", func() {
+	cv("default escape", func() {
 		s := v.MustMarshalString()
-		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, esc(key), esc(value)))
+		so(s, eq, fmt.Sprintf(`{"%s":"%s"}`, esc(key), esc(value)))
 
 		vv, err := UnmarshalString(s)
-		So(err, ShouldBeNil)
-		So(vv.MustGet(key).String(), ShouldEqual, value)
+		so(err, isNil)
+		so(vv.MustGet(key).String(), eq, value)
 	})
 
-	Convey("escapeHTML on", func() {
+	cv("escapeHTML on", func() {
 		s := v.MustMarshalString(OptEscapeHTML(true))
-		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, esc(key), esc(value)))
+		so(s, eq, fmt.Sprintf(`{"%s":"%s"}`, esc(key), esc(value)))
 
 		vv, err := UnmarshalString(s)
-		So(err, ShouldBeNil)
-		So(vv.MustGet(key).String(), ShouldEqual, value)
+		so(err, isNil)
+		so(vv.MustGet(key).String(), eq, value)
 	})
 
-	Convey("escapeHTML off", func() {
+	cv("escapeHTML off", func() {
 		s := v.MustMarshalString(OptEscapeHTML(false))
-		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, key, value))
+		so(s, eq, fmt.Sprintf(`{"%s":"%s"}`, key, value))
 
 		vv, err := UnmarshalString(s)
-		So(err, ShouldBeNil)
-		So(vv.MustGet(key).String(), ShouldEqual, value)
+		so(err, isNil)
+		so(vv.MustGet(key).String(), eq, value)
 	})
 }
 
@@ -328,7 +326,7 @@ func testMarshalEscapeUTF8(t *testing.T) {
 		key: value,
 	})
 
-	Convey("default escape", func() {
+	cv("default escape", func() {
 		str := func(s string) string {
 			buf := &bytes.Buffer{}
 			for _, r := range s {
@@ -344,14 +342,14 @@ func testMarshalEscapeUTF8(t *testing.T) {
 		}
 
 		s := v.MustMarshalString()
-		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, str(key), str(value)))
+		so(s, eq, fmt.Sprintf(`{"%s":"%s"}`, str(key), str(value)))
 
 		vv, err := UnmarshalString(s)
-		So(err, ShouldBeNil)
-		So(vv.MustGet(key).String(), ShouldEqual, value)
+		so(err, isNil)
+		so(vv.MustGet(key).String(), eq, value)
 	})
 
-	Convey("escapeHTML on, ascii", func() {
+	cv("escapeHTML on, ascii", func() {
 		str := func(s string) string {
 			buf := &bytes.Buffer{}
 			for _, r := range s {
@@ -367,14 +365,14 @@ func testMarshalEscapeUTF8(t *testing.T) {
 		}
 
 		s := v.MustMarshalString(OptEscapeHTML(true))
-		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, str(key), str(value)))
+		so(s, eq, fmt.Sprintf(`{"%s":"%s"}`, str(key), str(value)))
 
 		vv, err := UnmarshalString(s)
-		So(err, ShouldBeNil)
-		So(vv.MustGet(key).String(), ShouldEqual, value)
+		so(err, isNil)
+		so(vv.MustGet(key).String(), eq, value)
 	})
 
-	Convey("escapeHTML off, ascii", func() {
+	cv("escapeHTML off, ascii", func() {
 		str := func(s string) string {
 			buf := &bytes.Buffer{}
 			for _, r := range s {
@@ -388,14 +386,14 @@ func testMarshalEscapeUTF8(t *testing.T) {
 		}
 
 		s := v.MustMarshalString(OptEscapeHTML(false))
-		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, str(key), str(value)))
+		so(s, eq, fmt.Sprintf(`{"%s":"%s"}`, str(key), str(value)))
 
 		vv, err := UnmarshalString(s)
-		So(err, ShouldBeNil)
-		So(vv.MustGet(key).String(), ShouldEqual, value)
+		so(err, isNil)
+		so(vv.MustGet(key).String(), eq, value)
 	})
 
-	Convey("escapeHTML on, UTF-8 on", func() {
+	cv("escapeHTML on, UTF-8 on", func() {
 		str := func(s string) string {
 			buf := &bytes.Buffer{}
 			for _, r := range s {
@@ -409,20 +407,20 @@ func testMarshalEscapeUTF8(t *testing.T) {
 		}
 
 		s := v.MustMarshalString(OptEscapeHTML(true), OptUTF8())
-		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, str(key), str(value)))
+		so(s, eq, fmt.Sprintf(`{"%s":"%s"}`, str(key), str(value)))
 
 		vv, err := UnmarshalString(s)
-		So(err, ShouldBeNil)
-		So(vv.MustGet(key).String(), ShouldEqual, value)
+		so(err, isNil)
+		so(vv.MustGet(key).String(), eq, value)
 	})
 
-	Convey("escapeHTML off, UTF-8 on", func() {
+	cv("escapeHTML off, UTF-8 on", func() {
 		s := v.MustMarshalString(OptEscapeHTML(false), OptUTF8())
-		So(s, ShouldEqual, fmt.Sprintf(`{"%s":"%s"}`, key, value))
+		so(s, eq, fmt.Sprintf(`{"%s":"%s"}`, key, value))
 
 		vv, err := UnmarshalString(s)
-		So(err, ShouldBeNil)
-		So(vv.MustGet(key).String(), ShouldEqual, value)
+		so(err, isNil)
+		so(vv.MustGet(key).String(), eq, value)
 	})
 }
 
@@ -431,21 +429,21 @@ func testMarshalEscapeSlash(t *testing.T) {
 	dflt := `"https:\/\/google.com"`
 	nonesc := `"https://google.com"`
 
-	Convey("default", func() {
+	cv("default", func() {
 		s := v.MustMarshalString()
-		So(s, ShouldEqual, dflt)
-		So(MustUnmarshalString(s).String(), ShouldEqual, v.String())
+		so(s, eq, dflt)
+		so(MustUnmarshalString(s).String(), eq, v.String())
 	})
 
-	Convey("escape slash", func() {
+	cv("escape slash", func() {
 		s := v.MustMarshalString(OptEscapeSlash(true))
-		So(s, ShouldEqual, dflt)
-		So(MustUnmarshalString(s).String(), ShouldEqual, v.String())
+		so(s, eq, dflt)
+		so(MustUnmarshalString(s).String(), eq, v.String())
 	})
 
-	Convey("non-escape slash", func() {
+	cv("non-escape slash", func() {
 		s := v.MustMarshalString(OptEscapeSlash(false))
-		So(s, ShouldEqual, nonesc)
-		So(MustUnmarshalString(s).String(), ShouldEqual, v.String())
+		so(s, eq, nonesc)
+		so(MustUnmarshalString(s).String(), eq, v.String())
 	})
 }

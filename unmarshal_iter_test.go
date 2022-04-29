@@ -7,11 +7,11 @@ import (
 	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestIter(t *testing.T) {
-	test(t, "iter.memcpy", testIterMemcpy)
-	test(t, "iter.assignWideRune", testIterAssignWideRune)
-	test(t, "iter.character searching", testIterChrSearching)
-	test(t, "iter.testIter_parseNumber", testIterParseNumber)
+func testIter(t *testing.T) {
+	cv("iter.memcpy", func() { testIterMemcpy(t) })
+	cv("iter.assignWideRune", func() { testIterAssignWideRune(t) })
+	cv("iter.character searching", func() { testIterChrSearching(t) })
+	cv("iter.testIter_parseNumber", func() { testIterParseNumber(t) })
 }
 
 func testIterMemcpy(t *testing.T) {

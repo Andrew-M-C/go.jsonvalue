@@ -4,15 +4,13 @@ import (
 	"fmt"
 	"strconv"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestSort(t *testing.T) {
-	test(t, "sort array", testSortArray)
-	test(t, "sort array errors", testSortArrayError)
-	test(t, "sort marshal", testSortMarshal)
-	test(t, "sort by string slice", testSortByStringSlice)
+func testSort(t *testing.T) {
+	cv("sort array", func() { testSortArray(t) })
+	cv("sort array errors", func() { testSortArrayError(t) })
+	cv("sort marshal", func() { testSortMarshal(t) })
+	cv("sort by string slice", func() { testSortByStringSlice(t) })
 }
 
 func testSortArray(t *testing.T) {
@@ -39,7 +37,7 @@ func testSortArray(t *testing.T) {
 	res := arr.MustMarshalString()
 	t.Logf("sorted res: '%s'", res)
 
-	So(res, ShouldEqual, `[9,8,7,6,5,4,3,2,1,0]`)
+	so(res, eq, `[9,8,7,6,5,4,3,2,1,0]`)
 }
 
 func testSortArrayError(t *testing.T) {
@@ -68,10 +66,10 @@ func testSortMarshal(t *testing.T) {
 		}
 
 		s := v.MustMarshalString(Opt{MarshalLessFunc: DefaultStringSequence})
-		So(s, ShouldEqual, expected)
+		so(s, eq, expected)
 
 		s = v.MustMarshalString(OptDefaultStringSequence())
-		So(s, ShouldEqual, expected)
+		so(s, eq, expected)
 	}
 
 	// key path
@@ -92,7 +90,7 @@ func testSortMarshal(t *testing.T) {
 	}`
 
 	v, err := UnmarshalString(orig)
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	less := func(parentInfo *ParentInfo, keyA, keyB string, vA, vB *V) bool {
 		t.Logf("parentInfo: %v", parentInfo.KeyPath)
@@ -112,10 +110,10 @@ func testSortMarshal(t *testing.T) {
 
 	expected = `{"object!":{"object!!":{"array!!!!":[1234,{"stringA":"a string","stringBB":"aa string"}]},"string!!!":"a string"}}`
 	t.Logf("marshaled string: %v", s)
-	So(s, ShouldEqual, expected)
+	so(s, eq, expected)
 
 	s = v.MustMarshalString(OptOmitNull(true), OptKeySequenceWithLessFunc(less))
-	So(s, ShouldEqual, expected)
+	so(s, eq, expected)
 }
 
 func testSortByStringSlice(t *testing.T) {
@@ -146,8 +144,8 @@ func testSortByStringSlice(t *testing.T) {
 
 	expected := `{"grandpa":"Kentucky","grandma":"McDonald","father":"Hanberger","mother":"Chips","son":"Ketchup","daughter":"Mayonnaise","friendA":"Fish","friendB":"Beef"}`
 	t.Logf("marshaled: '%s'", s)
-	So(s, ShouldEqual, expected)
+	so(s, eq, expected)
 
 	s = v.MustMarshalString(OptOmitNull(true), OptKeySequence(seq))
-	So(s, ShouldEqual, expected)
+	so(s, eq, expected)
 }

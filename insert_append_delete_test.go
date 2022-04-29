@@ -1,21 +1,18 @@
 package jsonvalue
 
 import (
-	"log"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestInsertAppendDelete(t *testing.T) {
-	test(t, "insert/append", testInsertAppend)
-	test(t, "delete", testDelete)
-	test(t, "test misc append functions", testMiscAppend)
-	test(t, "test append and auto generate functions", testAppendAndAutoGeneratePath)
-	test(t, "test misc insert functions", testMiscInsert)
-	test(t, "test misc insert errors", testMiscInsertError)
-	test(t, "test misc append errors", testMiscAppendError)
-	test(t, "test misc delete errors", testMiscDeleteError)
+func testInsertAppendDelete(t *testing.T) {
+	cv("insert/append", func() { testInsertAppend(t) })
+	cv("delete", func() { testDelete(t) })
+	cv("test misc append functions", func() { testMiscAppend(t) })
+	cv("test append and auto generate functions", func() { testAppendAndAutoGeneratePath(t) })
+	cv("test misc insert functions", func() { testMiscInsert(t) })
+	cv("test misc insert errors", func() { testMiscInsertError(t) })
+	cv("test misc append errors", func() { testMiscAppendError(t) })
+	cv("test misc delete errors", func() { testMiscDeleteError(t) })
 }
 
 func testInsertAppend(t *testing.T) {
@@ -23,113 +20,113 @@ func testInsertAppend(t *testing.T) {
 	a := NewArray()
 
 	a.AppendString("world").InTheBeginning()
-	So(a.MustMarshalString(), ShouldEqual, `["world"]`)
+	so(a.MustMarshalString(), eq, `["world"]`)
 	t.Log(a.MustMarshalString())
 
 	a.AppendFloat64(1234.123456789).InTheEnd()
-	So(a.MustMarshalString(), ShouldEqual, `["world",1234.123456789]`)
+	so(a.MustMarshalString(), eq, `["world",1234.123456789]`)
 	t.Log(a.MustMarshalString())
 
 	a.InsertBool(true).After(-1)
-	So(a.MustMarshalString(), ShouldEqual, `["world",1234.123456789,true]`)
+	so(a.MustMarshalString(), eq, `["world",1234.123456789,true]`)
 	t.Log(a.MustMarshalString())
 
 	a.AppendNull().InTheEnd()
-	So(a.MustMarshalString(), ShouldEqual, `["world",1234.123456789,true,null]`)
+	so(a.MustMarshalString(), eq, `["world",1234.123456789,true,null]`)
 	t.Log(a.MustMarshalString())
 
 	a.InsertInt(123456).Before(0)
-	So(a.MustMarshalString(), ShouldEqual, `[123456,"world",1234.123456789,true,null]`)
+	so(a.MustMarshalString(), eq, `[123456,"world",1234.123456789,true,null]`)
 	t.Log(a.MustMarshalString())
 
 	a.InsertString("hello").After(0)
-	So(a.MustMarshalString(), ShouldEqual, `[123456,"hello","world",1234.123456789,true,null]`)
+	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,null]`)
 	t.Log(a.MustMarshalString())
 
 	a.InsertArray().After(-2)
-	So(a.MustMarshalString(), ShouldEqual, `[123456,"hello","world",1234.123456789,true,[],null]`)
+	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,[],null]`)
 	t.Log(a.MustMarshalString())
 
 	a.AppendString("12345").InTheEnd(-2)
-	So(a.MustMarshalString(), ShouldEqual, `[123456,"hello","world",1234.123456789,true,["12345"],null]`)
+	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null]`)
 	t.Log(a.MustMarshalString())
 
 	a.Append(nil).InTheEnd()
-	So(a.MustMarshalString(), ShouldEqual, `[123456,"hello","world",1234.123456789,true,["12345"],null,null]`)
+	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null,null]`)
 	t.Log(a.MustMarshalString())
 
 	a.AppendBytes([]byte("1")).InTheEnd()
-	So(a.MustMarshalString(), ShouldEqual, `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ=="]`)
+	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ=="]`)
 	t.Log(a.MustMarshalString())
 
 	s, _ := a.MarshalString()
 	t.Logf("after SetXxx(): %v", s)
 
-	So(s, ShouldEqual, expected)
+	so(s, eq, expected)
 
 	// unmarshal and then marchal back
 	a, err := UnmarshalString(expected)
-	So(err, ShouldBeNil)
+	so(err, isNil)
 	s, err = a.MarshalString()
-	So(err, ShouldBeNil)
-	So(s, ShouldEqual, expected)
+	so(err, isNil)
+	so(s, eq, expected)
 }
 
 func testDelete(t *testing.T) {
 	raw := `{"array":[1,2,3,4,5,6],"string":"string to be deleted","object":{"number":12345},"OBJECT":{}}`
 	o, err := UnmarshalString(raw)
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	s, _ := o.MarshalString()
 	t.Logf("parsed object: %v", s)
 
 	err = o.Delete("oBJECT") // this key not exists
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	err = o.Delete("object", "number")
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	sub, err := o.Get("object")
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	s, _ = sub.MarshalString()
-	So(s, ShouldEqual, "{}")
+	so(s, eq, "{}")
 
 	err = o.Delete("object", "number")
-	So(err, ShouldBeError, ErrNotFound)
+	so(err, isErr, ErrNotFound)
 
 	err = o.Delete("object")
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	_, err = o.Caseless().Get("object")
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	err = o.Delete("object")
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	err = o.Caseless().Delete("object") // delete another "object", actually "OBJECT"
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	err = o.Caseless().Delete("object") // delete again
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	err = o.Caseless().Delete("NOT_EXIST")
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	_, err = o.Get("object")
-	So(err, ShouldBeError, ErrNotFound)
+	so(err, isErr, ErrNotFound)
 
 	err = o.Delete("string")
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	s, _ = o.MarshalString()
-	So(s, ShouldEqual, `{"array":[1,2,3,4,5,6]}`)
+	so(s, eq, `{"array":[1,2,3,4,5,6]}`)
 
 	err = o.Delete("array", 1)
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	s, _ = o.MarshalString()
-	So(s, ShouldEqual, `{"array":[1,3,4,5,6]}`)
+	so(s, eq, `{"array":[1,3,4,5,6]}`)
 }
 
 func testMiscAppend(t *testing.T) {
@@ -151,19 +148,17 @@ func testMiscAppend(t *testing.T) {
 	a.AppendBool(false).InTheBeginning(-1, 0)
 
 	s, _ := a.MarshalString()
-	So(s, ShouldEqual, expected)
+	so(s, eq, expected)
 }
 
 func testAppendAndAutoGeneratePath(t *testing.T) {
 	expected := `{"arr":[1]}`
 
-	log.Printf("======== MARK ========")
-
 	o := NewObject()
 	_, err := o.AppendInt(1).InTheEnd("arr")
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
-	So(o.MustMarshalString(), ShouldEqual, expected)
+	so(o.MustMarshalString(), eq, expected)
 }
 
 func testMiscInsert(t *testing.T) {
@@ -174,230 +169,229 @@ func testMiscInsert(t *testing.T) {
 	v := NewArray()
 
 	_, err = v.InsertNull().Before(0)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	_, err = v.InsertNull().After(0)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	_, err = v.AppendNull().InTheBeginning()
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
 	_, err = v.InsertNull().Before(10000)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	_, err = v.InsertNull().After(10000)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	_, err = v.InsertNull().Before(-10000)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	_, err = v.InsertNull().After(-10000)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	_, err = v.InsertNull().Before(-2)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	c, err = v.InsertUint(1).After(-1)
-	So(err, ShouldBeNil)
-	So(c.Int(), ShouldEqual, 1)
+	so(err, isNil)
+	so(c.Int(), eq, 1)
 
 	c, err = v.InsertInt(-2).After(-1)
-	So(err, ShouldBeNil)
-	So(c.Int(), ShouldEqual, -2)
+	so(err, isNil)
+	so(c.Int(), eq, -2)
 
 	c, err = v.InsertUint64(3).After(-1)
-	So(err, ShouldBeNil)
-	So(c.Int(), ShouldEqual, 3)
+	so(err, isNil)
+	so(c.Int(), eq, 3)
 
 	c, err = v.InsertInt64(-4).After(-1)
-	So(err, ShouldBeNil)
-	So(c.Int(), ShouldEqual, -4)
+	so(err, isNil)
+	so(c.Int(), eq, -4)
 
 	c, err = v.InsertUint32(5).After(-1)
-	So(err, ShouldBeNil)
-	So(c.Int(), ShouldEqual, 5)
+	so(err, isNil)
+	so(c.Int(), eq, 5)
 
 	c, err = v.InsertInt32(-6).After(-1)
-	So(err, ShouldBeNil)
-	So(c.Int(), ShouldEqual, -6)
+	so(err, isNil)
+	so(c.Int(), eq, -6)
 
 	c, err = v.InsertFloat32(7.7).After(-1)
-	Print(v.MustMarshalString())
-	So(err, ShouldBeNil)
-	So(c.String(), ShouldEqual, "7.7")
+	t.Log(v.MustMarshalString())
+	so(err, isNil)
+	so(c.String(), eq, "7.7")
 
 	c, err = v.InsertFloat64(-8.88888).After(-1)
-	So(err, ShouldBeNil)
-	So(c.Float64(), ShouldEqual, -8.88888)
+	so(err, isNil)
+	so(c.Float64(), eq, -8.88888)
 
 	c, err = v.InsertBool(true).After(-1)
-	So(err, ShouldBeNil)
-	So(c.Bool(), ShouldBeTrue)
+	so(err, isNil)
+	so(c.Bool(), isTrue)
 
 	c, err = v.InsertBool(false).After(-1)
-	So(err, ShouldBeNil)
-	So(c.IsBoolean(), ShouldBeTrue)
-	So(c.Bool(), ShouldBeFalse)
+	so(err, isNil)
+	so(c.IsBoolean(), isTrue)
+	so(c.Bool(), isFalse)
 
 	c, err = v.Insert(nil).After(-1)
-	So(err, ShouldBeNil)
-	So(c.IsNull(), ShouldBeTrue)
+	so(err, isNil)
+	so(c.IsNull(), isTrue)
 
 	c, err = v.InsertNull().After(-1)
-	So(err, ShouldBeNil)
-	So(c.IsNull(), ShouldBeTrue)
+	so(err, isNil)
+	so(c.IsNull(), isTrue)
 
 	c, err = v.InsertObject().After(-1)
-	So(err, ShouldBeNil)
-	So(c.IsObject(), ShouldBeTrue)
+	so(err, isNil)
+	so(c.IsObject(), isTrue)
 
 	c, err = v.InsertArray().After(-1)
-	So(err, ShouldBeNil)
-	So(c.IsArray(), ShouldBeTrue)
+	so(err, isNil)
+	so(c.IsArray(), isTrue)
 
 	c, err = v.AppendArray().InTheBeginning(-1)
-	So(err, ShouldBeNil)
-	So(c.IsArray(), ShouldBeTrue)
+	so(err, isNil)
+	so(c.IsArray(), isTrue)
 
 	c, err = v.AppendInt(-11).InTheBeginning(-1, 0)
-	So(err, ShouldBeNil)
-	So(c.Int(), ShouldEqual, -11)
+	so(err, isNil)
+	so(c.Int(), eq, -11)
 
 	c, err = v.InsertUint(22).After(-1, 0, 0)
-	So(err, ShouldBeNil)
-	So(c.Int(), ShouldEqual, 22)
+	so(err, isNil)
+	so(c.Int(), eq, 22)
 
 	c, err = v.InsertNull().Before(-1, 0, 0)
-	So(err, ShouldBeNil)
-	So(c.IsNull(), ShouldBeTrue)
+	so(err, isNil)
+	so(c.IsNull(), isTrue)
 
 	c, err = v.InsertInt(-2).Before(-1)
-	So(err, ShouldBeNil)
-	So(c.Int(), ShouldEqual, -2)
+	so(err, isNil)
+	so(c.Int(), eq, -2)
 
 	s, _ := v.MarshalString()
-	So(s, ShouldEqual, expected)
+	so(s, eq, expected)
 }
 
 func testMiscInsertError(t *testing.T) {
-	Convey("not initialized", func() {
+	cv("not initialized", func() {
 		v := V{}
 		_, err := v.Insert(nil).After(0)
-		So(err, ShouldBeError)
+		so(err, isErr)
 		_, err = v.Insert(nil).Before(0)
-		So(err, ShouldBeError)
+		so(err, isErr)
 	})
 
-	Convey("not array", func() {
+	cv("not array", func() {
 		v := NewNull()
 		_, err := v.Insert(nil).After(0)
-		So(err, ShouldBeError)
+		so(err, isErr)
 		_, err = v.Insert(nil).Before(0)
-		So(err, ShouldBeError)
+		so(err, isErr)
 	})
 
-	Convey("param error", func() {
+	cv("param error", func() {
 		v := NewArray()
 		_, err := v.InsertNull().After(true)
-		So(err, ShouldBeError)
+		so(err, isErr)
 		_, err = v.InsertNull().Before(true)
-		So(err, ShouldBeError)
+		so(err, isErr)
 	})
 
-	Convey("out of range", func() {
+	cv("out of range", func() {
 		v := NewArray()
 		v.AppendNull().InTheEnd()
 		v.AppendNull().InTheEnd()
 		_, err := v.InsertNull().After(100)
-		So(err, ShouldBeError)
+		so(err, isErr)
 		_, err = v.InsertNull().Before(-100)
-		So(err, ShouldBeError)
+		so(err, isErr)
 	})
 
-	Convey("deep not exist", func() {
+	cv("deep not exist", func() {
 		raw := `{"object":{"array":[1,2,3,4]}}`
 		v, _ := UnmarshalString(raw)
 		_, err := v.InsertNull().After("object", "not exist")
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		_, err = v.InsertNull().Before("object", "not exist")
-		So(err, ShouldBeError)
+		so(err, isErr)
 	})
 
-	Convey("uninitialized append", func() {
+	cv("uninitialized append", func() {
 		_, err := (&Append{}).InTheBeginning("dummy")
-		So(err, ShouldBeError)
+		so(err, isErr)
 	})
 }
 
 func testMiscAppendError(t *testing.T) {
-	Convey("uninitialized AppendString to uninitialized V", func() {
+	cv("uninitialized AppendString to uninitialized V", func() {
 		v := V{}
 		_, err := v.AppendString("blahblah").InTheBeginning()
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		_, err = v.AppendString("blahblah").InTheEnd()
-		So(err, ShouldBeError)
+		so(err, isErr)
 	})
 
-	Convey("uninitialized AppendString to string", func() {
+	cv("uninitialized AppendString to string", func() {
 		v := NewString("blahblah")
 		_, err := v.AppendString("blahblah").InTheBeginning()
-		So(err, ShouldBeError)
+		so(err, isErr)
 	})
 
-	Convey("append non exist data", func() {
+	cv("append non exist data", func() {
 		raw := `{"object":{"object":{"array":[[]],"object":{}}}}`
 		v, err := UnmarshalString(raw)
-		So(err, ShouldBeNil)
+		so(err, isNil)
 
 		_, err = v.AppendNull().InTheBeginning("object", "arrayNotExist", "arrayNotExistForTheBeginning")
-		So(err, ShouldBeNil)
+		so(err, isNil)
 
-		t.Logf("========== MARK ==========")
 		_, err = v.AppendNull().InTheEnd("object", "arrayNotExist", "arrayNotExistForTheEnd")
-		So(err, ShouldBeNil)
+		so(err, isNil)
 
 		_, err = v.AppendNull().InTheBeginning("object", "object")
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		_, err = v.AppendNull().InTheEnd("object", "object")
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		err = v.GetNull("object", "arrayNotExist", "arrayNotExistForTheBeginning", 0)
-		So(err, ShouldBeNil)
+		so(err, isNil)
 
 		err = v.GetNull("object", "arrayNotExist", "arrayNotExistForTheEnd", 0)
-		So(err, ShouldBeNil)
+		so(err, isNil)
 	})
 
-	Convey("append/insert to error type", func() {
+	cv("append/insert to error type", func() {
 		raw := `{"object":{"object":{"array":[[]],"object":{}}}}`
 		v, err := UnmarshalString(raw)
-		So(err, ShouldBeNil)
+		so(err, isNil)
 
 		_, err = v.AppendNull().InTheBeginning("object", "object")
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		_, err = v.AppendNull().InTheBeginning("object", "object")
-		So(err, ShouldBeError)
+		so(err, isErr)
 
 		_, err = v.InsertNull().After("object", "object", "object", 0)
-		So(err, ShouldBeError)
+		so(err, isErr)
 		t.Logf("expected error: %v", err)
 	})
 
-	Convey("insert non-exist data", func() {
+	cv("insert non-exist data", func() {
 		raw := `{"object":{"object":{"array":[[]],"object":{}}}}`
 		v, err := UnmarshalString(raw)
-		So(err, ShouldBeNil)
+		so(err, isNil)
 		o, _ := v.Get("object", "object", "object")
 		_, err = o.AppendNull().InTheEnd()
-		So(err, ShouldBeError)
+		so(err, isErr)
 		t.Logf("expected error: %v", err)
 
 		_, err = v.InsertNull().Before("object", "object", "array", true)
-		So(err, ShouldBeError)
+		so(err, isErr)
 		t.Logf("expected error: %v", err)
 	})
 }
@@ -409,29 +403,29 @@ func testMiscDeleteError(t *testing.T) {
 
 	// param error
 	err = v.Delete(make(map[string]string))
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	// param error
 	err = v.Delete("object", true)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	// param error
 	err = v.Delete("array", "2")
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	// not found error
 	err = v.Delete("earth")
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	// out of range
 	err = v.Delete("array", 100)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	// not an object or array
 	err = v.Delete("object", "object", "int", "number")
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	// not found error
 	err = v.Delete("object", "bool", "string")
-	So(err, ShouldBeError)
+	so(err, isErr)
 }

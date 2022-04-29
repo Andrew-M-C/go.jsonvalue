@@ -3,19 +3,17 @@ package jsonvalue
 import (
 	"strconv"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestIteration(t *testing.T) {
-	test(t, "Range Array", testRangeArray)
-	test(t, "Range Object", testRangeObject)
+func testIteration(t *testing.T) {
+	cv("Range Array", func() { testRangeArray(t) })
+	cv("Range Object", func() { testRangeObject(t) })
 }
 
 func testRangeArray(t *testing.T) {
-	Convey("invalid array range", func() {
+	cv("invalid array range", func() {
 		v := NewString("")
-		v.RangeArray(func(i int, c *V) bool {
+		v.RangeArray(func(_ int, _ *V) bool {
 			t.Errorf("should NOT iter here!!!")
 			return true
 		}) // just do not panic
@@ -38,7 +36,7 @@ func testRangeArray(t *testing.T) {
 		}
 	})
 
-	Convey("nil array callback", func() {
+	cv("nil array callback", func() {
 		v := NewArray()
 		v.AppendNull().InTheEnd()
 		v.RangeArray(nil) // just do not panic
@@ -52,10 +50,10 @@ func testRangeArray(t *testing.T) {
 		}
 	})
 
-	Convey("array range", func() {
+	cv("array range", func() {
 		raw := `[1,2,3,4,5,6,7,8,9,10,"11","12",13.0]`
 		v, err := UnmarshalString(raw)
-		So(err, ShouldBeNil)
+		so(err, isNil)
 
 		rangeCount := 0
 		v.RangeArray(func(i int, c *V) bool {
@@ -66,13 +64,13 @@ func testRangeArray(t *testing.T) {
 			} else if c.IsString() {
 				s := c.String()
 				element, err = strconv.Atoi(s)
-				So(err, ShouldBeNil)
+				so(err, isNil)
 			} else {
 				t.Errorf("invalid jsonvalue type")
 				return false
 			}
 
-			So(element, ShouldEqual, i+1)
+			so(element, eq, i+1)
 
 			if element != i+1 {
 				t.Errorf("unexpected element %d, index %d", element, i)
@@ -82,7 +80,7 @@ func testRangeArray(t *testing.T) {
 			return true
 		})
 
-		So(rangeCount, ShouldEqual, 13)
+		so(rangeCount, eq, 13)
 
 		// broken array range
 		rangeCount = 0
@@ -102,9 +100,9 @@ func testRangeArray(t *testing.T) {
 }
 
 func testRangeObject(t *testing.T) {
-	Convey("invalid object range", func() {
+	cv("invalid object range", func() {
 		v := NewString("")
-		v.RangeObjects(func(k string, c *V) bool {
+		v.RangeObjects(func(_ string, _ *V) bool {
 			t.Errorf("should NOT iter here!!!")
 			return true
 		}) // just do not panic
@@ -127,7 +125,7 @@ func testRangeObject(t *testing.T) {
 		}
 	})
 
-	Convey("nil object callback", func() {
+	cv("nil object callback", func() {
 		v := NewObject()
 		v.SetString("world").At("hello")
 		v.RangeObjects(nil) // just do not panic
@@ -141,10 +139,10 @@ func testRangeObject(t *testing.T) {
 		}
 	})
 
-	Convey("unmarshal object and whole object range", func() {
+	cv("unmarshal object and whole object range", func() {
 		raw := `{"number":12345,"bool":true,"string":"hello, world","null":null}`
 		v, err := UnmarshalString(raw)
-		So(err, ShouldBeNil)
+		so(err, isNil)
 
 		checkKeys := map[string]bool{
 			"number": true,
@@ -152,7 +150,7 @@ func testRangeObject(t *testing.T) {
 			"string": true,
 			"null":   true,
 		}
-		v.RangeObjects(func(k string, v *V) bool {
+		v.RangeObjects(func(k string, _ *V) bool {
 			delete(checkKeys, k)
 			return true
 		})

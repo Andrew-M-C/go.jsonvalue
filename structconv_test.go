@@ -2,16 +2,14 @@ package jsonvalue
 
 import (
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
-func TestStructConv(t *testing.T) {
-	test(t, "export to string", testExportString)
-	test(t, "export to int", testExportInt)
-	test(t, "export to float", testExportFloat)
-	test(t, "export to bool", testExportBool)
-	test(t, "misc import", testImport)
+func testStructConv(t *testing.T) {
+	cv("export to string", func() { testExportString(t) })
+	cv("export to int", func() { testExportInt(t) })
+	cv("export to float", func() { testExportFloat(t) })
+	cv("export to bool", func() { testExportBool(t) })
+	cv("misc import", func() { testImport(t) })
 }
 
 func testExportString(t *testing.T) {
@@ -20,20 +18,20 @@ func testExportString(t *testing.T) {
 
 	str := ""
 	err := v.Export(str)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	err = v.Export(&str)
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
-	So(str, ShouldEqual, S)
+	so(str, eq, S)
 
 	bol := true
 	err = v.Export(&bol)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	v = &V{}
 	err = v.Export(nil)
-	So(err, ShouldBeError)
+	so(err, isErr)
 }
 
 func testExportInt(t *testing.T) {
@@ -48,38 +46,38 @@ func testExportInt(t *testing.T) {
 	var u32 uint32
 
 	err := n1.Export(&i)
-	So(err, ShouldBeNil)
-	So(i, ShouldEqual, positive)
+	so(err, isNil)
+	so(i, eq, positive)
 
 	err = n1.Export(&u)
-	So(err, ShouldBeNil)
-	So(u, ShouldEqual, positive)
+	so(err, isNil)
+	so(u, eq, positive)
 
 	err = n1.Export(&i32)
-	So(err, ShouldBeNil)
-	So(i32, ShouldEqual, positive)
+	so(err, isNil)
+	so(i32, eq, positive)
 
 	err = n1.Export(&u32)
-	So(err, ShouldBeNil)
-	So(u32, ShouldEqual, positive)
+	so(err, isNil)
+	so(u32, eq, positive)
 
 	// --------
 
 	n2 := NewInt(negative)
 
 	err = n2.Export(&i)
-	So(err, ShouldBeNil)
-	So(i, ShouldEqual, negative)
+	so(err, isNil)
+	so(i, eq, negative)
 
 	err = n2.Export(&i32)
-	So(err, ShouldBeNil)
-	So(i32, ShouldEqual, negative)
+	so(err, isNil)
+	so(i32, eq, negative)
 
 	// --------
 
 	bol := true
 	err = n1.Export(&bol)
-	So(err, ShouldBeError)
+	so(err, isErr)
 }
 
 func testExportFloat(t *testing.T) {
@@ -91,18 +89,18 @@ func testExportFloat(t *testing.T) {
 	var f64 float64
 
 	err := n.Export(&f32)
-	So(err, ShouldBeNil)
-	So(f32, ShouldEqual, F)
+	so(err, isNil)
+	so(f32, eq, F)
 
 	err = n.Export(&f64)
-	So(err, ShouldBeNil)
-	So(f64, ShouldEqual, F)
+	so(err, isNil)
+	so(f64, eq, F)
 
 	// --------
 
 	bol := true
 	err = n.Export(&bol)
-	So(err, ShouldBeError)
+	so(err, isErr)
 }
 
 func testExportBool(t *testing.T) {
@@ -110,20 +108,20 @@ func testExportBool(t *testing.T) {
 	b := false
 
 	err := v.Export(b)
-	So(err, ShouldBeError)
+	so(err, isErr)
 
 	err = v.Export(&b)
-	So(err, ShouldBeNil)
+	so(err, isNil)
 
-	So(b, ShouldBeTrue)
+	so(b, isTrue)
 
 	str := ""
 	err = v.Export(&str)
-	So(err, ShouldBeError)
+	so(err, isErr)
 }
 
 func testImport(t *testing.T) {
-	Convey("integers", func() {
+	cv("integers", func() {
 
 		params := []interface{}{
 			int(1),
@@ -140,21 +138,21 @@ func testImport(t *testing.T) {
 
 		for i, p := range params {
 			v, err := Import(p)
-			So(err, ShouldBeNil)
-			So(v.ValueType(), ShouldEqual, Number)
-			So(v.Int(), ShouldEqual, i+1)
+			so(err, isNil)
+			so(v.ValueType(), eq, Number)
+			so(v.Int(), eq, i+1)
 		}
 	})
 
-	Convey("string", func() {
+	cv("string", func() {
 		s := "hello"
 		v, err := Import(s)
-		So(err, ShouldBeNil)
-		So(v.ValueType(), ShouldEqual, String)
-		So(v.String(), ShouldEqual, s)
+		so(err, isNil)
+		so(v.ValueType(), eq, String)
+		so(v.String(), eq, s)
 	})
 
-	Convey("object", func() {
+	cv("object", func() {
 		type thing struct {
 			String string `json:"str"`
 		}
@@ -163,21 +161,21 @@ func testImport(t *testing.T) {
 		}
 
 		v, err := Import(&th)
-		So(err, ShouldBeNil)
-		So(v.ValueType(), ShouldEqual, Object)
+		so(err, isNil)
+		so(v.ValueType(), eq, Object)
 
 		s, err := v.GetString("str")
-		So(err, ShouldBeNil)
-		So(s, ShouldEqual, th.String)
+		so(err, isNil)
+		so(s, eq, th.String)
 	})
 
-	Convey("error", func() {
+	cv("error", func() {
 		f := func() bool {
 			return false
 		}
 		v, err := Import(f)
-		So(err, ShouldBeError)
-		So(v, ShouldNotBeNil)
-		So(v.ValueType(), ShouldEqual, NotExist)
+		so(err, isErr)
+		so(v, notNil)
+		so(v.ValueType(), eq, NotExist)
 	})
 }

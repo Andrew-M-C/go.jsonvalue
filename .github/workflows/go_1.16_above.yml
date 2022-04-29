@@ -37,7 +37,7 @@ jobs:
       run: |
         echo GO_VER = ${{ matrix.GO_VER }}
         go get golang.org/x/tools/cmd/cover
-        go install github.com/mattn/goveralls
+        go install github.com/mattn/goveralls || go get github.com/mattn/goveralls
         go get .
 
     - name: Go test

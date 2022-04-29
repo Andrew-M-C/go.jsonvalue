@@ -44,3 +44,20 @@ func NewFloat32(f float32, prec int) *V
 ## 支持处理 NaN 和 Inf 浮点值
 
 参见[值的自动转换](./07_conversion.md)小节。
+
+---
+
+## 支持覆盖默认序列化配置
+
+```go
+func SetDefaultMarshalOptions(opts ...Option)
+func ResetDefaultMarshalOptions()
+```
+
+在 jsonvalue 中，序列化的默认逻辑为:
+
+- 按照 JSON 标准序列化所有需要转义的字符，包括 `", /, \, <, >, &, %`, 水平/垂直制表符, 换行符, 退格符等，均进行转义
+- 非 ASCII 字符，均进行转义
+
+但是从反馈上来看，很多具体的需求中，不需要这么严格的转义，普通的即可。在这种情况下，当开发者能够明确全局的序列化格式时，可以在程序启动后调用一次 `SetDefaultMarshalOptions` 函数来覆盖掉 jsonvalue 的配置逻辑。当然，也可以调用 `ResetDefaultMarshalOptions` 复位。
+
