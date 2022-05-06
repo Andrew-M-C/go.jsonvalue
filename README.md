@@ -1,14 +1,15 @@
-# Jsonvalue - A Go package for fast and convient JSON marshal and unmarshaling
+# Jsonvalue - A Fast and Convinent Alternation of Go map[string]interface{}
 
 [![Workflow](https://github.com/Andrew-M-C/go.jsonvalue/actions/workflows/go_test_general.yml/badge.svg)](https://github.com/Andrew-M-C/go.jsonvalue/actions/workflows/go_test_general.yml)
-[![Coveralls](https://coveralls.io/repos/github/Andrew-M-C/go.jsonvalue/badge.svg?branch=master)](https://coveralls.io/github/Andrew-M-C/go.jsonvalue)
+[![codecov](https://codecov.io/gh/Andrew-M-C/go.jsonvalue/branch/dev/github_workflow/graph/badge.svg?token=REDI4YDLPR)](https://codecov.io/gh/Andrew-M-C/go.jsonvalue)
 [![Go report](https://goreportcard.com/badge/github.com/Andrew-M-C/go.jsonvalue)](https://goreportcard.com/report/github.com/Andrew-M-C/go.jsonvalue)
 [![Codebeat](https://codebeat.co/badges/ecf87760-2987-48a7-a6dd-4d9fcad57256)](https://codebeat.co/projects/github-com-andrew-m-c-go-jsonvalue-master)<br>
 [![GoDoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue?status.svg)](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue@v1.2.1)
 [![Latest](https://img.shields.io/badge/latest-v1.2.1-blue.svg)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.2.1)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-[中文版](./README_cn.md)，[中文版详细文档](./docs/zh-cn/README.md)
+- [中文版](./README_cn.md)
+- [中文版详细文档](./docs/zh-cn/README.md)
 
 **Jsonvalue** is a Golang package for JSON parsing. It is used in situations those Go structures cannot achieve, or `map[string]interface{}` could not do properbally.
 
@@ -79,3 +80,8 @@ In opposite, to parse and read the first JSON above, you can use jsonvalue like 
 ```
 
 However, it is quite complex and annoying in automatically creating array. I strongly suggest using `SetArray()` to create the array first, then use `Append()` or `Insert()` to set array elements. Please refer go [godoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue).
+
+<details>
+<summary>Other Badage</summary>
+<a href='https://coveralls.io/github/Andrew-M-C/go.jsonvalue?branch=master'><img src='https://coveralls.io/repos/github/Andrew-M-C/go.jsonvalue/badge.svg?branch=master' alt='Coverage Status' /></a>
+</details>

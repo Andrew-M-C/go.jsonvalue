@@ -1,0 +1,8 @@
+codecov:
+  bot: laplacezhang@126.com
+
+coverage:
+  round: down
+  range: "95..97"
+  precision: 2
+
