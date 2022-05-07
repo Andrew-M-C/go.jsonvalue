@@ -85,7 +85,7 @@ func testRangeArray(t *testing.T) {
 		// broken array range
 		rangeCount = 0
 		brokenCount := 4
-		v.RangeArray(func(i int, c *V) bool {
+		v.RangeArray(func(i int, _ *V) bool {
 			if i < brokenCount {
 				rangeCount++
 				return true

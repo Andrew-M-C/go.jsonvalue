@@ -92,7 +92,7 @@ func testSortMarshal(t *testing.T) {
 	v, err := UnmarshalString(orig)
 	so(err, isNil)
 
-	less := func(parentInfo *ParentInfo, keyA, keyB string, vA, vB *V) bool {
+	less := func(parentInfo *ParentInfo, keyA, keyB string, _, _ *V) bool {
 		t.Logf("parentInfo: %v", parentInfo.KeyPath)
 		s := ""
 		for _, k := range parentInfo.KeyPath {
