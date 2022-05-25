@@ -7,6 +7,7 @@
 [![GoDoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue?status.svg)](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue@v1.2.1)
 [![Latest](https://img.shields.io/badge/latest-v1.2.1-blue.svg)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.2.1)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![UsedBy](https://andrewmc.cn/v1/usedby/usedby/getBadge?repo=github.com/Andrew-M-C/go.jsonvalue)](https://github.com/Andrew-M-C/go.jsonvalue/network/dependents)
 
 - [中文版](./README_cn.md)
 - [中文版详细文档](./docs/zh-cn/README.md)
