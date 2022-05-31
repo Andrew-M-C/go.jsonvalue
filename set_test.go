@@ -166,6 +166,15 @@ func testSetMisc(t *testing.T) {
 	err = v.GetNull("data", "nil")
 	so(err, isNil)
 
+	// Set(any type)
+	v = NewObject()
+	_, err = v.Set(make(chan struct{})).At("channel")
+	so(err, notNil)
+	child, err = v.Set([]interface{}{1, "2", 3.25, -4, false, nil}).At("arr")
+	so(child.IsArray(), isTrue)
+	so(err, isNil)
+	so(v.MustMarshalString(), eq, `{"arr":[1,"2",3.25,-4,false,null]}`)
+
 	// Complex Set()
 	a = NewArray()
 	_, err = a.SetArray().At(0, 0, 0)

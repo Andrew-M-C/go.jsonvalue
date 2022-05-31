@@ -8,18 +8,29 @@ package jsonvalue
 type Insert struct {
 	v *V
 	c *V // child
+
+	err error
 }
 
 // Insert starts inserting a child JSON value
 //
 // Insert 开启一个 JSON 数组成员的插入操作.
-func (v *V) Insert(child *V) *Insert {
-	if nil == child {
-		child = NewNull()
+func (v *V) Insert(child interface{}) *Insert {
+	var ch *V
+	var err error
+
+	if child == nil {
+		ch = NewNull()
+	} else if childV, ok := child.(*V); ok {
+		ch = childV
+	} else {
+		ch, err = Import(child)
 	}
+
 	return &Insert{
-		v: v,
-		c: child,
+		v:   v,
+		c:   ch,
+		err: err,
 	}
 }
 
@@ -128,6 +139,9 @@ func (v *V) InsertArray() *Insert {
 //
 // 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
 func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*V, error) {
+	if ins.err != nil {
+		return &V{}, ins.err
+	}
 	v := ins.v
 	c := ins.c
 	if v.valueType == NotExist {
@@ -181,6 +195,9 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 //
 // 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
 func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V, error) {
+	if ins.err != nil {
+		return &V{}, ins.err
+	}
 	v := ins.v
 	c := ins.c
 	if nil == v || v.valueType == NotExist {

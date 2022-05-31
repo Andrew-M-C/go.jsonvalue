@@ -23,8 +23,7 @@ func (v *V) Export(dst interface{}) error {
 
 // Import convert json value from a marsalable parameter to *V.
 //
-// Import 将符合 encoding/json 的 struct 转为 *V 类型。该函数只是个便利的函数封装，途中需要一次序列化和反序列化，
-// 性能不是最优。后续有计划改为无需序列化直接转换，并且支持浮点数的 Inf, -Inf, NaN 的特殊处理，敬请期待。
+// Import 将符合 encoding/json 的 struct 转为 *V 类型。
 func Import(src interface{}) (*V, error) {
 	v, fu, err := validateValAndReturnParser(reflect.ValueOf(src), ext{})
 	if err != nil {
@@ -56,6 +55,9 @@ func validateValAndReturnParser(v reflect.Value, ex ext) (out reflect.Value, fu 
 		// 	fallthrough
 		// case reflect.Chan, reflect.Func, reflect.UnsafePointer:
 		err = fmt.Errorf("jsonvalue: unsupported type: %v", v.Type())
+
+	case reflect.Invalid:
+		fu = parseInvalidValue
 
 	case reflect.Bool:
 		fu = parseBoolValue
@@ -107,6 +109,10 @@ func validateValAndReturnParser(v reflect.Value, ex ext) (out reflect.Value, fu 
 	}
 
 	return
+}
+
+func parseInvalidValue(_ reflect.Value, _ ext) (*V, error) {
+	return NewNull(), nil
 }
 
 func parseBoolValue(v reflect.Value, ex ext) (*V, error) {

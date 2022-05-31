@@ -12,18 +12,28 @@ import (
 type Append struct {
 	v *V
 	c *V // child
+
+	err error
 }
 
 // Append starts appending a child JSON value to a JSON array.
 //
 // Append 开始将一个 JSON 值添加到一个数组中。需结合 InTheEnd() 和 InTheBeginning() 函数使用。
-func (v *V) Append(child *V) *Append {
-	if nil == child {
-		child = NewNull()
+func (v *V) Append(child interface{}) *Append {
+	var ch *V
+	var err error
+
+	if child == nil {
+		ch = NewNull()
+	} else if childV, ok := child.(*V); ok {
+		ch = childV
+	} else {
+		ch, err = Import(child)
 	}
 	return &Append{
-		v: v,
-		c: child,
+		v:   v,
+		c:   ch,
+		err: err,
 	}
 }
 

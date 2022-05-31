@@ -13,6 +13,8 @@ import (
 type Set struct {
 	v *V
 	c *V // child
+
+	err error
 }
 
 // Set starts setting a child JSON value. Please refer to examples of "func (set *Set) At(...)"
@@ -22,13 +24,22 @@ type Set struct {
 // Set 开始设置一个 JSON 子成员。请参见 "func (set *Set) At(...)" 例子.
 //
 // https://godoc.org/github.com/Andrew-M-C/go.jsonvalue/#Set.At
-func (v *V) Set(child *V) *Set {
-	if nil == child {
-		child = NewNull()
+func (v *V) Set(child interface{}) *Set {
+	var ch *V
+	var err error
+
+	if child == nil {
+		ch = NewNull()
+	} else if childV, ok := child.(*V); ok {
+		ch = childV
+	} else {
+		ch, err = Import(child)
 	}
+
 	return &Set{
-		v: v,
-		c: child,
+		v:   v,
+		c:   ch,
+		err: err,
 	}
 }
 
@@ -146,6 +157,9 @@ func (v *V) setToObjectChildren(key string, child *V) {
 // 该函数的用法恐怕是 jsonvalue 中最重要的内容了：该函数会按照给定的可变参数递归地一层一层查找 JSON 值的子成员，并且设置到指定的位置上。
 // 设置的逻辑说明起来比较抽象，请打开以下的例子以了解，这非常重要。
 func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error) {
+	if s.err != nil {
+		return &V{}, s.err
+	}
 	v := s.v
 	c := s.c
 	if nil == v || v.valueType == NotExist {
