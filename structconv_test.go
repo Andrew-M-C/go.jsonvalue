@@ -325,6 +325,7 @@ func testStructConv_Import_InvalidTypes(t *testing.T) {
 			Ch: make(chan struct{}),
 		}
 
+		//lint:ignore SA1026 intend to do this to check error in uni-test
 		_, err := json.Marshal(&st)
 		so(err, isErr)
 		t.Logf("expect error: %v", err)
@@ -357,6 +358,7 @@ func testStructConv_Import_InvalidTypes(t *testing.T) {
 			Func: func() { panic("Hey!") },
 		}
 
+		//lint:ignore SA1026 intend to do this to check error in uni-test
 		_, err := json.Marshal(&st)
 		so(err, isErr)
 		t.Logf("expect error: %v", err)

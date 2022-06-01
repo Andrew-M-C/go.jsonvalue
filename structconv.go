@@ -44,7 +44,7 @@ type ext struct {
 	toString  bool
 }
 
-// validateValAndReturnParser 检查入参合法性并返回响应的处理函数
+// validateValAndReturnParser 检查入参合法性并返回相应的处理函数
 func validateValAndReturnParser(v reflect.Value, ex ext) (out reflect.Value, fu parserFunc, err error) {
 	out = v
 

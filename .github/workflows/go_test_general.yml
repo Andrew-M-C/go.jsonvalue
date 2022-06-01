@@ -63,11 +63,11 @@ jobs:
     #   run: |
     #     bash <(curl -s https://codecov.io/bash) -t ${{ env.CODECOV_TOKEN }}
 
-    - name: Convert Coverage file to lcov format
-      uses: jandelgado/gcov2lcov-action@v1.0.8
-      with:
-        infile: ./coverage.out
-        outfile: ./coverage.lcov
+    # - name: Convert Coverage file to lcov format
+    #   uses: jandelgado/gcov2lcov-action@v1.0.8
+    #   with:
+    #     infile: ./coverage.out
+    #     outfile: ./coverage.lcov
 
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v2
