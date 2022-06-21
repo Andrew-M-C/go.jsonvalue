@@ -17,11 +17,18 @@ type Set struct {
 	err error
 }
 
-// Set starts setting a child JSON value. Please refer to examples of "func (set *Set) At(...)"
+// Set starts setting a child JSON value. Any legal JSON value typped parameter
+// is accepted, such as string, int, float, bool, nil, *jsonvalue.V, or even
+// a struct or map or slice.
+//
+// Please refer to examples of "func (set *Set) At(...)"
 //
 // https://godoc.org/github.com/Andrew-M-C/go.jsonvalue/#Set.At
 //
-// Set 开始设置一个 JSON 子成员。请参见 "func (set *Set) At(...)" 例子.
+// Set 开始设置一个 JSON 子成员。任何合法的 JSON 类型都可以作为参数, 比如 string, int,
+// float, bool, nil, *jsonvalue.V 等类型, 甚至也支持结构体、map、切片、数组。
+//
+// 请参见 "func (set *Set) At(...)" 例子.
 //
 // https://godoc.org/github.com/Andrew-M-C/go.jsonvalue/#Set.At
 func (v *V) Set(child interface{}) *Set {

@@ -10,8 +10,7 @@ import (
 
 // Export convert jsonvalue to another type of parameter. The target parameter type should match the type of *V.
 //
-// Export 将 *V 转到符合原生 encoding/json 的一个 struct 中。该函数只是个便利的函数封装，途中需要一次序列化和反序列化，
-// 性能不是最优。
+// Export 将 *V 转到符合原生 encoding/json 的一个 struct 中。
 func (v *V) Export(dst interface{}) error {
 	b, err := v.Marshal()
 	if err != nil {
@@ -21,9 +20,9 @@ func (v *V) Export(dst interface{}) error {
 	return json.Unmarshal(b, dst)
 }
 
-// Import convert json value from a marsalable parameter to *V.
+// Import convert json value from a marsalable parameter to *V. This a experimental function.
 //
-// Import 将符合 encoding/json 的 struct 转为 *V 类型。
+// Import 将符合 encoding/json 的 struct 转为 *V 类型。不经过 encoding/json，并且支持 Option.
 func Import(src interface{}) (*V, error) {
 	v, fu, err := validateValAndReturnParser(reflect.ValueOf(src), ext{})
 	if err != nil {
@@ -159,7 +158,7 @@ func parseFloatValue(v reflect.Value, ex ext) (*V, error) {
 	return NewFloat64(f), nil
 }
 
-func parseArrayValue(v reflect.Value, _ ext) (*V, error) {
+func parseArrayValue(v reflect.Value, ex ext) (*V, error) {
 	res := NewArray()
 	le := v.Len()
 
@@ -279,7 +278,7 @@ func parseStringValue(v reflect.Value, ex ext) (*V, error) {
 	return NewString(str), nil
 }
 
-func parseStructValue(v reflect.Value, _ ext) (*V, error) {
+func parseStructValue(v reflect.Value, ex ext) (*V, error) {
 	t := v.Type()
 	numField := t.NumField()
 
@@ -302,7 +301,7 @@ func parseStructValue(v reflect.Value, _ ext) (*V, error) {
 	return res, nil
 }
 
-func parseNullValue(_ reflect.Value, ex ext) (*V, error) {
+func parseNullValue(v reflect.Value, ex ext) (*V, error) {
 	if ex.omitempty {
 		return nil, nil
 	}

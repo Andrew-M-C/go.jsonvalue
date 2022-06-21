@@ -877,7 +877,7 @@ func (v *V) Bytes() []byte {
 // String 返回 string 类型值。如果当前值不是字符串类型，则返回当前 *V 类型的描述说明。
 func (v *V) String() string {
 	if v == nil {
-		return ""
+		return "nil"
 	}
 	switch v.valueType {
 	default:

@@ -110,9 +110,9 @@ func ExampleInsert_Before() {
 //
 // 这是最简单的例子：
 func ExampleSet_At() {
-	v := jsonvalue.NewObject()                        // {}
-	v.SetObject().At("obj")                           // {"obj":{}}
-	v.SetString("Hello, world!").At("obj", "message") // {"obj":{"message":"Hello, world!"}}
+	v := jsonvalue.NewObject()                  // {}
+	v.SetObject().At("obj")                     // {"obj":{}}
+	v.Set("Hello, world!").At("obj", "message") // {"obj":{"message":"Hello, world!"}}
 	fmt.Println(v.MustMarshalString())
 	// Output:
 	// {"obj":{"message":"Hello, world!"}}
@@ -122,8 +122,8 @@ func ExampleSet_At() {
 //
 // 或者你还可以更加简洁，因为 At() 函数会自动创建在值链中所需要但未创建的对象
 func ExampleSet_At_another() {
-	v := jsonvalue.NewObject()                        // {}
-	v.SetString("Hello, world!").At("obj", "message") // {"obj":{"message":"Hello, world!"}}
+	v := jsonvalue.NewObject()                  // {}
+	v.Set("Hello, world!").At("obj", "message") // {"obj":{"message":"Hello, world!"}}
 	fmt.Println(v.MustMarshalString())
 	// Output:
 	// {"obj":{"message":"Hello, world!"}}
@@ -133,8 +133,8 @@ func ExampleSet_At_another() {
 //
 // 对于数组类型，At() 也是能够自动生成的
 func ExampleSet_At_another2() {
-	v := jsonvalue.NewObject()                // {}
-	v.SetString("Hello, world!").At("arr", 0) // {"arr":[Hello, world!]}
+	v := jsonvalue.NewObject()          // {}
+	v.Set("Hello, world!").At("arr", 0) // {"arr":[Hello, world!]}
 	fmt.Println(v.MustMarshalString())
 	// Output:
 	// {"arr":["Hello, world!"]}
@@ -149,8 +149,8 @@ func ExampleSet_At_another2() {
 // 应当为0，操作才能成功；而当数组已经存在，那么 At() 指定的位置数，要么在数组中已存在，要么正好等于数组的长度，当后者的情况下，会在数组的最后追加值。
 // 这个特性在使用 for-range 块时会非常有用。
 func ExampleSet_At_another3() {
-	v := jsonvalue.NewObject()                         // {}
-	_, err := v.SetString("Hello, world").At("arr", 1) // failed because there are no children of v.arr
+	v := jsonvalue.NewObject()                   // {}
+	_, err := v.Set("Hello, world").At("arr", 1) // failed because there are no children of v.arr
 	if err != nil {
 		fmt.Println("got error:", err)
 	}
@@ -160,7 +160,7 @@ func ExampleSet_At_another3() {
 	integers := []int{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}
 	for i, n := range integers {
 		// this will succeed because i is equal to len(v.arr) every time
-		v.SetInt(n).At("arr", i)
+		v.Set(n).At("arr", i)
 	}
 
 	fmt.Println(v.MustMarshalString())
@@ -181,7 +181,7 @@ func ExampleSet_At_another4() {
 
 	fmt.Println(v.MustMarshalString())
 
-	v.SetFloat64(123.12345).At("arr", 3)
+	v.Set(123.12345).At("arr", 3)
 	fmt.Println(v.MustMarshalString())
 	// Output:
 	// {"arr":[0,1,2,3,4,5,6,7,8,9]}

@@ -428,4 +428,10 @@ func testUnmarshalWithIter(t *testing.T) {
 		so(child.IsString(), isTrue)
 		so(child.String(), eq, "empty object")
 	})
+
+	cv("nil jsonvalue object String", func() {
+		var invalid *V
+		s := invalid.String()
+		so(s, eq, "nil")
+	})
 }

@@ -16,7 +16,7 @@ func testInsertAppendDelete(t *testing.T) {
 }
 
 func testInsertAppend(t *testing.T) {
-	expected := `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ=="]`
+	expected := `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ==",99999999]`
 	a := NewArray()
 
 	a.AppendString("world").InTheBeginning()
@@ -57,6 +57,10 @@ func testInsertAppend(t *testing.T) {
 
 	a.AppendBytes([]byte("1")).InTheEnd()
 	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ=="]`)
+	t.Log(a.MustMarshalString())
+
+	a.Append(99999999).InTheEnd()
+	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ==",99999999]`)
 	t.Log(a.MustMarshalString())
 
 	s, _ := a.MarshalString()
@@ -162,7 +166,7 @@ func testAppendAndAutoGeneratePath(t *testing.T) {
 }
 
 func testMiscInsert(t *testing.T) {
-	expected := `[null,1,-2,3,-4,5,-6,7.7,-8.88888,true,false,null,null,{},-2,[[null,-11,22]]]`
+	expected := `[null,1,-2,3,-4,5,-6,7.7,-8.88888,true,false,null,null,{},-2,"insert test",[[null,-11,22]]]`
 
 	var err error
 	var c *V
@@ -270,6 +274,10 @@ func testMiscInsert(t *testing.T) {
 	so(err, isNil)
 	so(c.Int(), eq, -2)
 
+	c, err = v.Insert("insert test").Before(-1)
+	so(err, isNil)
+	so(c.String(), eq, "insert test")
+
 	s, _ := v.MarshalString()
 	so(s, eq, expected)
 }
@@ -321,6 +329,16 @@ func testMiscInsertError(t *testing.T) {
 
 	cv("uninitialized append", func() {
 		_, err := (&Append{}).InTheBeginning("dummy")
+		so(err, isErr)
+	})
+
+	cv("invalid insert type", func() {
+		a := MustUnmarshalString(`[0]`)
+		ch := make(chan struct{}, 1)
+		_, err := a.Insert(ch).After(0)
+		so(err, isErr)
+
+		_, err = a.Insert(ch).Before(0)
 		so(err, isErr)
 	})
 }

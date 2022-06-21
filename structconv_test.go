@@ -388,6 +388,7 @@ func testStructConv_Import_InvalidTypes(t *testing.T) {
 		}
 
 		j, err := Import(m)
+		// panic(j.MustMarshalString())
 		so(err, isErr)
 		so(j, notNil)
 	})

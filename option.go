@@ -165,14 +165,6 @@ func (o Opt) mergeTo(tgt *Opt) {
 	*tgt = o
 }
 
-// Deprecated: CombineOptions is a function for internal use, which combine
-// severial Options together. Please do not use this.
-//
-// CombineOptions 用于 jsonvalue 内部使用，合并入参的多个额外选项，请不要使用。
-func CombineOptions(opts []Option) *Opt {
-	return combineOptions(opts)
-}
-
 // SetDefaultMarshalOptions set default option for marshaling. It is quite
 // useful to invoke this function once in certern init funciton. Or you can
 // invoke it after main entry. It is goroutine-safe.
