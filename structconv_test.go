@@ -668,4 +668,24 @@ func testStructConv_Import_ArrayAndSlice(t *testing.T) {
 		so(j.MustGet("M").IsObject(), isTrue)
 		so(j.MustGet("Null").IsNull(), isTrue)
 	})
+
+	cv("stringfied value", func() {
+		type st struct {
+			Int  int  `json:"int,string"`
+			Bool bool `json:"bool,string"`
+		}
+		s := st{
+			Int:  100,
+			Bool: true,
+		}
+		b, _ := json.Marshal(s)
+		t.Logf("json marshal result: %s", string(b))
+		v, err := Import(s)
+		so(err, isNil)
+		so(v.ValueType(), eq, Object)
+		so(v.MustGet("int").ValueType(), eq, String)
+		so(v.MustGet("int").Int(), eq, s.Int)
+		so(v.MustGet("bool").ValueType(), eq, String)
+		so(v.MustGet("bool").Bool(), eq, s.Bool)
+	})
 }

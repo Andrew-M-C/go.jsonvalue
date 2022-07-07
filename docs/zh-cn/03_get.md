@@ -182,39 +182,6 @@ err = not match given type
 
 ---
 
-## 迭代 Object 和 Array 的成员
-
-对于基础类型（number, string, boolean, null），我们只关心它的一个值。但对于复杂类型（object, array），我们有必要关心其中的各种结构。除了使用 `Get` 系列函数之外，jsonvalue 还提供了 iter 函数，有以下两种风格：
-
-### 回调函数风格
-
-```go
-func (v *V) RangeArray  (callback func(i int, v *V) bool)
-func (v *V) RangeObjects(callback func(k string, v *V) bool)
-```
-
-使用回调函数的风格来迭代 object 和 array 中的每一个成员。如果回调函数返回 true，则继续迭代；返回 false 则会中止迭代，退出回调。
-
-### for-range 风格
-
-```go
-func (v *V) ForRangeArr() []*V
-func (v *V) ForRangeObj() map[string]*V
-```
-
-这种模式返回了一个预先存好了 kv 信息的 channel，并且已经 close 了，因此开发者可以使用 `for` 语法，进行更加直观的开发：
-
-```go
-    v := jsonvalue.MustUnmarshalString(`["A","B","C","D"]`)
-    for i, v := range v.ForRangeArr() {
-        fmt.Println(i, "-", v)
-    }
-```
-
-在 `ForRangeObj` 函数中，由于 jsonvalue 是使用 map 来实现 object 的 kv 存储，因此 key 的顺序不予保证。
-
-在命名的角度上，由于历史原因，笔者先开发了 RangeXxx 系列函数，所以导致 for-range 风格的函数反而不使用 range 命名，还请开发者们谅解。
-
 ## MustGet 和相关函数
 
 上文中提到了 `Get` 和 `GetXxx` 系列函数。除了 `GetNull` 之外，各个函数的返回值均为两个。而针对 Get 函数，jsonvalue 也提供了一个 `MustGet` 函数，仅返回一个参数，从而便于实现即为简单的逻辑。
@@ -257,3 +224,37 @@ func (v *V) ForRangeObj() map[string]*V
     }
 ```
 
+---
+
+## 迭代 Object 和 Array 的成员
+
+对于基础类型（number, string, boolean, null），我们只关心它的一个值。但对于复杂类型（object, array），我们有必要关心其中的各种结构。除了使用 `Get` 系列函数之外，jsonvalue 还提供了 iter 函数，有以下两种风格：
+
+### 回调函数风格
+
+```go
+func (v *V) RangeArray  (callback func(i int, v *V) bool)
+func (v *V) RangeObjects(callback func(k string, v *V) bool)
+```
+
+使用回调函数的风格来迭代 object 和 array 中的每一个成员。如果回调函数返回 true，则继续迭代；返回 false 则会中止迭代，退出回调。
+
+### for-range 风格
+
+```go
+func (v *V) ForRangeArr() []*V
+func (v *V) ForRangeObj() map[string]*V
+```
+
+这种模式返回了一个预先存好了 kv 信息的 channel，并且已经 close 了，因此开发者可以使用 `for` 语法，进行更加直观的开发：
+
+```go
+    v := jsonvalue.MustUnmarshalString(`["A","B","C","D"]`)
+    for i, v := range v.ForRangeArr() {
+        fmt.Println(i, "-", v)
+    }
+```
+
+在 `ForRangeObj` 函数中，由于 jsonvalue 是使用 map 来实现 object 的 kv 存储，因此 key 的顺序不予保证。
+
+在命名的角度上，由于历史原因，笔者先开发了 RangeXxx 系列函数，所以导致 for-range 风格的函数反而不使用 range 命名，还请开发者们谅解。

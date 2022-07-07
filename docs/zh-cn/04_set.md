@@ -1,6 +1,6 @@
 # 创建并序列化 JSON
 
-[上一页](./03_get.md) | [总目录](./README.md) | [下一页](./05_iteration.md)
+[上一页](./03_get.md) | [总目录](./README.md) | [下一页](./05_import_export.md)
 
 ---
 
@@ -47,7 +47,7 @@ v.Set(child).At(path...)
 
 ```go
 v := jsonvalue.NewObject()
-v.SetString("Hello, JSON!").At("data", "message")
+v.Set("Hello, JSON!").At("data", "message")
 fmt.Println(v.MustMarshalString())
 ```
 
@@ -55,7 +55,7 @@ fmt.Println(v.MustMarshalString())
 
 ### At 参数语义
 
-可以看到，通过 `SetXxx` 系列函数后，还需要紧跟 `At` 函数来将欲设置的值落地到真正的 JSON 结构中。因此 `At` 函数的参数自然是重点。`At` 函数的原型如下：
+可以看到，通过 `Set` 系列函数后，还需要紧跟 `At` 函数来将欲设置的值落地到真正的 JSON 结构中。因此 `At` 函数的参数自然是重点。`At` 函数的原型如下：
 
 ```go
 func (s *Set) At(param1 interface{}, params ...interface{}) (*V, error)
@@ -71,9 +71,9 @@ At 函数的参数语义，与前文提及的 `Get` 函数语义基本一致。�
 以下例子中，自动创建了数据结构：
 
 ```go
-v := jsonvalue.NewObject()                         // {}
-v.SetString("Hello, object!").At("obj", "message") // {"obj":{"message":"Hello, object!"}}
-v.SetString("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, object!"},"arr":["Hello, array!"]}
+v := jsonvalue.NewObject()                   // {}
+v.Set("Hello, object!").At("obj", "message") // {"obj":{"message":"Hello, object!"}}
+v.Set("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, object!"},"arr":["Hello, array!"]}
 ```
 
 在 At() 自动创建数组的逻辑其实稍微有点复杂，需要解释一下：
@@ -89,8 +89,8 @@ v.SetString("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, 
     const lessons = []int{1, 2, 3, 4}
     v := jsonvalue.NewObject()
     for i := range words {
-        v.SetString(words[i]).At("array", i, "word")
-        v.SetInt(lessons[i]).At("array", i, "lesson")
+        v.Set(words[i]).At("array", i, "word")
+        v.Set(lessons[i]).At("array", i, "lesson")
     }
     fmt.Println(c.MustMarshalString())
 ```
@@ -117,11 +117,11 @@ v.SetString("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, 
 这几个函数的原型如下：
 
 ```go
-func (v *V) Append(child *V) *Append
+func (v *V) Append(child interface{}) *Append
 func (apd *Append) InTheBeginning(params ...interface{}) (*V, error)
 func (apd *Append) InTheEnd      (params ...interface{}) (*V, error)
 
-func (v *V) Insert(child *V) *Insert
+func (v *V) Insert(child interface{}) *Insert
 func (ins *Insert) After (firstParam interface{}, otherParams ...interface{}) (*V, error)
 func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*V, error)
 ```
@@ -130,8 +130,6 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 
 - `InTheBeginning` 和 `InTheEnd` 允许空参数，此时表示当前的 value 就已经是一个数组，语义是在当前数组的开头或末尾追加子值。
 - `After` 和 `Before` 的最后一个参数（如果只有一个参数，则最后一个即为第一个）必须是一个整型数字，代表在数组中的下标位。与 `Set(...).At(...)` 类似，允许负下标。
-
-与 `Set(...).At(...)` 函数类似，这几个函数也会隐式创建缺失的数据结构。此外，也提供了各种诸如 `AppendString`、`InsertInt64` 等等便利的函数方式。
 
 ---
 

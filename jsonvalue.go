@@ -772,9 +772,14 @@ func getBoolAndErrorFromValue(v *V) (*V, error) {
 
 // Bool returns represented bool value. If value is not boolean, returns false.
 //
-// Bool 返回布尔类型值。如果当前值不是布尔类型，则返回 false。
+// Bool 返回布尔类型值。如果当前值不是布尔类型，则判断是否为 string，不是 string 返回 false;
+// 是 string 的话则返回字面值是否等于 true
 func (v *V) Bool() bool {
-	return v.valueBool
+	if v.valueType == Boolean {
+		return v.valueBool
+	}
+	b, _ := getBoolAndErrorFromValue(v)
+	return b.valueBool
 }
 
 // Int returns represented int value. If value is not a number, returns zero.

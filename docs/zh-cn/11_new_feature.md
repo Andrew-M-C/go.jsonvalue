@@ -1,6 +1,6 @@
 # v1.2.x 新特性
 
-[上一页](./09_beta.md) | [总目录](./README.md) | [下一页](./11_benchmark.md)
+[上一页](./10_beta.md) | [总目录](./README.md) | [下一页](./12_benchmark.md)
 
 ---
 

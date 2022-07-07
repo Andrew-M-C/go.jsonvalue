@@ -188,6 +188,24 @@ func ExampleSet_At_another4() {
 	// {"arr":[0,1,2,123.12345,4,5,6,7,8,9]}
 }
 
+// In addition, any legal json type parameters are supported in Set(...).At(...).
+// For example, we can set a struct as following:
+//
+// 此外，Set(...).At(...) 支持任意合法的 json 类型变量参数。比如我可以传入一个结构体:
+func ExampleSet_At_another5() {
+	type st struct {
+		Text string `json:"text"`
+	}
+	child := st{
+		Text: "Hello, jsonvalue!",
+	}
+	v := jsonvalue.NewObject()
+	v.Set(child).At("child")
+	fmt.Println(v.MustMarshalString())
+	// Output:
+	// {"child":{"text":"Hello, jsonvalue!"}}
+}
+
 func ExampleV_Get() {
 	s := `{"objA":{"objB":{"message":"Hello, world!"}}}`
 	v, _ := jsonvalue.UnmarshalString(s)
