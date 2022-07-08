@@ -221,7 +221,6 @@ func unmarshalWithIter(it iter, offset int) (v *V, err error) {
 		var n *V
 		n, offset, _, err = it.parseNumber(offset)
 		if err == nil {
-			n.srcByte = it[offset:end]
 			v = n
 		}
 
@@ -313,7 +312,6 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			if err != nil {
 				return nil, -1, err
 			}
-			v.srcByte = it[offset:sectEnd]
 			arr.appendToArr(v)
 			offset = sectEnd
 
@@ -465,7 +463,6 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 			if err != nil {
 				return nil, -1, err
 			}
-			v.srcByte = it[offset:sectEnd]
 			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd

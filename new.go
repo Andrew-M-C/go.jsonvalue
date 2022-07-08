@@ -8,6 +8,18 @@ import (
 	"strconv"
 )
 
+// New generate a new jsonvalue type via given type. If given type is not supported,
+// the returned type would equal to NotExist. If you are not sure whether given value
+// type is OK in runtime, use Import() instead.
+//
+// New 函数按照给定参数类型创建一个 jsonvalue 类型。如果给定参数不是 JSON 支持的类型, 那么返回的
+// *V 对象的类型为 NotExist。如果在代码中无法确定入参是否是 JSON 支持的类型, 请改用函数
+// Import()。
+func New(value interface{}) *V {
+	v, _ := Import(value)
+	return v
+}
+
 // NewString returns an initialied string jsonvalue object
 //
 // NewString 用给定的 string 返回一个初始化好的字符串类型的 jsonvalue 值
