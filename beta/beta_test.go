@@ -10,10 +10,12 @@ var (
 	cv = convey.Convey
 	so = convey.So
 
+	eq = convey.ShouldEqual
+
 	isTrue  = convey.ShouldBeTrue
 	isFalse = convey.ShouldBeFalse
 )
 
 func TestBeta(t *testing.T) {
-	cv("test HasSubset() and IsSubsetOf()", t, func() { testHasSubsetIsSubsetOf(t) })
+	cv("test Contains()", t, func() { testContains(t) })
 }

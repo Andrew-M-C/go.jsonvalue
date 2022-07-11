@@ -4,33 +4,45 @@ import (
 	jsonvalue "github.com/Andrew-M-C/go.jsonvalue"
 )
 
-// IsSubsetOf is the invert version of HasSubset.
-//
-// IsSubsetOf 是 HasSubset 函数的反向操作。
-func IsSubsetOf(v, macroSet *jsonvalue.V) bool {
-	return HasSubset(macroSet, v)
-}
-
-// HasSubset identidies whether has a subset. This only takes effect to object
+// Contains identidies whether a value has a subset. This only takes effect to object
 // and array types.
 //
-// HasSubset 表示是否包含某个子集。只对 object 和 array 类型有效, 其他类型则需完全相等时,
+// Contains 表示是否包含某个子集。只对 object 和 array 类型有效, 其他类型则需完全相等时,
 // 才返回 true
-func HasSubset(v, sub *jsonvalue.V) bool {
-	if v == nil || sub == nil {
+func Contains(v *jsonvalue.V, sub interface{}, inPath ...interface{}) bool {
+	if v == nil {
 		return false
 	}
-	if v.ValueType() != sub.ValueType() {
+
+	var err error
+	subV, ok := sub.(*jsonvalue.V)
+	if !ok {
+		subV, err = jsonvalue.Import(sub)
+		if err != nil {
+			// fmt.Println("Import failed")
+			return false
+		}
+	}
+	if len(inPath) > 0 {
+		v, err = v.Get(inPath[0], inPath[1:]...)
+		if err != nil {
+			// fmt.Println("Get failed:", err)
+			return false
+		}
+	}
+
+	if v.ValueType() != subV.ValueType() {
+		// fmt.Println("type mismatch - ", v.ValueType(), subV.ValueType())
 		return false
 	}
 
 	switch v.ValueType() {
 	default:
-		return v.Equal(sub)
+		return v.Equal(subV)
 	case jsonvalue.Object:
-		return objectHasSubset(v, sub)
+		return objectHasSubset(v, subV)
 	case jsonvalue.Array:
-		return arrayHasSubset(v, sub)
+		return arrayHasSubset(v, subV)
 	}
 }
 
@@ -43,7 +55,7 @@ func objectHasSubset(v, sub *jsonvalue.V) bool {
 			res = false
 			return false
 		}
-		if !HasSubset(vv, subV) {
+		if !Contains(vv, subV) {
 			res = false
 			return false
 		}
