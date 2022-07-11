@@ -93,12 +93,13 @@ func testSortMarshal(t *testing.T) {
 	so(err, isNil)
 
 	less := func(parentInfo *ParentInfo, keyA, keyB string, _, _ *V) bool {
+		so(parentInfo, notNil)
 		t.Logf("parentInfo: %v", parentInfo.KeyPath)
 		s := ""
 		for _, k := range parentInfo.KeyPath {
 			s += fmt.Sprintf(`"%s"<%d><%v|%v>  `, k.String(), k.Int(), k.IsString(), k.IsInt())
 		}
-		t.Logf("Key path: %v", s)
+		t.Logf("Key path: %v, keyA: '%s', keyB: '%s'", s, keyA, keyB)
 
 		return len(keyA) <= len(keyB)
 	}

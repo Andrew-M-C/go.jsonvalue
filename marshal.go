@@ -218,46 +218,86 @@ func (v *V) marshalNull(buf *bytes.Buffer) {
 }
 
 func (v *V) marshalObject(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
+	if len(v.children.object) == 0 {
+		buf.WriteString("{}")
+		return
+	}
+
+	opt.indent.cnt++
+	buf.WriteByte('{')
+
 	if opt.MarshalLessFunc != nil {
 		sov := v.newSortObjectV(parentInfo, opt)
 		sov.marshalObjectWithLessFunc(buf, opt)
-		return
-	}
-	if len(opt.MarshalKeySequence) > 0 {
+	} else if len(opt.MarshalKeySequence) > 0 {
 		sssv := v.newSortStringSliceV(opt)
 		sssv.marshalObjectWithStringSlice(buf, opt)
-		return
+	} else {
+		firstWritten := false
+		for k, child := range v.children.object {
+			firstWritten = writeObjectChildren(nil, buf, !firstWritten, k, child, opt)
+		}
 	}
 
-	buf.WriteByte('{')
-	defer buf.WriteByte('}')
+	opt.indent.cnt--
+	if opt.indent.enabled {
+		buf.WriteByte('\n')
+		writeIndent(buf, opt)
+	}
+	buf.WriteByte('}')
+}
 
-	i := 0
+func writeObjectChildren(
+	parentInfo *ParentInfo, buf *bytes.Buffer, isFirstOne bool, key string, child *V, opt *Opt,
+) (written bool) {
+	if child.IsNull() && opt.OmitNull {
+		return false
+	}
+	if !isFirstOne {
+		buf.WriteByte(',')
+	}
 
-	for k, child := range v.children.object {
-		if child.IsNull() && opt.OmitNull {
-			continue
-		}
-		if i > 0 {
-			buf.WriteByte(',')
-		}
+	if opt.indent.enabled {
+		buf.WriteByte('\n')
+		writeIndent(buf, opt)
+	}
 
-		buf.WriteByte('"')
-		escapeStringToBuff(k, buf, opt)
+	buf.WriteByte('"')
+	escapeStringToBuff(key, buf, opt)
+
+	if opt.indent.enabled {
+		buf.WriteString("\": ")
+	} else {
 		buf.WriteString("\":")
+	}
 
-		child.marshalToBuffer(nil, buf, opt)
-		i++
+	child.marshalToBuffer(parentInfo, buf, opt)
+	return true
+}
+
+func writeIndent(buf *bytes.Buffer, opt *Opt) {
+	buf.WriteString(opt.indent.prefix)
+	for i := 0; i < opt.indent.cnt; i++ {
+		buf.WriteString(opt.indent.indent)
 	}
 }
 
 func (v *V) marshalArray(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
+	if len(v.children.arr) == 0 {
+		buf.WriteString("[]")
+		return
+	}
+
+	opt.indent.cnt++
 	buf.WriteByte('[')
-	defer buf.WriteByte(']')
 
 	v.RangeArray(func(i int, child *V) bool {
 		if i > 0 {
 			buf.WriteByte(',')
+		}
+		if opt.indent.enabled {
+			buf.WriteByte('\n')
+			writeIndent(buf, opt)
 		}
 		if opt.MarshalLessFunc == nil {
 			child.marshalToBuffer(nil, buf, opt)
@@ -266,4 +306,11 @@ func (v *V) marshalArray(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 		}
 		return true
 	})
+
+	opt.indent.cnt--
+	if opt.indent.enabled {
+		buf.WriteByte('\n')
+		writeIndent(buf, opt)
+	}
+	buf.WriteByte(']')
 }

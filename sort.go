@@ -140,7 +140,7 @@ func (p KeyPath) String() (s string) {
 			buff.WriteString(s)
 		} else {
 			buff.WriteRune('"')
-			escapeStringToBuff(k.String(), &buff, &Opt{})
+			escapeStringToBuff(k.String(), &buff, getDefaultOptions())
 			buff.WriteRune('"')
 		}
 	}
@@ -185,29 +185,15 @@ func DefaultStringSequence(parent *ParentInfo, key1, key2 string, v1, v2 *V) boo
 }
 
 func (sov *sortObjectV) marshalObjectWithLessFunc(buf *bytes.Buffer, opt *Opt) {
-	buf.WriteRune('{')
-	defer buf.WriteRune('}')
-
 	// sort
 	sort.Sort(sov)
 
 	// marshal
-	marshaledCount := 0
+	firstWritten := false
 	for i, key := range sov.keys {
 		child := sov.values[i]
-		if child.IsNull() && opt.OmitNull {
-			continue
-		}
-		if marshaledCount > 0 {
-			buf.WriteRune(',')
-		}
-
-		buf.WriteRune('"')
-		escapeStringToBuff(key, buf, opt)
-		buf.WriteString("\":")
-
-		child.marshalToBuffer(child.newParentInfo(sov.parentInfo, stringKey(key)), buf, opt)
-		marshaledCount++
+		par := child.newParentInfo(sov.parentInfo, stringKey(key))
+		firstWritten = writeObjectChildren(par, buf, !firstWritten, key, child, opt)
 	}
 }
 
@@ -248,29 +234,14 @@ func (v *V) newSortObjectV(parentInfo *ParentInfo, opt *Opt) *sortObjectV {
 
 // marshalObjectWithStringSlice use a slice to determine sequence of object
 func (sssv *sortStringSliceV) marshalObjectWithStringSlice(buf *bytes.Buffer, opt *Opt) {
-	buf.WriteRune('{')
-	defer buf.WriteRune('}')
-
 	// sort
 	sort.Sort(sssv)
 
 	// marshal
-	marshaledCount := 0
+	firstWritten := false
 	for i, key := range sssv.keys {
 		child := sssv.values[i]
-		if child.IsNull() && opt.OmitNull {
-			continue
-		}
-		if marshaledCount > 0 {
-			buf.WriteRune(',')
-		}
-
-		buf.WriteRune('"')
-		escapeStringToBuff(key, buf, opt)
-		buf.WriteString("\":")
-
-		child.marshalToBuffer(nil, buf, opt)
-		marshaledCount++
+		firstWritten = writeObjectChildren(nil, buf, !firstWritten, key, child, opt)
 	}
 }
 

@@ -104,6 +104,14 @@ type Opt struct {
 
 	// escProperties
 	escProperties escapingProperties
+
+	// indent
+	indent struct {
+		enabled bool
+		prefix  string
+		indent  string
+		cnt     int
+	}
 }
 
 type FloatNaNHandleType uint8
@@ -530,4 +538,21 @@ func (o *Opt) parseEscapingFuncs() {
 		o.asciiCharEscapingFunc['>'] = escapeNothing
 		o.asciiCharEscapingFunc['&'] = escapeNothing
 	}
+}
+
+// ==== indent ====
+
+// OptIndent appliesiIndent to format the output.
+//
+// OptIndent 指定序列化时的缩进。
+func OptIndent(prefix, indent string) Option {
+	return optionIndent{prefix, indent}
+}
+
+type optionIndent [2]string
+
+func (o optionIndent) mergeTo(opt *Opt) {
+	opt.indent.enabled = true
+	opt.indent.prefix = o[0]
+	opt.indent.indent = o[1]
 }

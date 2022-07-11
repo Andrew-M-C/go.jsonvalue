@@ -2,6 +2,7 @@ package jsonvalue
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
@@ -14,6 +15,7 @@ func testMarshal(t *testing.T) {
 	cv("escapeHTML", func() { testMarshalEscapeHTML(t) })
 	cv("UTF-8", func() { testMarshalEscapeUTF8(t) })
 	cv("slash", func() { testMarshalEscapeSlash(t) })
+	cv("indent", func() { testMarshalIndent(t) })
 }
 
 func testMarshalFloat64NaN(t *testing.T) {
@@ -446,4 +448,95 @@ func testMarshalEscapeSlash(t *testing.T) {
 		so(s, eq, nonesc)
 		so(MustUnmarshalString(s).String(), eq, v.String())
 	})
+}
+
+func testMarshalIndent(t *testing.T) {
+	cv("object", func() {
+		v := NewObject()
+		v.SetString("Hello, world").At("obj", "obj_in_obj", "msg")
+		b := v.MustMarshal(OptIndent("", "  "))
+
+		var m interface{}
+		json.Unmarshal(b, &m)
+		bJS, _ := json.MarshalIndent(m, "", "  ")
+
+		so(string(b), eq, string(bJS))
+		t.Logf(string(b))
+
+		b = v.MustMarshal(OptIndent("+", "  "))
+		bJS, _ = json.MarshalIndent(m, "+", "  ")
+		so(string(b), eq, string(bJS))
+		t.Logf(string(b))
+	})
+
+	cv("array", func() {
+		v := NewArray()
+		v.Append(1).InTheEnd()
+		v.Append(2).InTheEnd()
+		v.Append(3).InTheEnd()
+
+		b := v.MustMarshal(OptIndent("", "  "))
+
+		var m interface{}
+		json.Unmarshal(b, &m)
+		bJS, _ := json.MarshalIndent(m, "", "  ")
+
+		so(string(b), eq, string(bJS))
+		t.Logf(string(b))
+
+		b = v.MustMarshal(OptIndent("+", "  "))
+		bJS, _ = json.MarshalIndent(m, "+", "  ")
+		so(string(b), eq, string(bJS))
+		t.Logf(string(b))
+	})
+
+	cv("multiple indents", func() {
+		type s struct {
+			Arr []interface{} `json:"arr,omitempty"`
+			Obj *s            `json:"obj,omitempty"`
+			Str string        `json:"str,omitempty"`
+		}
+
+		data := &s{
+			Str: "Lv.0",
+			Obj: &s{
+				Str: "Lv.1",
+				Obj: &s{
+					Str: "Lv.2",
+				},
+				Arr: []interface{}{
+					1,
+					"2",
+					&s{
+						Str: "Lv1.1",
+					},
+				},
+			},
+		}
+
+		v, err := Import(data)
+		so(err, isNil)
+
+		b := v.MustMarshal(OptIndent("", "  "), OptDefaultStringSequence())
+		// b := v.MustMarshal(OptIndent("", "  "))
+		bJS, _ := json.MarshalIndent(data, "", "  ")
+
+		so(string(b), eq, string(bJS))
+		t.Logf(string(b))
+	})
+
+	cv("empty indent", func() {
+		v := NewObject()
+		v.SetString("Hello, world").At("obj", "obj_in_obj", "msg")
+		b := v.MustMarshal(OptIndent("", ""))
+
+		var m interface{}
+		json.Unmarshal(b, &m)
+		bJS, _ := json.MarshalIndent(m, "", "")
+
+		so(string(b), eq, string(bJS))
+		t.Logf(string(b))
+	})
+
+	// TODO:
 }
