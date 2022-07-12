@@ -59,3 +59,5 @@ func main() {
 
 - `Caseless` 函数会改变 `*V` 内部的结构。由于 `jsonvalue` 不是协程安全的，在多协程环境下使用同一个 jsonvalue 的 `caseless` 特性，需要加写锁
 - `Caseless` 会给 jsonvalue 带来额外的开销，如果不是特别有必要，建议还是区分大小写
+
+需要注意的是，`Caseless` 并不支持 `Equal` 函数，主要是考虑到当不区分大小写时，是否 Equal 可能会有很多歧义，因此作者斟酌再三决定放弃这一功能。其实也请开发者在实际工作中注意，尽量避免需要使用 `Caseless` 函数的情况

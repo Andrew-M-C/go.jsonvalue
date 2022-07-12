@@ -4,9 +4,12 @@
 
 ---
 
-## 功能说明
 
-在 jsonvalue 中主要操作的类型是 `*jsonvalue.V`，但在逻辑过程中其实也支持其它类型，就像原生的 `json.Unmarshal` 函数的第二个参数一样，是 `interface{}` 类型。
+## Import / Export
+
+Import 和 Export 最开始的作用，是在原生 `encoding/json` 和 `jsonvalue` 之间进行互转。
+
+此外，作者在开发 `Import` 函数过程中，也顺便构建了不少功能，也就成就了 v1.3.0 版本新增的很多功能，这些功能主要体现在以下内容：
 
 ## New 函数
 
@@ -44,9 +47,4 @@ fmt.Println(v.MustMarshalString())
 // Output: {"msg":"Hello, JSON!"}
 ```
 
-## Import / Export
-
-Import 和 Export 最开始的作用，是在原生 `encoding/json` 和 `jsonvalue` 之间进行互转。
-
-此外，作者在开发 `Import` 函数过程中，也顺便构建了不少功能，也就成就了 v1.3.0 版本新增的很多功能。
 

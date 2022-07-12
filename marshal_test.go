@@ -20,7 +20,7 @@ func testMarshal(t *testing.T) {
 
 func testMarshalFloat64NaN(t *testing.T) {
 	cv("with error", func() {
-		v := NewFloat64(math.NaN())
+		v := New(math.NaN())
 		_, err := v.Marshal()
 		so(err, isErr)
 

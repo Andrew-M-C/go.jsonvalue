@@ -1,6 +1,6 @@
 # 快速上手
 
-[上一页](./01_introduction.md) | [总目录](./README.md) | [下一页](03_get.md)
+[上一页](./01_introduction.md) | [总目录](./README.md) | [下一页](./03_set.md)
 
 ---
 

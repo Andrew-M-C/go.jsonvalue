@@ -2,8 +2,8 @@
 
 - [Jsonvalue 简介](./01_introduction.md)
 - [快速上手](./02_quick_start.md)
-- [解析并获取 JSON](./03_get.md)
-- [创建并序列化 JSON](./04_set.md)
+- [创建并序列化 JSON](./03_set.md)
+- [解析并获取 JSON](./04_get.md)
 - [与原生 json 的导入/导出](./05_import_export.md)
 - [遍历](./06_iteration.md)
 - [忽略大小写](./07_caseless.md)
@@ -11,4 +11,5 @@
 - [值的自动转换](./09_conversion.md)
 - [比较](./10_comparation.md)
 - [实验性功能](./11_beta.md)
-- [v1.2.x 新特性](./12_new_feature.md)
+- [v1.3 和 v1.2 新特性](./12_new_feature.md)
+- [其他](./13_others.md)

@@ -1,6 +1,6 @@
 # 创建并序列化 JSON
 
-[上一页](./03_get.md) | [总目录](./README.md) | [下一页](./05_import_export.md)
+[上一页](./02_quick_start.md) | [总目录](./README.md) | [下一页](./04_get.md)
 
 ---
 
@@ -10,21 +10,28 @@
 
 ## 创建 JSON 值
 
-在 jsonvalue 中提供了一系列的 `NewXxx` 函数，用于创建指定类型的 JSON 值。在绝大部分情况下，我们要创建的最外层 JSON 值是一个 object 或者是 array 类型值。此时我们可以使用以下的两个函数：
+在绝大部分情况下，我们要创建的最外层 JSON 值是一个 object 或者是 array 类型值。此时我们可以使用以下的两个函数：
 
 ```go
-anObj := jsonvalue.NewObject()
-anArr := jsonvalue.NewArray()
+o := jsonvalue.NewObject()
+a := jsonvalue.NewArray()
+```
+
+也可以指定任意可以合法地转换成 JSON 的 Go 类型，使用 `New` 函数直接创建 JSON 值。比如上面的对象和数组类型值，也可以用这种方式创建:
+
+```go
+o := jsonvalue.New(struct{}{})
+a := jsonvalue.New([]int{})
 ```
 
 也可以创建其他的基础类型值，如：
 
 ```go
-func NewInt    (i int)     *V
-func NewString (s string)  *V
-func NewFloat64(f float64) *V
-func NewBool   (b bool)    *V
-func NewNull() *V
+i := jsonvalue.New(100)
+s := jsonvalue.New("Hello, JSON!")
+f := jsonvalue.New("188.88")
+b := jsonvalue.New(true)
+n := jsonvalue.New(nil) // 返回一个 JSON null
 ```
 
 ---
@@ -43,17 +50,15 @@ v.Set(child).At(path...)
 
 对应英语中的语法：`SET some sub value AT some position.`
 
-目前 jsonvalue 的函数使用 `interface{}`, 因此获得了一个类似于泛型的体验。不过在的实际操作中，如果对性能极为敏感，建议指定基础类型值，如：
+目前 jsonvalue 的函数使用 `interface{}`, 因此获得了一个类似于泛型的体验，如：
 
 ```go
 v := jsonvalue.NewObject()
-v.SetString("Hello, JSON!").At("data", "message")
+v.Set("Hello, JSON!").At("data", "message")
 fmt.Println(v.MustMarshalString())
 ```
 
 输出: `{"data":{"message":"Hello, JSON!"}}`
-
-当然在绝大部分情况下, 推荐将上面的 `Set` 行直接换成 `v.Set("Hello, JSON!").At("data", "message")`
 
 ### At 参数语义
 

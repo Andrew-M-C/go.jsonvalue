@@ -12,7 +12,7 @@ import (
 )
 ```
 
-在 beta 包中, 提供实验性的功能。自从 v1.3.0 开始提供的 `Import` 函数最开始即是在 beta 中提供的，现在已转入正式。从 v1.3.0 版本则新增了另一个函数：`Contains`，用于判断一个 JSON 值是否包含另一个子集。函数原型如下：
+在 beta 包中, 提供实验性的功能。从 v1.3.0 版本则新增了另一个函数：`Contains`，用于判断一个 JSON 值是否包含另一个子集。函数原型如下：
 
 ```go
 func Contains(v *jsonvalue.V, sub interface{}, inPath ...interface{}) bool
@@ -26,3 +26,5 @@ func Contains(v *jsonvalue.V, sub interface{}, inPath ...interface{}) bool
 - 如果是对象类型，则迭代每一个值：
     - 当指定的 “子集” 拥有 “父集” 以外的 key 时，则返回 `false`
     - 针对指定的 “子集” 所拥有的所有 key 下面，均递归执行 `Contains` 函数，全部递归均为 `true` 时，则返回 `true`
+
+此外，自从 v1.2 开始提供的 `Import` 函数，现在已转入正式，如果开发者用到了，请直接到正式包里调用即可。

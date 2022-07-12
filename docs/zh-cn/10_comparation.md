@@ -10,7 +10,7 @@
 
 ## 判断两个 JSON 值是否相等
 
-使用 `Equal` 函数判断两个 JSON 值是否相等。
+从 v1.3.0 开始，支持使用 `Equal` 函数判断两个 JSON 值是否相等。判断的规则如下：
 
 首先，如果两个 JSON 值的类型不同，则返回 `false`。
 
@@ -18,9 +18,10 @@
 
 - `string` 类型: 检查两个 string 值是否相等
 - `number` 类型: 检查两个十进制数值是否相等
+    - 这里请注意，是比对十进制数值，实现上使用了 [decimal](https://pkg.go.dev/github.com/shopspring/decimal) 库。
 - `boolean` 类型: 检查两个布尔值是否相等
 - `null` 类型: 两个 null 值永远相等
 - `array` 类型: 两个数组相等的充分必要条件是: 长度相等并且在每一个索引位置上的 JSON 值相等
 - `object` 类型: 两个对象相等的充分必要条件是: key 列表完全相同，并且对应的每一个值都相等
 
-也就是说针对 array 和 object 类型，需要进行递归判断
+也即针对 array 和 object 类型，内部进行了递归判断。
