@@ -47,6 +47,10 @@ v.Set(time.Now().Unix()).At("time")
 
 主要是新增了 [Equal](./10_comparation.md) 函数，用于判断两个 JSON 是否相等。此外在 beta 包中新增了 [Contains](./11_beta.md) 函数，也可以用于判断子集。
 
+### 支持 JSON 序列化锁进
+
+请参见 “额外选项配置” 的[可视化锁进](./08_option.md#可视化锁进)小节
+
 ---
 
 ## v1.2.x 新特性
