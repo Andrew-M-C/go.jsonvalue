@@ -87,9 +87,9 @@ func escAnd(_ byte, buf *bytes.Buffer) {
 	buf.Write([]byte{'\\', 'u', '0', '0', '2', '6'})
 }
 
-func escPercent(_ byte, buf *bytes.Buffer) {
-	buf.Write([]byte{'\\', 'u', '0', '0', '2', '5'})
-}
+// func escPercent(_ byte, buf *bytes.Buffer) {
+// 	buf.Write([]byte{'\\', 'u', '0', '0', '2', '5'})
+// }
 
 func escapeStringToBuff(s string, buf *bytes.Buffer, opt *Opt) {
 	for _, r := range s {

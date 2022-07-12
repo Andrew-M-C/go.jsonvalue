@@ -518,7 +518,7 @@ func (o *Opt) parseEscapingFuncs() {
 	o.asciiCharEscapingFunc['<'] = escLeftAngle
 	o.asciiCharEscapingFunc['>'] = escRightAngle
 	o.asciiCharEscapingFunc['&'] = escAnd
-	o.asciiCharEscapingFunc['%'] = escPercent
+	// o.asciiCharEscapingFunc['%'] = escPercent
 
 	// unicodes >= 0x80
 	if o.escProperties.has(escapeUTF8) {
