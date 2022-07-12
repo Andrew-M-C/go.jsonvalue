@@ -47,6 +47,25 @@ fmt.Println(v.MustMarshalString(jsonvalue.OptOmitNull(true)))
 
 ---
 
+## 可视化锁进
+
+类似于原生 `encoding/json` 的 `json.MarshalIndent` 函数，将序列化的数据进行可视化。只需要在 Marshal 的时候传入一个选项即可，比如上面 v，在序列化的时候可以这样传参数:
+
+```go
+s := v.MustMarshalString(jsonvalue.OptIndent("", "  "))
+fmt.Println(s)
+```
+
+输出: 
+
+```json
+{
+  "null": null
+}
+```
+
+---
+
 ## 指定 key 顺序
 
 在 jsonvalue 对 object 的实现是使用原生 `map` 类型实现的，因此在迭代每一个 kv 的时候，key 的顺序无法保证。

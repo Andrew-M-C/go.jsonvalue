@@ -44,7 +44,7 @@ With `jsonvalue`, It is quite simple to achieve this:
 
 ```go
     v := jsonvalue.NewObject()
-    v.SetString("Hello, JSON").At("someObject", "someObject", "someObject", "message")
+    v.Set("Hello, JSON").At("someObject", "someObject", "someObject", "message")
     fmt.Println(v.MustMarshalString())
     // Output:
     // {"someObject":{"someObject":{"someObject":{"message":"Hello, JSON!"}}}
@@ -64,7 +64,7 @@ Similarly, it is quite easy to create sub-arrays like:
 
 ```go
     v := jsonvalue.NewArray()
-    v.SetString("Hello, JSON").At(0, "someObject", 0)
+    v.Set("Hello, JSON").At(0, "someObject", 0)
     fmt.Println(v.MustMarshalString())
     // Output:
     // [{"someObject":["Hello, JSON"]}]

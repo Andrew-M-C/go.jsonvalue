@@ -9,5 +9,6 @@
 - [忽略大小写](./07_caseless.md)
 - [额外选项配置](./08_option.md)
 - [值的自动转换](./09_conversion.md)
-- [实验性功能](./10_beta.md)
-- [v1.2.x 新特性](./11_new_feature.md)
+- [比较](./10_comparation.md)
+- [实验性功能](./11_beta.md)
+- [v1.2.x 新特性](./12_new_feature.md)

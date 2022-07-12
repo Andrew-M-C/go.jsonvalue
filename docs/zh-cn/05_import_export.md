@@ -8,6 +8,13 @@
 
 在 jsonvalue 中主要操作的类型是 `*jsonvalue.V`，但在逻辑过程中其实也支持其它类型，就像原生的 `json.Unmarshal` 函数的第二个参数一样，是 `interface{}` 类型。
 
+## New 函数
+
+从 v1.3.0 开始，jsonvalue 支持 `New` 函数，该函数接收任意类型的参数，并且将其解析为 JSON 并转换为一个 `*jsonvalue.V` 类型。如果入参不是合法的 JSON 值, 那么返回的对象类型为 `NotExist`。
+
+实际上 `New` 函数是针对 `Import` 函数的封装，差别只是不返回错误而已。
+
+
 ## Set, Append, Insert, Add 函数
 
 可以注意到，标题中提及的函数参数类型均为 `interface{}`。也就是说这几个函数也支持配置任意类型的子类型。比如:
@@ -28,7 +35,18 @@ fmt.Println(v.MustMarshalString())
 
 输出为: `{"data":{"message":"Hello, JSON!"}}`
 
+也可以直接配置一个合法的 JSON 值：
+
+```go
+v := jsonvalue.NewObject()
+v.Set("Hello, JSON!").At("msg")
+fmt.Println(v.MustMarshalString())
+// Output: {"msg":"Hello, JSON!"}
+```
+
 ## Import / Export
 
+Import 和 Export 最开始的作用，是在原生 `encoding/json` 和 `jsonvalue` 之间进行互转。
 
+此外，作者在开发 `Import` 函数过程中，也顺便构建了不少功能，也就成就了 v1.3.0 版本新增的很多功能。
 

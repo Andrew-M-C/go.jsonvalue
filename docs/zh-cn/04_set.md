@@ -43,15 +43,17 @@ v.Set(child).At(path...)
 
 对应英语中的语法：`SET some sub value AT some position.`
 
-实际操作中，我们经常直接设置指定的基础类型值，如：
+目前 jsonvalue 的函数使用 `interface{}`, 因此获得了一个类似于泛型的体验。不过在的实际操作中，如果对性能极为敏感，建议指定基础类型值，如：
 
 ```go
 v := jsonvalue.NewObject()
-v.Set("Hello, JSON!").At("data", "message")
+v.SetString("Hello, JSON!").At("data", "message")
 fmt.Println(v.MustMarshalString())
 ```
 
 输出: `{"data":{"message":"Hello, JSON!"}}`
+
+当然在绝大部分情况下, 推荐将上面的 `Set` 行直接换成 `v.Set("Hello, JSON!").At("data", "message")`
 
 ### At 参数语义
 

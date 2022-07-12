@@ -1,6 +1,6 @@
 # 值的自动转换
 
-[上一页](./08_option.md) | [总目录](./README.md) | [下一页](./10_beta.md)
+[上一页](./08_option.md) | [总目录](./README.md) | [下一页](./10_comparation.md)
 
 ---
 

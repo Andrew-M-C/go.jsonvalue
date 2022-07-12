@@ -22,7 +22,7 @@
 
 ```go
 	v := jsonvalue.NewObject()
-	v.SetString("Hello, JSON").At("someObject", "someObject", "someObject", "message")
+	v.Set("Hello, JSON").At("someObject", "someObject", "someObject", "message")
 	fmt.Println(v.MustMarshalString())
 ```
 
