@@ -16,6 +16,8 @@ func testMarshal(t *testing.T) {
 	cv("UTF-8", func() { testMarshalEscapeUTF8(t) })
 	cv("slash", func() { testMarshalEscapeSlash(t) })
 	cv("indent", func() { testMarshalIndent(t) })
+	cv("ASCII control characters", func() { testMarshalControlCharacters(t) })
+	cv("test JSONP and control ASCII for UTF-8", func() { testMarshalJSONPAndControlAsciiForUTF8(t) })
 }
 
 func testMarshalFloat64NaN(t *testing.T) {
@@ -537,6 +539,69 @@ func testMarshalIndent(t *testing.T) {
 		so(string(b), eq, string(bJS))
 		t.Logf(string(b))
 	})
+}
 
-	// TODO:
+func testMarshalControlCharacters(t *testing.T) {
+	unshownableControlChars := []byte{
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+		0x0E, 0x0F,
+		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+		0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
+		0x7F,
+	}
+	expectedBuilder := strings.Builder{}
+	expectedBuilder.WriteByte('"')
+	for _, b := range unshownableControlChars {
+		expectedBuilder.WriteString(fmt.Sprintf("\\u%04X", b))
+	}
+	expectedBuilder.WriteByte('"')
+	expected := expectedBuilder.String()
+
+	goVer, _ := json.Marshal(string(unshownableControlChars))
+	v := New(string(unshownableControlChars))
+	s := v.MustMarshalString()
+	so(s, eq, expected)
+	so(strings.ToLower(s), eq, strings.ReplaceAll(string(goVer), string('\u007f'), "\\u007f"))
+	// It is strange that encoding/json does not escape DEL symbol
+
+	t.Log("")
+	t.Logf("jsonvalue   result: %s", s)
+	t.Logf("encoding/go result: %s", goVer)
+
+	v, err := UnmarshalString(s)
+	so(err, isNil)
+	so(v.String(), eq, string(unshownableControlChars))
+}
+
+func testMarshalJSONPAndControlAsciiForUTF8(t *testing.T) {
+	unshownableControlCharsAndJSONPSpecial := []rune{
+		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+		0x0E, 0x0F,
+		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+		0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
+		0x7F,
+		0x2028, 0x2029,
+	}
+
+	expectedBuilder := strings.Builder{}
+	expectedBuilder.WriteByte('"')
+	for _, r := range unshownableControlCharsAndJSONPSpecial {
+		expectedBuilder.WriteString(fmt.Sprintf("\\u%04X", r))
+	}
+	expectedBuilder.WriteByte('"')
+	expected := expectedBuilder.String()
+
+	goVer, _ := json.Marshal(string(unshownableControlCharsAndJSONPSpecial))
+	v := New(string(unshownableControlCharsAndJSONPSpecial))
+	s := v.MustMarshalString(OptUTF8())
+	so(s, eq, expected)
+	so(strings.ToLower(s), eq, strings.ReplaceAll(string(goVer), string('\u007f'), "\\u007f"))
+
+	t.Log("")
+	t.Logf("jsonvalue   result: %s", s)
+	t.Logf("encoding/go result: %s", goVer)
+
+	v, err := UnmarshalString(s)
+	so(err, isNil)
+	so(v.String(), eq, string(unshownableControlCharsAndJSONPSpecial))
 }

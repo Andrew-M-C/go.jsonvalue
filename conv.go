@@ -36,11 +36,41 @@ func escapeGreaterUnicodeToBuffByUTF16(r rune, buf *bytes.Buffer) {
 }
 
 func escapeGreaterUnicodeToBuffByUTF8(r rune, buf *bytes.Buffer) {
-	buf.WriteRune(r)
+	// Comments below are copied from encoding/json:
+	//
+	// U+2028 is LINE SEPARATOR.
+	// U+2029 is PARAGRAPH SEPARATOR.
+	// They are both technically valid characters in JSON strings,
+	// but don't work in JSONP, which has to be evaluated as JavaScript,
+	// and can lead to security holes there. It is valid JSON to
+	// escape them, so we do so unconditionally.
+	// See http://timelessrepo.com/json-isnt-a-javascript-subset for discussion.
+	if r == '\u2028' || r == '\u2029' {
+		escapeGreaterUnicodeToBuffByUTF16(r, buf)
+	} else {
+		buf.WriteRune(r)
+	}
 }
 
 func escapeNothing(b byte, buf *bytes.Buffer) {
 	buf.WriteByte(b)
+}
+
+func escAsciiControlChar(b byte, buf *bytes.Buffer) {
+	upper := b >> 4
+	lower := b & 0x0F
+
+	writeChar := func(c byte) {
+		if c < 0xA {
+			buf.WriteByte('0' + c)
+		} else {
+			buf.WriteByte('A' + (c - 0xA))
+		}
+	}
+
+	buf.Write([]byte{'\\', 'u', '0', '0'})
+	writeChar(upper)
+	writeChar(lower)
 }
 
 func escDoubleQuote(_ byte, buf *bytes.Buffer) {
