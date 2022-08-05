@@ -51,17 +51,11 @@ func (v *V) Marshal(opts ...Option) (b []byte, err error) {
 //
 // MarshalString 与 Marshal 相同, 不同的是返回 string 类型。它比 string(b) 操作更高效。
 func (v *V) MarshalString(opts ...Option) (s string, err error) {
-	if NotExist == v.valueType {
-		return "", ErrValueUninitialized
-	}
-
-	buf := bytes.Buffer{}
-	opt := combineOptions(opts)
-	err = v.marshalToBuffer(nil, &buf, opt)
+	b, err := v.Marshal(opts...)
 	if err != nil {
 		return "", err
 	}
-	return buf.String(), nil
+	return unsafeBtoS(b), nil
 }
 
 func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) (err error) {
