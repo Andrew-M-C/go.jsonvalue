@@ -59,9 +59,9 @@ func (v *V) initCaselessStorage() {
 }
 
 func (v *V) getFromObjectChildren(caseless bool, key string) (child *V, exist bool) {
-	child, exist = v.children.object[key]
+	childProperty, exist := v.children.object[key]
 	if exist {
-		return child, true
+		return childProperty.v, true
 	}
 
 	if !caseless {
@@ -77,9 +77,9 @@ func (v *V) getFromObjectChildren(caseless bool, key string) (child *V, exist bo
 	}
 
 	for actualKey := range keys {
-		child, exist = v.children.object[actualKey]
+		childProperty, exist = v.children.object[actualKey]
 		if exist {
-			return child, true
+			return childProperty.v, true
 		}
 	}
 

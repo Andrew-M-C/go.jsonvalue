@@ -150,7 +150,11 @@ func (v *V) SetArray() *Set {
 }
 
 func (v *V) setToObjectChildren(key string, child *V) {
-	v.children.object[key] = child
+	v.children.incrID++
+	v.children.object[key] = childWithProperty{
+		id: v.children.incrID,
+		v:  child,
+	}
 	v.addCaselessKey(key)
 }
 

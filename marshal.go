@@ -40,6 +40,7 @@ func (v *V) Marshal(opts ...Option) (b []byte, err error) {
 
 	buf := bytes.Buffer{}
 	opt := combineOptions(opts)
+
 	err = v.marshalToBuffer(nil, &buf, opt)
 	if err != nil {
 		return []byte{}, err
@@ -226,10 +227,13 @@ func (v *V) marshalObject(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 	} else if len(opt.MarshalKeySequence) > 0 {
 		sssv := v.newSortStringSliceV(opt)
 		sssv.marshalObjectWithStringSlice(buf, opt)
+	} else if opt.marshalBySetSequence {
+		sssv := v.newSortStringSliceVBySetSeq(opt)
+		sssv.marshalObjectWithStringSlice(buf, opt)
 	} else {
 		firstWritten := false
 		for k, child := range v.children.object {
-			firstWritten = writeObjectChildren(nil, buf, !firstWritten, k, child, opt)
+			firstWritten = writeObjectChildren(nil, buf, !firstWritten, k, child.v, opt)
 		}
 	}
 

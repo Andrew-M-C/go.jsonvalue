@@ -119,9 +119,15 @@ type num struct {
 	f64      float64
 }
 
+type childWithProperty struct {
+	id uint32
+	v  *V
+}
+
 type children struct {
+	incrID uint32
 	arr    []*V
-	object map[string]*V
+	object map[string]childWithProperty
 
 	// As official json package supports caseless key accessing, I decide to do it as well
 	lowerCaseKeys map[string]map[string]struct{}
@@ -135,7 +141,7 @@ func new(t ValueType) *V {
 
 func newObject() *V {
 	v := new(Object)
-	v.children.object = make(map[string]*V)
+	v.children.object = make(map[string]childWithProperty)
 	v.children.lowerCaseKeys = nil
 	return v
 }
@@ -917,7 +923,7 @@ func (v *V) bufObjChildren(buf *bytes.Buffer) {
 		}
 		buf.WriteString(k)
 		buf.WriteString(": ")
-		buf.WriteString(v.String())
+		buf.WriteString(v.v.String())
 		i++
 	}
 	buf.WriteByte('}')

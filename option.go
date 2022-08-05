@@ -54,6 +54,11 @@ type Opt struct {
 	MarshalKeySequence []string
 	keySequence        map[string]int // generated from MarshalKeySequence
 
+	// marshalBySetSequence enables object key sequence by when it is set.
+	//
+	// 按照 key 被设置的顺序处理序列化时的 marshal 顺序
+	marshalBySetSequence bool
+
 	// FloatNaNHandleType tells what to deal with float NaN.
 	//
 	// FloatNaNHandleType 表示当处理 float 的时候，如果遇到了 NaN 的话，要如何处理。
@@ -266,6 +271,9 @@ type optMarshalLessFunc struct {
 func (o *optMarshalLessFunc) mergeTo(opt *Opt) {
 	if o.f != nil {
 		opt.MarshalLessFunc = o.f
+		opt.MarshalKeySequence = nil
+		opt.keySequence = nil
+		opt.marshalBySetSequence = false
 	}
 }
 
@@ -283,7 +291,29 @@ type optMarshalKeySequence struct {
 }
 
 func (o *optMarshalKeySequence) mergeTo(opt *Opt) {
+	opt.MarshalLessFunc = nil
 	opt.MarshalKeySequence = o.seq
+	opt.keySequence = nil
+	opt.marshalBySetSequence = false
+}
+
+// ==== marshalBySetSequence ====
+
+// OptSetSequence tells that when marshaling an object, the key sequences should
+// follow when it is set.
+//
+// OptSetSequence 指定在序列化 object 时，按照一个 key 被设置时的顺序进行序列化
+func OptSetSequence() Option {
+	return optSetSequence{}
+}
+
+type optSetSequence struct{}
+
+func (optSetSequence) mergeTo(opt *Opt) {
+	opt.MarshalLessFunc = nil
+	opt.MarshalKeySequence = nil
+	opt.keySequence = nil
+	opt.marshalBySetSequence = true
 }
 
 // ==== FloatNaNConvertToFloat ====

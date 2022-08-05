@@ -27,8 +27,8 @@ func (v *V) RangeObjects(callback func(k string, v *V) bool) {
 		return
 	}
 
-	for k, v := range v.children.object {
-		ok := callback(k, v)
+	for k, c := range v.children.object {
+		ok := callback(k, c.v)
 		if !ok {
 			break
 		}
@@ -37,18 +37,18 @@ func (v *V) RangeObjects(callback func(k string, v *V) bool) {
 
 // Deprecated: IterObjects is deprecated, please Use ForRangeObj() instead.
 func (v *V) IterObjects() <-chan *ObjectIter {
-	c := make(chan *ObjectIter, len(v.children.object))
+	ch := make(chan *ObjectIter, len(v.children.object))
 
 	go func() {
-		for k, v := range v.children.object {
-			c <- &ObjectIter{
+		for k, c := range v.children.object {
+			ch <- &ObjectIter{
 				K: k,
-				V: v,
+				V: c.v,
 			}
 		}
-		close(c)
+		close(ch)
 	}()
-	return c
+	return ch
 }
 
 // ForRangeObj returns a map which can be used in for - range block to iteration KVs in a JSON object value.
@@ -56,8 +56,8 @@ func (v *V) IterObjects() <-chan *ObjectIter {
 // ForRangeObj 返回一个 map 类型，用于使用 for - range 块迭代 JSON 对象类型的子成员。
 func (v *V) ForRangeObj() map[string]*V {
 	res := make(map[string]*V, len(v.children.object))
-	for k, v := range v.children.object {
-		res[k] = v
+	for k, c := range v.children.object {
+		res[k] = c.v
 	}
 	return res
 }

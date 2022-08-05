@@ -226,7 +226,7 @@ func (v *V) newSortObjectV(parentInfo *ParentInfo, opt *Opt) *sortObjectV {
 	}
 	for k, child := range v.children.object {
 		sov.keys = append(sov.keys, k)
-		sov.values = append(sov.values, child)
+		sov.values = append(sov.values, child.v)
 	}
 
 	return &sov
@@ -268,7 +268,27 @@ func (v *V) newSortStringSliceV(opt *Opt) *sortStringSliceV {
 	}
 	for k, child := range v.children.object {
 		sssv.keys = append(sssv.keys, k)
-		sssv.values = append(sssv.values, child)
+		sssv.values = append(sssv.values, child.v)
+	}
+
+	return &sssv
+}
+
+func (v *V) newSortStringSliceVBySetSeq(opt *Opt) *sortStringSliceV {
+	keySequence := make(map[string]int, len(v.children.object))
+	for k, child := range v.children.object {
+		keySequence[k] = int(child.id)
+	}
+
+	sssv := sortStringSliceV{
+		v:      v,
+		seq:    keySequence,
+		keys:   make([]string, 0, v.Len()),
+		values: make([]*V, 0, v.Len()),
+	}
+	for k, child := range v.children.object {
+		sssv.keys = append(sssv.keys, k)
+		sssv.values = append(sssv.values, child.v)
 	}
 
 	return &sssv

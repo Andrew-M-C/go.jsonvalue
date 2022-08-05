@@ -55,7 +55,7 @@ func objectEqual(left, right *V) bool {
 		if !exist {
 			return false
 		}
-		if !leftChild.Equal(rightChild) {
+		if !leftChild.v.Equal(rightChild.v) {
 			return false
 		}
 	}
