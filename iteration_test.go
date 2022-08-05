@@ -8,6 +8,7 @@ import (
 func testIteration(t *testing.T) {
 	cv("Range Array", func() { testRangeArray(t) })
 	cv("Range Object", func() { testRangeObject(t) })
+	cv("Range Object by seq", func() { testRangeObjectsBySetSequence(t) })
 }
 
 func testRangeArray(t *testing.T) {
@@ -130,13 +131,19 @@ func testRangeObject(t *testing.T) {
 		v.SetString("world").At("hello")
 		v.RangeObjects(nil) // just do not panic
 
+		iterCount := 0
 		for iter := range v.IterObjects() {
+			iterCount++
 			_ = iter.V.String() // just do not panic
 		}
+		so(iterCount, eq, 1)
 
+		iterCount = 0
 		for _, v := range v.ForRangeObj() {
+			iterCount++
 			_ = v.String() // just do not panic
 		}
+		so(iterCount, eq, 1)
 	})
 
 	cv("unmarshal object and whole object range", func() {
@@ -150,14 +157,16 @@ func testRangeObject(t *testing.T) {
 			"string": true,
 			"null":   true,
 		}
+
+		expectedIterCount := len(checkKeys)
+		iterCount := 0
 		v.RangeObjects(func(k string, _ *V) bool {
+			iterCount++
 			delete(checkKeys, k)
 			return true
 		})
-		if len(checkKeys) > 0 {
-			t.Errorf("not all key checked, remains: %+v", checkKeys)
-			return
-		}
+		so(iterCount, eq, expectedIterCount)
+		so(len(checkKeys), isZero)
 
 		// broken object range
 		caughtValue := ""
@@ -167,11 +176,57 @@ func testRangeObject(t *testing.T) {
 			caughtValue = v.String()
 			return k != "string"
 		})
+
 		if caughtKey == "string" && caughtValue == "hello, world" {
 			// OK
 		} else {
 			t.Errorf("unexpected K-V: %s - %s", caughtKey, caughtValue)
 			return
+		}
+	})
+}
+
+func testRangeObjectsBySetSequence(t *testing.T) {
+	cv("invalid object range", func() {
+		v := NewString("")
+		v.RangeObjectsBySetSequence(func(_ string, _ *V) bool {
+			t.Errorf("should NOT iter here!!!")
+			return true
+		}) // just do not panic
+	})
+
+	cv("nil callback", func() {
+		v := NewObject()
+		v.RangeObjectsBySetSequence(nil)
+		// just do not panic
+		so(true, isTrue)
+	})
+
+	cv("unmarshal object and whole object range", func() {
+		v := NewObject()
+		const size = 50
+		const iterate = 100
+		for i := 0; i < size; i++ {
+			v.Set(i).At(strconv.FormatInt(int64(i), 10))
+		}
+		so(v.Len(), eq, size)
+
+		for i := 0; i < iterate; i++ {
+			lastNum := int64(-1)
+			v.RangeObjectsBySetSequence(func(key string, v *V) bool {
+				k, err := strconv.ParseInt(key, 10, 64)
+				so(err, isNil)
+				so(k, eq, v.Int64())
+
+				so(k, eq, lastNum+1)
+
+				lastNum = k
+
+				// last one? exist
+				return k+2 < size
+			})
+			so(lastNum, ne, -1)
+			so(lastNum, eq, size-2)
 		}
 	})
 }

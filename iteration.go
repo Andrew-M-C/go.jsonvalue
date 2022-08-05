@@ -1,5 +1,7 @@
 package jsonvalue
 
+import "sort"
+
 // Deprecated: ObjectIter is a deprecated type.
 type ObjectIter struct {
 	K string
@@ -29,6 +31,45 @@ func (v *V) RangeObjects(callback func(k string, v *V) bool) {
 
 	for k, c := range v.children.object {
 		ok := callback(k, c.v)
+		if !ok {
+			break
+		}
+	}
+}
+
+// RangeObjectsBySetSequence acts just like RangeObjects, but the key sequence
+// is arranged by when a key is set to the given object.
+//
+// RangeObjectsBySetSequence 类似于 RangeObjects 函数, 但是 key 的顺序会依照其被 set
+// 进这个 object 的顺序传递。
+func (v *V) RangeObjectsBySetSequence(callback func(k string, v *V) bool) {
+	if !v.IsObject() {
+		return
+	}
+	if nil == callback {
+		return
+	}
+
+	type keysAndID struct {
+		k  string
+		id uint32
+		v  *V
+	}
+
+	kvs := make([]keysAndID, 0, len(v.children.object))
+	for k, child := range v.children.object {
+		kvs = append(kvs, keysAndID{
+			k:  k,
+			id: child.id,
+			v:  child.v,
+		})
+	}
+	sort.Slice(kvs, func(i, j int) bool {
+		return kvs[i].id <= kvs[j].id
+	})
+
+	for _, kv := range kvs {
+		ok := callback(kv.k, kv.v)
 		if !ok {
 			break
 		}
