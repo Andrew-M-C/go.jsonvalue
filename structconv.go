@@ -23,12 +23,15 @@ func (v *V) Export(dst interface{}) error {
 // Import convert json value from a marsalable parameter to *V. This a experimental function.
 //
 // Import 将符合 encoding/json 的 struct 转为 *V 类型。不经过 encoding/json，并且支持 Option.
-func Import(src interface{}) (*V, error) {
-	v, fu, err := validateValAndReturnParser(reflect.ValueOf(src), ext{})
+func Import(src interface{}, opts ...Option) (*V, error) {
+	opt := combineOptions(opts)
+	ext := ext{}
+	ext.ignoreOmitempty = opt.ignoreJsonOmitempty
+	v, fu, err := validateValAndReturnParser(reflect.ValueOf(src), ext)
 	if err != nil {
 		return &V{}, err
 	}
-	res, err := fu(v, ext{})
+	res, err := fu(v, ext)
 	if err != nil {
 		return &V{}, err
 	}
@@ -39,8 +42,16 @@ func Import(src interface{}) (*V, error) {
 type parserFunc func(v reflect.Value, ex ext) (*V, error)
 
 type ext struct {
+	// standard encoding/json tag
 	omitempty bool
 	toString  bool
+
+	// extended jsonvalue options
+	ignoreOmitempty bool
+}
+
+func (e ext) shouldOmitEmpty() bool {
+	return e.omitempty && !e.ignoreOmitempty
 }
 
 // validateValAndReturnParser 检查入参合法性并返回相应的处理函数
@@ -110,13 +121,16 @@ func validateValAndReturnParser(v reflect.Value, ex ext) (out reflect.Value, fu 
 	return
 }
 
-func parseInvalidValue(_ reflect.Value, _ ext) (*V, error) {
+func parseInvalidValue(_ reflect.Value, ex ext) (*V, error) {
+	if ex.shouldOmitEmpty() {
+		return nil, nil
+	}
 	return NewNull(), nil
 }
 
 func parseBoolValue(v reflect.Value, ex ext) (*V, error) {
 	b := v.Bool()
-	if !b && ex.omitempty {
+	if !b && ex.shouldOmitEmpty() {
 		return nil, nil
 	}
 	if ex.toString {
@@ -127,7 +141,7 @@ func parseBoolValue(v reflect.Value, ex ext) (*V, error) {
 
 func parseIntValue(v reflect.Value, ex ext) (*V, error) {
 	i := v.Int()
-	if i == 0 && ex.omitempty {
+	if i == 0 && ex.shouldOmitEmpty() {
 		return nil, nil
 	}
 	if ex.toString {
@@ -138,7 +152,7 @@ func parseIntValue(v reflect.Value, ex ext) (*V, error) {
 
 func parseUintValue(v reflect.Value, ex ext) (*V, error) {
 	u := v.Uint()
-	if u == 0 && ex.omitempty {
+	if u == 0 && ex.shouldOmitEmpty() {
 		return nil, nil
 	}
 	if ex.toString {
@@ -149,7 +163,7 @@ func parseUintValue(v reflect.Value, ex ext) (*V, error) {
 
 func parseFloatValue(v reflect.Value, ex ext) (*V, error) {
 	f := v.Float()
-	if f == 0.0 && ex.omitempty {
+	if f == 0.0 && ex.shouldOmitEmpty() {
 		return nil, nil
 	}
 	if ex.toString {
@@ -185,7 +199,7 @@ func parseMapValue(v reflect.Value, ex ext, keyFunc func(key reflect.Value) stri
 
 	keys := v.MapKeys()
 	if len(keys) == 0 {
-		if ex.omitempty {
+		if ex.shouldOmitEmpty() {
 			return nil, nil
 		}
 		return NewObject(), nil
@@ -242,7 +256,7 @@ func parsePtrValue(v reflect.Value, ex ext) (*V, error) {
 
 func parseSliceValue(v reflect.Value, ex ext) (*V, error) {
 	if v.IsNil() || v.Len() == 0 {
-		if ex.omitempty {
+		if ex.shouldOmitEmpty() {
 			return nil, nil
 		}
 		return NewArray(), nil
@@ -253,7 +267,7 @@ func parseSliceValue(v reflect.Value, ex ext) (*V, error) {
 
 func parseBytesValue(v reflect.Value, ex ext) (*V, error) {
 	b := v.Interface().([]byte)
-	if len(b) == 0 && ex.omitempty {
+	if len(b) == 0 && ex.shouldOmitEmpty() {
 		return nil, nil
 	}
 
@@ -262,7 +276,7 @@ func parseBytesValue(v reflect.Value, ex ext) (*V, error) {
 
 func parseJSONRawMessageValue(v reflect.Value, ex ext) (*V, error) {
 	raw := v.Interface().(json.RawMessage)
-	if len(raw) == 0 && ex.omitempty {
+	if len(raw) == 0 && ex.shouldOmitEmpty() {
 		return nil, nil
 	}
 
@@ -271,7 +285,7 @@ func parseJSONRawMessageValue(v reflect.Value, ex ext) (*V, error) {
 
 func parseStringValue(v reflect.Value, ex ext) (*V, error) {
 	str := v.String()
-	if str == "" && ex.omitempty {
+	if str == "" && ex.shouldOmitEmpty() {
 		return nil, nil
 	}
 
@@ -288,7 +302,7 @@ func parseStructValue(v reflect.Value, ex ext) (*V, error) {
 		vv := v.Field(i)
 		tt := t.Field(i)
 
-		kv, err := parseStructFieldValue(vv, tt)
+		kv, err := parseStructFieldValue(vv, tt, ex)
 		if err != nil {
 			return nil, err
 		}
@@ -302,13 +316,13 @@ func parseStructValue(v reflect.Value, ex ext) (*V, error) {
 }
 
 func parseNullValue(v reflect.Value, ex ext) (*V, error) {
-	if ex.omitempty {
+	if ex.shouldOmitEmpty() {
 		return nil, nil
 	}
 	return NewNull(), nil
 }
 
-func parseStructFieldValue(fv reflect.Value, ft reflect.StructField) (m map[string]*V, err error) {
+func parseStructFieldValue(fv reflect.Value, ft reflect.StructField, parentEx ext) (m map[string]*V, err error) {
 	m = map[string]*V{}
 
 	if ft.Anonymous {
@@ -317,7 +331,7 @@ func parseStructFieldValue(fv reflect.Value, ft reflect.StructField) (m map[stri
 			ffv := fv.Field(i)
 			fft := ft.Type.Field(i)
 
-			mm, err := parseStructFieldValue(ffv, fft)
+			mm, err := parseStructFieldValue(ffv, fft, parentEx)
 			if err != nil {
 				return nil, err
 			}
@@ -332,7 +346,7 @@ func parseStructFieldValue(fv reflect.Value, ft reflect.StructField) (m map[stri
 		return
 	}
 
-	fieldName, ex := readFieldTag(ft, "json")
+	fieldName, ex := readFieldTag(ft, "json", parentEx)
 	if fieldName == "-" {
 		return
 	}
@@ -353,11 +367,13 @@ func parseStructFieldValue(fv reflect.Value, ft reflect.StructField) (m map[stri
 	return m, nil
 }
 
-func readFieldTag(ft reflect.StructField, name string) (field string, ex ext) {
+func readFieldTag(ft reflect.StructField, name string, parentEx ext) (field string, ex ext) {
 	tg := ft.Tag.Get(name)
 
 	if tg == "" {
-		return ft.Name, ext{}
+		return ft.Name, ext{
+			ignoreOmitempty: parentEx.ignoreOmitempty,
+		}
 	}
 
 	parts := strings.Split(tg, ",")
@@ -376,5 +392,6 @@ func readFieldTag(ft reflect.StructField, name string) (field string, ex ext) {
 	if field == "" {
 		field = ft.Name
 	}
+	ex.ignoreOmitempty = parentEx.ignoreOmitempty
 	return
 }

@@ -14,6 +14,7 @@ func testOption(t *testing.T) {
 	cv("test default option overwriting", func() { testOptionOverwriting(t) })
 	cv("test reset marshal options", func() { testOptionReset(t) })
 	cv("test OptSetSequence", func() { testOption_OptSetSequence(t) })
+	cv("test OptIgnoreOmitempty", func() { testOption_OptIgnoreOmitempty(t) })
 }
 
 func testOptionOverwriting(t *testing.T) {
@@ -79,5 +80,34 @@ func testOption_OptSetSequence(t *testing.T) {
 			s := v.MustMarshalString(OptSetSequence())
 			so(s, eq, raw)
 		}
+	})
+}
+
+func testOption_OptIgnoreOmitempty(t *testing.T) {
+	type st struct {
+		Object map[string]interface{} `json:"object,omitempty"`
+		Array  []interface{}          `json:"array,omitempty"`
+		String string                 `json:"string,omitempty"`
+		Bool   bool                   `json:"bool,omitempty"`
+		Num    float32                `json:"num,omitempty"`
+		Null   interface{}            `json:"null,omitempty"`
+	}
+
+	cv("by default", func() {
+		s := st{}
+		v, err := Import(s)
+		so(err, isNil)
+
+		t.Logf("default omitempty: %s", v.MustMarshalString(OptSetSequence()))
+		so(v.Len(), eq, 0)
+	})
+
+	cv("ignore omitempty", func() {
+		s := st{}
+		v, err := Import(s, OptIgnoreOmitempty())
+		so(err, isNil)
+
+		t.Logf("after ignoring omitempty: %s", v.MustMarshalString(OptSetSequence()))
+		so(v.Len(), eq, 6)
 	})
 }

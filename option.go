@@ -24,6 +24,10 @@ type Opt struct {
 	// OmitNull 表示是否忽略 JSON 中的 null 类型值。默认为 false.
 	OmitNull bool
 
+	// ignoreJsonOmitempty ignore json tag "omitempty", which means that every data
+	// would be parsed into *jsonvalue.V
+	ignoreJsonOmitempty bool
+
 	// MarshalLessFunc is used to handle sequences of marshaling. Since object is
 	// implemented by hash map, the sequence of keys is unexpectable. For situations
 	// those need settled JSON key-value sequence, please use MarshalLessFunc.
@@ -245,6 +249,24 @@ type optOmitNull struct {
 
 func (o *optOmitNull) mergeTo(opt *Opt) {
 	opt.OmitNull = o.b
+}
+
+// ==== IgnoreOmitempty ====
+
+// OptIgnoreOmitempty is used in Import() and New() function. This option tells
+// jsonvalue to ignore json tag "omitempty", which means that every field would
+// be parsed into *jsonvalue.V.
+//
+// OptIgnoreOmitempty 用在 Import 和 New() 函数中。这个选项将会忽略 json 标签中的
+// "omitempty" 参数。换句话说, 所有的字段都会被解析并包装到 *jsonvalue.V 值中。
+func OptIgnoreOmitempty() Option {
+	return optIgnoreOmitempty{}
+}
+
+type optIgnoreOmitempty struct{}
+
+func (optIgnoreOmitempty) mergeTo(opt *Opt) {
+	opt.ignoreJsonOmitempty = true
 }
 
 // ==== MarshalLessFunc ===
