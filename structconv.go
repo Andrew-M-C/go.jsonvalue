@@ -178,11 +178,11 @@ func parseArrayValue(v reflect.Value, ex ext) (*V, error) {
 
 	for i := 0; i < le; i++ {
 		vv := v.Index(i)
-		vv, fu, err := validateValAndReturnParser(vv, ext{})
+		vv, fu, err := validateValAndReturnParser(vv, ex)
 		if err != nil {
 			return nil, err
 		}
-		child, err := fu(vv, ext{})
+		child, err := fu(vv, ex)
 		if err != nil {
 			return nil, err
 		}
@@ -209,11 +209,11 @@ func parseMapValue(v reflect.Value, ex ext, keyFunc func(key reflect.Value) stri
 
 	for _, kk := range keys {
 		vv := v.MapIndex(kk)
-		vv, fu, err := validateValAndReturnParser(vv, ext{})
+		vv, fu, err := validateValAndReturnParser(vv, ex)
 		if err != nil {
 			return res, err
 		}
-		child, err := fu(vv, ext{})
+		child, err := fu(vv, ex)
 		if err != nil {
 			return res, err
 		}

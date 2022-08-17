@@ -110,4 +110,29 @@ func testOption_OptIgnoreOmitempty(t *testing.T) {
 		t.Logf("after ignoring omitempty: %s", v.MustMarshalString(OptSetSequence()))
 		so(v.Len(), eq, 6)
 	})
+
+	cv("ignore omitempty in array", func() {
+		arr := []st{{}, {}}
+		v, err := Import(arr, OptIgnoreOmitempty())
+		so(err, isNil)
+
+		t.Logf("after ignoring omitempty: %s", v.MustMarshalString(OptSetSequence()))
+		so(v.Len(), eq, 2)
+		so(v.MustGet(0).Len(), eq, 6)
+		so(v.MustGet(1).Len(), eq, 6)
+	})
+
+	cv("ignore omitempty in map", func() {
+		arr := map[string]st{
+			"a": {},
+			"b": {},
+		}
+		v, err := Import(arr, OptIgnoreOmitempty())
+		so(err, isNil)
+
+		t.Logf("after ignoring omitempty: %s", v.MustMarshalString(OptSetSequence()))
+		so(v.Len(), eq, 2)
+		so(v.MustGet("a").Len(), eq, 6)
+		so(v.MustGet("b").Len(), eq, 6)
+	})
 }
