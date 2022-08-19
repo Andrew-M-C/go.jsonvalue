@@ -1,87 +1,17 @@
-# 解析并获取 JSON
 
-[上一页](./03_set.md) | [总目录](./README.md) | [下一页](./05_import_export.md)
+<font size=6>解析并获取 JSON</font>
 
----
-
-[TOC]
+[上一页](./03_set.md) | [总目录](./README.md) | [下一页](./05_marshal_unmarshal.md)
 
 ---
 
-## Unmarshal 系列函数
-
-### 基础的 Unmarshal
-
-在 jsonvalue 中，采用 Go 的 marshal / unmarshal 语义描述序列化和反序列化的过程。
-
-在原生 `encoding/go` 中，`json.Unmarshal` 的入参是一个 `[]byte` 类型。在 jsonvalue 中类似，可以使用以下函数来解析 JSON 字节串
-
-```go
-func Unmarshal(b []byte) (ret *V, err error)
-```
-
-不论是否 error，该函数都会返回一个 `*jsonvalue.V` 对象
-
-- 当 JSON 字节串非法时，会返回 error 信息，此时返回的 json 对象的类型等于 `jsonvalue.NotExist`
-
-### 其他 Unmarshal 函数
-
-在实际操作中，JSON 字节串经常会以 `string` 而不是 `[]byte` 的格式出现。如果进行 `string(b)` 进行转换的话，实际上会进行一次内存拷贝。为了节省这个拷贝的开销，jsonvalue 也提供了入参为 `string` 的 unmarshal 函数:
-
-```go
-func UnmarshalString(s string) (ret *V, err error)
-```
-
-此外，当程序不需要关心 JSON 字节串格式是否正确的时候，也可以使用 `Must...` 系列的 unmarshal 函数：
-
-```go
-func MustUnmarshal(b []byte) *V
-func MustUnmarshalString(s string) *V
-```
-
-这两个函数与前面一样，必然会返回一个非空的 `jsonvalue.V` 对象，但是不返回 `error` 类型，便于开发者编写一些极为简短的逻辑代码。这种简短代码的技巧，在本页面的最后会进行介绍。
-
----
-
-## jsonvalue.V 对象的属性
-
-首先我们要了解一下 JSON 官方定义的一些属性，然后再说明这些属性在 `jsonvalue` 中是如何体现的。
-
-### 官方定义
-
-在标准的 [JSON 规范](https://www.json.org/json-en.html)中，规定了以下的几个概念：
-
-- 一个有效的 JSON 值，称为一个 JSON 的 `value`。在本工具包中，则使用一个 `*V` 来表示一个 JSON value
-- JSON 值的类型有以下几种：
-
-|类型|说明|
-|:---:|:---|
-|`object`|也就是一个对象，对应着一个 K-V 格式的值。其中 K 必然是一个 string，而 V 则是有效的 JSON `value`|
-|`array`|一个数组，对应着一系列 `value` 的有序组合|
-|`string`|字符串类型，这很好理解|
-|`number`|数字型，准确地说，是双精度浮点数|
-||由于 JSON 是基于 JavaScript 定义的，而 JS 中只有 double 这一种数字，所以 number 实际上就是 double。这是个小坑|
-|`"true"`|表示布尔 “真”|
-|`"false"`|表示布尔 “假”|
-|`"null"`|表示空值|
-
-### jsonvalue 基础属性
-
-在 `*jsonvalue.V` 对象中，参照绝大多数 JSON 工具包的做法，将 `"true"` 和 `"false"` 合并为一个 `Boolean` 类型。此外，将 `"null"` 也映射为一个 `Null` 类型。
-
-此外，还定义了一个 `NotExist` 类型，表示当前不是一个合法的 JSON 对象。此外还有一个 `Unknown`，开发者可以不用关心，使用中不会出现这个值。
-
-使用以下函数，可以获得 value 的类型属性：
-
-```go
-func (v *V) ValueType() ValueType
-func (v *V) IsObject()  bool
-func (v *V) IsArray()   bool
-func (v *V) IsString()  bool
-func (v *V) IsNumber()  bool
-func (v *V) IsBoolean() bool
-func (v *V) IsNull()    bool
-```
+- [Get 系列函数](#get-系列函数)
+  - [函数参数含义](#函数参数含义)
+  - [GetXxx 系列函数](#getxxx-系列函数)
+- [MustGet 和相关函数](#mustget-和相关函数)
+- [jsonvalue.V 对象的属性](#jsonvaluev-对象的属性)
+  - [官方定义](#官方定义)
+  - [jsonvalue 基础属性](#jsonvalue-基础属性)
 
 ---
 
@@ -226,35 +156,42 @@ err = not match given type
 
 ---
 
-## 迭代 Object 和 Array 的成员
+## jsonvalue.V 对象的属性
 
-对于基础类型（number, string, boolean, null），我们只关心它的一个值。但对于复杂类型（object, array），我们有必要关心其中的各种结构。除了使用 `Get` 系列函数之外，jsonvalue 还提供了 iter 函数，有以下两种风格：
+首先我们要了解一下 JSON 官方定义的一些属性，然后再说明这些属性在 `jsonvalue` 中是如何体现的。
 
-### 回调函数风格
+### 官方定义
+
+在标准的 [JSON 规范](https://www.json.org/json-en.html)中，规定了以下的几个概念：
+
+- 一个有效的 JSON 值，称为一个 JSON 的 `value`。在本工具包中，则使用一个 `*V` 来表示一个 JSON value
+- JSON 值的类型有以下几种：
+
+|   类型    | 说明                                                                                                          |
+| :-------: | :------------------------------------------------------------------------------------------------------------ |
+| `object`  | 也就是一个对象，对应着一个 K-V 格式的值。其中 K 必然是一个 string，而 V 则是有效的 JSON `value`               |
+|  `array`  | 一个数组，对应着一系列 `value` 的有序组合                                                                     |
+| `string`  | 字符串类型，这很好理解                                                                                        |
+| `number`  | 数字型，准确地说，是双精度浮点数                                                                              |
+|           | 由于 JSON 是基于 JavaScript 定义的，而 JS 中只有 double 这一种数字，所以 number 实际上就是 double。这是个小坑 |
+| `"true"`  | 表示布尔 “真”                                                                                                 |
+| `"false"` | 表示布尔 “假”                                                                                                 |
+| `"null"`  | 表示空值                                                                                                      |
+
+### jsonvalue 基础属性
+
+在 `*jsonvalue.V` 对象中，参照绝大多数 JSON 工具包的做法，将 `"true"` 和 `"false"` 合并为一个 `Boolean` 类型。此外，将 `"null"` 也映射为一个 `Null` 类型。
+
+此外，还定义了一个 `NotExist` 类型，表示当前不是一个合法的 JSON 对象。此外还有一个 `Unknown`，开发者可以不用关心，使用中不会出现这个值。
+
+使用以下函数，可以获得 value 的类型属性：
 
 ```go
-func (v *V) RangeArray  (callback func(i int, v *V) bool)
-func (v *V) RangeObjects(callback func(k string, v *V) bool)
+func (v *V) ValueType() ValueType
+func (v *V) IsObject()  bool
+func (v *V) IsArray()   bool
+func (v *V) IsString()  bool
+func (v *V) IsNumber()  bool
+func (v *V) IsBoolean() bool
+func (v *V) IsNull()    bool
 ```
-
-使用回调函数的风格来迭代 object 和 array 中的每一个成员。如果回调函数返回 true，则继续迭代；返回 false 则会中止迭代，退出回调。
-
-### for-range 风格
-
-```go
-func (v *V) ForRangeArr() []*V
-func (v *V) ForRangeObj() map[string]*V
-```
-
-这种模式返回了一个预先存好了 kv 信息的 channel，并且已经 close 了，因此开发者可以使用 `for` 语法，进行更加直观的开发：
-
-```go
-    v := jsonvalue.MustUnmarshalString(`["A","B","C","D"]`)
-    for i, v := range v.ForRangeArr() {
-        fmt.Println(i, "-", v)
-    }
-```
-
-在 `ForRangeObj` 函数中，由于 jsonvalue 是使用 map 来实现 object 的 kv 存储，因此 key 的顺序不予保证。
-
-在命名的角度上，由于历史原因，笔者先开发了 RangeXxx 系列函数，所以导致 for-range 风格的函数反而不使用 range 命名，还请开发者们谅解。

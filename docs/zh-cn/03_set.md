@@ -1,10 +1,19 @@
-# 创建并序列化 JSON
+
+<font size=6>创建并序列化 JSON</font>
 
 [上一页](./02_quick_start.md) | [总目录](./README.md) | [下一页](./04_get.md)
 
 ---
 
-[TOC]
+本小节说明如何设置和生成一个 jsonvalue 值。
+
+---
+
+- [创建 JSON 值](#创建-json-值)
+- [往 jsonvalue 中设置值](#往-jsonvalue-中设置值)
+  - [基础用法](#基础用法)
+  - [At 参数语义](#at-参数语义)
+- [往 JSON 数组中添加值 —— Append 和 Insert 系列函数](#往-json-数组中添加值--append-和-insert-系列函数)
 
 ---
 
@@ -20,25 +29,25 @@ a := jsonvalue.NewArray()
 也可以指定任意可以合法地转换成 JSON 的 Go 类型，使用 `New` 函数直接创建 JSON 值。比如上面的对象和数组类型值，也可以用这种方式创建:
 
 ```go
-o := jsonvalue.New(struct{}{})
-a := jsonvalue.New([]int{})
+o := jsonvalue.New(struct{}{})  // 生成一个 JSON object
+a := jsonvalue.New([]int{})     // 生成一个 JSON array
 ```
 
-也可以创建其他的基础类型值，如：
+如果你想要新建的是简单的 JSON 元素，也可以创建其他的合法类型，如：
 
 ```go
-i := jsonvalue.New(100)
-s := jsonvalue.New("Hello, JSON!")
-f := jsonvalue.New("188.88")
-b := jsonvalue.New(true)
-n := jsonvalue.New(nil) // 返回一个 JSON null
+i := jsonvalue.New(100)             // 生成一个 JSON number
+f := jsonvalue.New(188.88)          // 生成一个 JSON number
+s := jsonvalue.New("Hello, JSON!")  // 生成一个 JSON string
+b := jsonvalue.New(true)            // 生成一个 JSON boolean
+n := jsonvalue.New(nil)             // 返回一个 JSON null
 ```
 
 ---
 
-## Set 系列函数
+## 往 jsonvalue 中设置值
 
-在创建了最外层的 object 或者是 array 之后，下一步就是构建 JSON 的内部结构。相对于上一小节的 `Get` 系列函数，jsonvalue 则提供了 `Set` 系列函数来处理（目标类型为 object 为主）的 JSON 子结构的创建。
+在创建了最外层的 object 或者是 array 之后，下一步就是构建 JSON 的内部结构。相对于上一小节的 `Get` 系列函数，jsonvalue 则提供了 `Set` 系列函数来处理 JSON 子结构的创建。
 
 ### 基础用法
 
@@ -48,7 +57,7 @@ Set 系列函数，一般使用以下的模式进行调用：
 v.Set(child).At(path...)
 ```
 
-对应英语中的语法：`SET some sub value AT some position.`
+对应英语中的语法：`SET value AT some position.`，请注意，value 在前，path 在后
 
 目前 jsonvalue 的函数使用 `interface{}`, 因此获得了一个类似于泛型的体验，如：
 
@@ -110,7 +119,7 @@ v.Set("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, object
 
 ---
 
-## Append 和 Insert 系列函数
+## 往 JSON 数组中添加值 —— Append 和 Insert 系列函数
 
 函数 `Append` 和 `Insert` 专门针对数组操作使用。其中 `Append` 函数需搭配 `InTheBeginning` 和 `InTheEnd` 函数，而 `Insert` 则搭配 `After` 和 `Before`
 
@@ -120,6 +129,8 @@ v.Set("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, object
 - Append some value to the end of ...
 - Insert some value after ...
 - Insert some value before ...
+
+与 `Set` 函数一样，请注意路径参数是后置的。
 
 这几个函数的原型如下：
 
@@ -133,28 +144,9 @@ func (ins *Insert) After (firstParam interface{}, otherParams ...interface{}) (*
 func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*V, error)
 ```
 
-基本语义与前问的 `Set` 和配套函数基本一致，但有以下几点小差异：
+基本语义与前文的 `Set` 和配套函数基本一致，但有以下几点小差异：
 
 - `InTheBeginning` 和 `InTheEnd` 允许空参数，此时表示当前的 value 就已经是一个数组，语义是在当前数组的开头或末尾追加子值。
 - `After` 和 `Before` 的最后一个参数（如果只有一个参数，则最后一个即为第一个）必须是一个整型数字，代表在数组中的下标位。与 `Set(...).At(...)` 类似，允许负下标。
 
----
 
-## Marshal 系列函数
-
-与 Unmarshal 对应，jsonvalue 的序列化函数也采用其相对的 marshal 语义。提供了以下四个方法：
-
-```go
-func (v *V) Marshal          (opts ...Option) (b []byte, err error)
-func (v *V) MarshalString    (opts ...Option) (s string, err error)
-func (v *V) MustMarshal      (opts ...Option) []byte
-func (v *V) MustMarshalString(opts ...Option) string
-```
-
-在当前版本下，marshal 只有两种情况会报错：
-
-- `*V` 是 `NotExist` 类型
-- 值中包含了不合法的浮点数值 `+Inf`, `-Inf` 或 `NaN`，并且没有明确说明如何处理这些数值。后文还会提到，jsonvalue 针对这些非法的 number 数值，还提供了额外的处理能力。
-- 选项参数 opts 中包含非法配置
-
-因此如果开发者能够确定规避掉上述错误的话，完全可以使用 `MustMarshal` 系列函数。

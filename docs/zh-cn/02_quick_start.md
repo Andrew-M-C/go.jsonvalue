@@ -1,4 +1,4 @@
-# 快速上手
+<font size=6>快速上手</font>
 
 [上一页](./01_introduction.md) | [总目录](./README.md) | [下一页](./03_set.md)
 
@@ -8,10 +8,10 @@
 
 ```json
 {
-	"someObject": {
-		"someObject": {
-			"someObject": {
-				"message": "Hello, JSON!"
+	"obj": {
+		"obj": {
+			"obj": {
+				"str": "Hello, JSON!"
 			}
 		}
 	}
@@ -22,17 +22,17 @@
 
 ```go
 	v := jsonvalue.NewObject()
-	v.Set("Hello, JSON").At("someObject", "someObject", "someObject", "message")
+	v.Set("Hello, JSON").At("obj", "obj", "obj", "str")
 	fmt.Println(v.MustMarshalString())
 ```
 
-输出结果为: `{"someObject":{"someObject":{"someObject":{"message":"Hello, JSON!"}}}`
+输出结果为: `{"obj":{"obj":{"obj":{"str":"Hello, JSON!"}}}`
 
 反过来，我们如果要直接读取上面的 json 数据，也可以这么用 jsonvalue: 
 
 ```go
-const raw = `{"someObject": {"someObject": {"someObject": {"message": "Hello, JSON!"}}}}`
-s := jsonvalue.MustUnmarshalString(s).GetString("someObject", "someObject", "someObject", "message")
+const raw = `{"obj": {"obj": {"obj": {"str": "Hello, JSON!"}}}}`
+s := jsonvalue.MustUnmarshalString(s).GetString("obj", "obj", "obj", "str")
 fmt.Println(s)
 ```
 

@@ -1,10 +1,14 @@
-# 值的自动转换
 
-[上一页](./08_option.md) | [总目录](./README.md) | [下一页](./10_comparation.md)
+<font size=6>值的自动转换</font>
+
+[上一页](./09_option.md) | [总目录](./README.md) | [下一页](./11_comparation.md)
 
 ---
 
-[TOC]
+- [自动转换简介](#自动转换简介)
+- [String 转 number](#string-转-number)
+- [String 和 number 转 boolean](#string-和-number-转-boolean)
+- [GetString 和 MustGet(...).String() 的区别](#getstring-和-mustgetstring-的区别)
 
 ---
 
@@ -27,6 +31,8 @@ func main() {
 输出 `{"num":"12345"}`，可见 `num` 字段被序列化成了一个字符串而不是数字类型。
 
 在 jsonvalue 中，支持对这种类型的字符串的直接转换读取。但是针对不同类型，读取模式有细微差别，具体说明如下：
+
+---
 
 ## String 转 number
 
@@ -65,6 +71,8 @@ func main() {
 02 - err: failed to parse number from string: parsing number at index 0: zero string
 ```
 
+---
+
 ## String 和 number 转 boolean
 
 与 number 类似，string 也可以承载布尔值。同时，number 也可以转成 boolean 值。
@@ -74,6 +82,8 @@ String 转 boolean 只有一种情况会返回 `true`，那就是字符串字面
 Number 转 boolean 则是判断数字值是否不等于 0。
 
 不论什么情况，只要目标值存在但不为 Boolean 类型，err 均会返回 `ErrTypeNotMatch`
+
+---
 
 ## GetString 和 MustGet(...).String() 的区别
 

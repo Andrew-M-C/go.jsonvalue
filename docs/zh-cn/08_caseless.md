@@ -1,10 +1,12 @@
-# 忽略大小写
 
-[上一页](./06_iteration.md) | [总目录](./README.md) | [下一页](./08_option.md)
+<font size=6>大小写</font>
+
+[上一页](./07_iteration.md) | [总目录](./README.md) | [下一页](./09_option.md)
 
 ---
 
-[TOC]
+- [Go 原生 json 的问题](#go-原生-json-的问题)
+- [在 jsonvalue 中忽略大小写](#在-jsonvalue-中忽略大小写)
 
 ---
 
@@ -21,15 +23,28 @@ func main() {
     raw := []byte(`{"NAME":"json"}`)
     s := st{}
     json.Unmarshal(raw, &s)
-    fmt.Println(s.Name)
+    fmt.Println("name:", s.Name)
     // Output:
-    // json
+    // name: json
 }
 ```
 
 虽然 JSON 正文中使用的 key 是全大写的 `NAME`，而 struct 中定义的 tag 是全小写的 `name`，但是依然能够正确地解析到结构体中。
 
-但是到了 `map[string]interface{}`，就不一样了，由于 map 的特性，原生 json 无法做到忽略大小写。
+但是到了 `map`，就不一样了，由于 map 的特性，原生 json 无法做到忽略大小写。
+
+```go
+func main() {
+    raw := []byte(`{"NAME":"json"}`)
+    var m map[string]interface{}
+    json.Unmarshal(raw, &m)
+    fmt.Println("name:", m["name"])
+    // Output:
+    // name: <nil>
+}
+```
+
+这种问题，在 jsonvalue 中可以解决吗？答案是肯定的。
 
 ---
 
@@ -37,7 +52,7 @@ func main() {
 
 在 jsonvalue 中使用 map 来存储 object 类型的 K-V 信息，默认情况下，jsonvalue 的 Get 函数是区分大小写的。
 
-如果开发者需要区分大小写，那么只需要在 Get 操作之前插入一个 `Caseless()` 调用即可，如以下例子：
+但是如果开发者在做 `Get` 操作时需要忽略大小写，那么只需要在 Get 操作之前插入一个 `Caseless()` 调用即可，如以下例子：
 
 ```go
 func main() {

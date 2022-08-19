@@ -1,10 +1,30 @@
-# 额外选项配置
 
-[上一页](./07_caseless.md) | [总目录](./README.md) | [下一页](./09_conversion.md)
+<font size=6>额外选项配置</font>
+
+[上一页](./08_caseless.md) | [总目录](./README.md) | [下一页](./10_conversion.md)
 
 ---
 
-[TOC]
+- [选项概述](#选项概述)
+- [忽略 null 值](#忽略-null-值)
+- [可视化锁进](#可视化锁进)
+- [指定 key 顺序](#指定-key-顺序)
+  - [使用回调排序](#使用回调排序)
+  - [使用字母序](#使用字母序)
+  - [使用预定义的 []string 指定 key 顺序](#使用预定义的-string-指定-key-顺序)
+- [处理浮点数 NaN](#处理浮点数-nan)
+  - [NaN 转换成另一个浮点值](#nan-转换成另一个浮点值)
+  - [转换成 null](#转换成-null)
+  - [转换成字符串](#转换成字符串)
+- [处理浮点数 +/-Inf](#处理浮点数--inf)
+  - [转换成有效的浮点数](#转换成有效的浮点数)
+  - [转换成 null](#转换成-null-1)
+  - [转换成字符串](#转换成字符串-1)
+- [非敏感字符的转义控制](#非敏感字符的转义控制)
+  - [原生 json SetEscapeHTML 支持](#原生-json-setescapehtml-支持)
+  - [斜杠符号 `/`](#斜杠符号-)
+  - [启用/禁用大于 `\u00FF` unicode 的转义](#启用禁用大于-u00ff-unicode-的转义)
+- [旧版 options](#旧版-options)
 
 ---
 
@@ -36,6 +56,8 @@ fmt.Println(v.MustMarshalString(jsonvalue.OptOmitNull(true)))
 {"null":null}
 {}
 ```
+
+目前暂时只有 `OptIgnoreOmitempty()` 选项用于 `Import()` 函数，其他选项都是用于序列化的。
 
 各种选项说明如下：
 
@@ -210,6 +232,8 @@ func OptEscapeHTML(on bool) Option
 ```go
 func OptEscapeSlash(on bool) Option
 ```
+
+如果不指定，则默认等同于 true
 
 ### 启用/禁用大于 `\u00FF` unicode 的转义
 

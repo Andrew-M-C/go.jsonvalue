@@ -1,10 +1,11 @@
-# 值的比较
 
-[上一页](./09_conversion.md) | [总目录](./README.md) | [下一页](./11_beta.md)
+<font size=6>值的比较</font>
+
+[上一页](./10_conversion.md) | [总目录](./README.md) | [下一页](./12_scenarios.md)
 
 ---
 
-[TOC]
+- [判断两个 JSON 值是否相等](#判断两个-json-值是否相等)
 
 ---
 
