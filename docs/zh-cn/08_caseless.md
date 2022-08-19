@@ -36,7 +36,7 @@ func main() {
 ```go
 func main() {
     raw := []byte(`{"NAME":"json"}`)
-    var m map[string]interface{}
+    var m map[string]any
     json.Unmarshal(raw, &m)
     fmt.Println("name:", m["name"])
     // Output:

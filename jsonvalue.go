@@ -1,4 +1,4 @@
-// Package jsonvalue is for JSON parsing and setting. It is used in situations those Go structures cannot achieve, or "map[string]interface{}" could not do properbally.
+// Package jsonvalue is for JSON parsing and setting. It is used in situations those Go structures cannot achieve, or "map[string]any" could not do properbally.
 //
 // As a quick start:
 // 	v := jsonvalue.NewObject()
@@ -16,7 +16,7 @@
 // 	// hello, world
 //
 // jsonvalue 包用于 JSON 的解析（反序列化）和编码（序列化）。通常情况下我们用 struct 来处理结构化的 JSON，但是有时候使用 struct 不方便或者是功能不足的时候，
-// go 一般而言使用的是 "map[string]interface{}"，但是后者也有很多不方便的地方。本包即是用于替代这些不方便的情况的。
+// go 一般而言使用的是 "map[string]any"，但是后者也有很多不方便的地方。本包即是用于替代这些不方便的情况的。
 //
 // 快速上手：
 // 	v := jsonvalue.NewObject()

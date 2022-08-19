@@ -22,7 +22,7 @@
 Get 系列函数是 jsonvalue 中读取 JSON 信息的核心函数。函数格式如下：
 
 ```go
-func (v *V) Get(param1 interface{}, params ...interface{}) (*V, error)
+func (v *V) Get(param1 any, params ...any) (*V, error)
 ```
 
 实际的使用示例为：
@@ -38,7 +38,7 @@ fmt.Println(child.String())
 - 获取 `*V` 对象中，key 为 `someObject` 的 object 值，再从这个值中，获取 key 为 `someObject` 的 object 值……
   - 如果写成域格式，则相当于 `child = v.someObject.someObject.someObject.message`
 
-`Get` 函数的参数是一个 `interface{}`，但实际上，这个函数只接受两种类别的参数：一是字符串类型，二是整型数字（有符号无符号均可）。
+`Get` 函数的参数是一个 `any`，但实际上，这个函数只接受两种类别的参数：一是字符串类型，二是整型数字（有符号无符号均可）。
 
 `Get` 函数会解析入参，迭代检查每一个参数的类型，从而决定下一轮迭代的逻辑：
 
@@ -57,30 +57,30 @@ fmt.Println(child.String())
   - 如果找到，则根据后续参数情况继续迭代或返回。如果无法找到，则返回 `NotExist` 对象以及 [ErrNotFound](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue@v1.1.1#pkg-constants) 错误。
 - 如果当前的对象不是 `Array` 类型，则返回 `NotExist` 对象以及 [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue@v1.1.1#pkg-constants) 错误。
 
-相信开发者会有[这样的一个疑问](https://github.com/Andrew-M-C/go.jsonvalue/issues/4)：为什么输入参数要强行切为两个部分，而不是直接一个 `...interface{}` 就搞定呢？
+相信开发者会有[这样的一个疑问](https://github.com/Andrew-M-C/go.jsonvalue/issues/4)：为什么输入参数要强行切为两个部分，而不是直接一个 `...any` 就搞定呢？
 
 - 理由是：这是为了是避免出现 `v.Get()` 这样的笔误。让函数至少需要一个参数，就可以在编译阶段就检查出类似的错误，而不会带到线上程序中。
-- 如果开发者需要传入类似参数的话，那么开发者需要检查 `[]interface{}` 参数的长度是否大于一；如果能确保大于一的话，可以采用 `v, _ := Get(para[0], para[1:]...)` 的格式进行调用。
+- 如果开发者需要传入类似参数的话，那么开发者需要检查 `[]any` 参数的长度是否大于一；如果能确保大于一的话，可以采用 `v, _ := Get(para[0], para[1:]...)` 的格式进行调用。
 
 ### GetXxx 系列函数
 
 实际操作中，开发者完全不关心 `*V` 对象本身，而只关心它所承载的值。在开发者可以确定或限定某个字段只能是某个值的时候，可以使用以下函数：
 
 ```go
-func (v *V) GetObject (param1 interface{}, params ...interface{}) (*V, error)
-func (v *V) GetArray  (param1 interface{}, params ...interface{}) (*V, error)
-func (v *V) GetBool   (param1 interface{}, params ...interface{}) (bool, error)
-func (v *V) GetString (param1 interface{}, params ...interface{}) (string, error)
-func (v *V) GetBytes  (param1 interface{}, params ...interface{}) ([]byte, error)
-func (v *V) GetInt    (param1 interface{}, params ...interface{}) (int, error)
-func (v *V) GetInt32  (param1 interface{}, params ...interface{}) (int32, error)
-func (v *V) GetInt64  (param1 interface{}, params ...interface{}) (int64, error)
-func (v *V) GetNull   (param1 interface{}, params ...interface{}) error
-func (v *V) GetUint   (param1 interface{}, params ...interface{}) (uint, error)
-func (v *V) GetUint32 (param1 interface{}, params ...interface{}) (uint32, error)
-func (v *V) GetUint64 (param1 interface{}, params ...interface{}) (uint64, error)
-func (v *V) GetFloat32(param1 interface{}, params ...interface{}) (float32, error)
-func (v *V) GetFloat64(param1 interface{}, params ...interface{}) (float64, error)
+func (v *V) GetObject (param1 any, params ...any) (*V, error)
+func (v *V) GetArray  (param1 any, params ...any) (*V, error)
+func (v *V) GetBool   (param1 any, params ...any) (bool, error)
+func (v *V) GetString (param1 any, params ...any) (string, error)
+func (v *V) GetBytes  (param1 any, params ...any) ([]byte, error)
+func (v *V) GetInt    (param1 any, params ...any) (int, error)
+func (v *V) GetInt32  (param1 any, params ...any) (int32, error)
+func (v *V) GetInt64  (param1 any, params ...any) (int64, error)
+func (v *V) GetNull   (param1 any, params ...any) error
+func (v *V) GetUint   (param1 any, params ...any) (uint, error)
+func (v *V) GetUint32 (param1 any, params ...any) (uint32, error)
+func (v *V) GetUint64 (param1 any, params ...any) (uint64, error)
+func (v *V) GetFloat32(param1 any, params ...any) (float32, error)
+func (v *V) GetFloat64(param1 any, params ...any) (float64, error)
 ```
 
 这些函数都有以下共同点：

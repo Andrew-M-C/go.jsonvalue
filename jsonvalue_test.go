@@ -90,7 +90,7 @@ func testBasicFunction(t *testing.T) {
 	t.Logf("marshal: '%s'", string(b))
 
 	// can it be unmarshal back?
-	j := make(map[string]interface{})
+	j := make(map[string]any)
 	err = json.Unmarshal(b, &j)
 	so(err, isNil)
 

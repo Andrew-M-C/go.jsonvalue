@@ -29,7 +29,7 @@ Import 和 Export 最开始的作用，是在原生 `encoding/json` 和 `jsonval
 
 ## Set, Append, Insert, Add 函数
 
-可以注意到，标题中提及的函数参数类型均为 `interface{}`，或者应该说是 `any`。也就是说这几个函数也支持配置任意类型的子类型。比如:
+可以注意到，标题中提及的函数参数类型均为 `any`，或者应该说是 `any`。也就是说这几个函数也支持配置任意类型的子类型。比如:
 
 ```go
 v := jsonvalue.NewObject()

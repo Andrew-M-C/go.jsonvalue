@@ -17,7 +17,7 @@ jobs:
     strategy:
       max-parallel: 6
       matrix:
-        GO_VER: ['1.16', '1.17', '1.18']
+        GO_VER: ['1.16', '1.17', '1.18', '1.19']
         HOST_OS: ['ubuntu-latest', 'macos-latest']
 
     runs-on: ${{ matrix.HOST_OS }}

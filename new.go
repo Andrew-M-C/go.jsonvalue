@@ -15,7 +15,7 @@ import (
 // New 函数按照给定参数类型创建一个 jsonvalue 类型。如果给定参数不是 JSON 支持的类型, 那么返回的
 // *V 对象的类型为 NotExist。如果在代码中无法确定入参是否是 JSON 支持的类型, 请改用函数
 // Import()。
-func New(value interface{}) *V {
+func New(value any) *V {
 	v, _ := Import(value)
 	return v
 }
@@ -118,7 +118,7 @@ func NewNull() *V {
 // the object. Now we supports basic types only. Such as int/uint, int/int8/int16/int32/int64,
 // uint/uint8/uint16/uint32/uint64 series, string, bool, nil.
 //
-// NewObject 返回一个初始化好的 object 类型的 jsonvalue 值。可以使用可选的 map[string]interface{} 类型参数初始化该 object 的下一级键值对，
+// NewObject 返回一个初始化好的 object 类型的 jsonvalue 值。可以使用可选的 map[string]any 类型参数初始化该 object 的下一级键值对，
 // 不过目前只支持基础类型，也就是: int/uint, int/int8/int16/int32/int64, uint/uint8/uint16/uint32/uint64, string, bool, nil。
 func NewObject(keyValues ...M) *V {
 	v := newObject()
@@ -133,8 +133,8 @@ func NewObject(keyValues ...M) *V {
 	return v
 }
 
-// M is the alias of map[string]interface{}
-type M map[string]interface{}
+// M is the alias of map[string]any
+type M map[string]any
 
 func (v *V) parseNewObjectKV(kv M) {
 	for k, val := range kv {

@@ -399,7 +399,7 @@ func testMiscValue(t *testing.T) {
 	})
 
 	cv("create an initialized JSON object", func() {
-		v := NewObject(map[string]interface{}{
+		v := NewObject(map[string]any{
 			"null":    nil,
 			"string":  "string",
 			"true":    true,

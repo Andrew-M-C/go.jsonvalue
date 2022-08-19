@@ -16,7 +16,7 @@ import (
 在 beta 包中, 提供实验性的功能。从 v1.3.0 版本则新增了另一个函数：`Contains`，用于判断一个 JSON 值是否包含另一个子集。函数原型如下：
 
 ```go
-func Contains(v *jsonvalue.V, sub interface{}, inPath ...interface{}) bool
+func Contains(v *jsonvalue.V, sub any, inPath ...any) bool
 ```
 
 首先我们看 `inPath` 参数，如果传入了路径参数的话，那么首先会从 v 中 `Get(inPath...)` 对应的子值，然后再执行 Contains 逻辑。逻辑如下：

@@ -10,7 +10,7 @@
 
 ## 关于泛型的思考
 
-在 jsonvalue 的 [issue](https://github.com/Andrew-M-C/go.jsonvalue/issues?q=) 列表中，[harryhan1989](https://github.com/Andrew-M-C/go.jsonvalue/issues/14) 批评本库不支持泛型。实际上在 v1.3.0 中实现了类泛型（Generics-like）的[操作](./12_new_feature.md)，因此这个 issue 不再存在。实际上，我并不是通过泛型、而是使用 `interface{}` 来解决的。
+在 jsonvalue 的 [issue](https://github.com/Andrew-M-C/go.jsonvalue/issues?q=) 列表中，[harryhan1989](https://github.com/Andrew-M-C/go.jsonvalue/issues/14) 批评本库不支持泛型。实际上在 v1.3.0 中实现了类泛型（Generics-like）的[操作](./12_new_feature.md)，因此这个 issue 不再存在。实际上，我并不是通过泛型、而是使用 `any` 来解决的。
 
 ### 不使用泛型的原因
 
@@ -21,11 +21,14 @@
     - 我们公司内部的 Go 社区有一个不成文的建议: 除非是重大漏洞修复，否则生产环境的 Go 版本大致最新的落后 0.2 是比较合适的
     - 在版本上，jsonvalue 不是一个激进的库，它是面向生产环境的——这也是为什么我那么执着地要把单测覆盖率提升到 99.5% 以上的主要原因
 - 在使用体验上，jsonvalue 已经尽量降低对类型的依赖了。最典型的就是 `Set().At()` 和 `Get()` 的参数，可以让使用者无需区分 string 和 int 参数
-- 从 v1.3.0 开始，jsonvalue 魔改了 `Set()` 函数以及其他[相关函数](./12_new_feature.md)，将这些函数的参数从 `*V` 换成了 `interface{}`，提供与泛型几乎无异的编程体验。
+- 从 v1.3.0 开始，jsonvalue 魔改了 `Set()` 函数以及其他[相关函数](./12_new_feature.md)，将这些函数的参数从 `*V` 换成了 `any`，提供与泛型几乎无异的编程体验。
 - 从 [go.mod](../../go.mod) 文件中也可以看到，jsonvalue 的支持版本是 Go 1.13+，Go 对泛型的正式支持在 1.18+，一旦支持了泛型，那么依赖 jsonvalue 的代码将可能无法编译，这种过河拆桥的行为是为 Go 社区所不齿的。
 
 ### 泛型支持计划
 
-泛型是迟早要支持的，但笔者依然还在观望。一旦整个 Go 社区对泛型有了普遍正面的反馈和体验，那么这件事情就会排上日程。
+泛型是迟早要支持的，随着 Go 1.19 的推出，笔者已经是蠢蠢欲动了，积极调研中。
 
-届时将以 jsonvalue v2.x 版的模式推出，因为很多函数定义将有重大改变，很可能不向后兼容。不过 v1 版本依然会坚定地继续支持。
+后续可能有两种方案，还未确定选取哪一种，也欢迎读者提建议:
+
+- 以 jsonvalue 2.x 版的模式推出，因为很多函数定义将有重大改变，很可能不向后兼容。不过 v1 版本依然会坚定地继续支持。
+- 依然以 jsonvalue 1.x 版推出，但是针对 Go 1.18+ 和 1.18- 区分对待。前者则添加支持泛型的方法，而这些方法对后者屏蔽。

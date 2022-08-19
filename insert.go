@@ -15,7 +15,7 @@ type Insert struct {
 // Insert starts inserting a child JSON value
 //
 // Insert 开启一个 JSON 数组成员的插入操作.
-func (v *V) Insert(child interface{}) *Insert {
+func (v *V) Insert(child any) *Insert {
 	var ch *V
 	var err error
 
@@ -138,7 +138,7 @@ func (v *V) InsertArray() *Insert {
 // 如果这个值等于0或者正整数，那么它指定的是在 JSON 数组中的位置（从0开始）。如果这个值是负数，那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
 //
 // 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
-func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*V, error) {
+func (ins *Insert) Before(firstParam any, otherParams ...any) (*V, error) {
 	if ins.err != nil {
 		return &V{}, ins.err
 	}
@@ -194,7 +194,7 @@ func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*
 // 如果这个值等于0或者正整数，那么它指定的是在 JSON 数组中的位置（从0开始）。如果这个值是负数，那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
 //
 // 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
-func (ins *Insert) After(firstParam interface{}, otherParams ...interface{}) (*V, error) {
+func (ins *Insert) After(firstParam any, otherParams ...any) (*V, error) {
 	if ins.err != nil {
 		return &V{}, ins.err
 	}

@@ -31,7 +31,7 @@ type Set struct {
 // 请参见 "func (set *Set) At(...)" 例子.
 //
 // https://godoc.org/github.com/Andrew-M-C/go.jsonvalue/#Set.At
-func (v *V) Set(child interface{}) *Set {
+func (v *V) Set(child any) *Set {
 	var ch *V
 	var err error
 
@@ -167,7 +167,7 @@ func (v *V) setToObjectChildren(key string, child *V) {
 //
 // 该函数的用法恐怕是 jsonvalue 中最重要的内容了：该函数会按照给定的可变参数递归地一层一层查找 JSON 值的子成员，并且设置到指定的位置上。
 // 设置的逻辑说明起来比较抽象，请打开以下的例子以了解，这非常重要。
-func (s *Set) At(firstParam interface{}, otherParams ...interface{}) (*V, error) {
+func (s *Set) At(firstParam any, otherParams ...any) (*V, error) {
 	if s.err != nil {
 		return &V{}, s.err
 	}

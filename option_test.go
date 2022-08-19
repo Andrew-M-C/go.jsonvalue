@@ -85,12 +85,12 @@ func testOption_OptSetSequence(t *testing.T) {
 
 func testOption_OptIgnoreOmitempty(t *testing.T) {
 	type st struct {
-		Object map[string]interface{} `json:"object,omitempty"`
-		Array  []interface{}          `json:"array,omitempty"`
+		Object map[string]any `json:"object,omitempty"`
+		Array  []any          `json:"array,omitempty"`
 		String string                 `json:"string,omitempty"`
 		Bool   bool                   `json:"bool,omitempty"`
 		Num    float32                `json:"num,omitempty"`
-		Null   interface{}            `json:"null,omitempty"`
+		Null   any            `json:"null,omitempty"`
 	}
 
 	cv("by default", func() {

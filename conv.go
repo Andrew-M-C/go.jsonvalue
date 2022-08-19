@@ -132,7 +132,7 @@ func escapeStringToBuff(s string, buf *bytes.Buffer, opt *Opt) {
 	}
 }
 
-func intfToInt(v interface{}) (u int, err error) {
+func intfToInt(v any) (u int, err error) {
 	switch v := v.(type) {
 	case int:
 		u = v
@@ -161,7 +161,7 @@ func intfToInt(v interface{}) (u int, err error) {
 	return
 }
 
-// func intfToInt64(v interface{}) (i int64, err error) {
+// func intfToInt64(v any) (i int64, err error) {
 // 	switch v.(type) {
 // 	case int:
 // 		i = int64(v.(int))
@@ -190,7 +190,7 @@ func intfToInt(v interface{}) (u int, err error) {
 // 	return
 // }
 
-func intfToString(v interface{}) (s string, err error) {
+func intfToString(v any) (s string, err error) {
 	switch str := v.(type) {
 	case string:
 		return str, nil
@@ -199,7 +199,7 @@ func intfToString(v interface{}) (s string, err error) {
 	}
 }
 
-// func intfToJsonvalue(v interface{}) (j *V, err error) {
+// func intfToJsonvalue(v any) (j *V, err error) {
 // 	switch v.(type) {
 // 	case *V:
 // 		j = v.(*V)

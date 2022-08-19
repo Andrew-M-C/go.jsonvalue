@@ -170,7 +170,7 @@ func testSetMisc(t *testing.T) {
 	v = NewObject()
 	_, err = v.Set(make(chan struct{})).At("channel")
 	so(err, notNil)
-	child, err = v.Set([]interface{}{1, "2", 3.25, -4, false, nil}).At("arr")
+	child, err = v.Set([]any{1, "2", 3.25, -4, false, nil}).At("arr")
 	so(child.IsArray(), isTrue)
 	so(err, isNil)
 	so(v.MustMarshalString(), eq, `{"arr":[1,"2",3.25,-4,false,null]}`)

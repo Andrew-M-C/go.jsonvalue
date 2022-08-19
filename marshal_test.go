@@ -138,7 +138,7 @@ func testMarshalFloat64Inf(t *testing.T) {
 			FloatInfHandleType: FloatInfConvertToFloat,
 			FloatInfToFloat:    2.25,
 		}
-		v := NewObject(map[string]interface{}{
+		v := NewObject(map[string]any{
 			"+inf": math.Inf(1),
 			"-inf": math.Inf(-1),
 		})
@@ -176,7 +176,7 @@ func testMarshalFloat64Inf(t *testing.T) {
 		so(err, isNil)
 		so(s, eq, `"-Inf"`)
 
-		v = NewObject(map[string]interface{}{
+		v = NewObject(map[string]any{
 			"+inf": math.Inf(1),
 			"-inf": math.Inf(-1),
 		})
@@ -223,7 +223,7 @@ func testMarshalFloat64Inf(t *testing.T) {
 	})
 
 	cv("to null", func() {
-		v := NewObject(map[string]interface{}{
+		v := NewObject(map[string]any{
 			"+inf": math.Inf(1),
 			"-inf": math.Inf(-1),
 		})
@@ -458,7 +458,7 @@ func testMarshalIndent(t *testing.T) {
 		v.SetString("Hello, world").At("obj", "obj_in_obj", "msg")
 		b := v.MustMarshal(OptIndent("", "  "))
 
-		var m interface{}
+		var m any
 		json.Unmarshal(b, &m)
 		bJS, _ := json.MarshalIndent(m, "", "  ")
 
@@ -479,7 +479,7 @@ func testMarshalIndent(t *testing.T) {
 
 		b := v.MustMarshal(OptIndent("", "  "))
 
-		var m interface{}
+		var m any
 		json.Unmarshal(b, &m)
 		bJS, _ := json.MarshalIndent(m, "", "  ")
 
@@ -494,7 +494,7 @@ func testMarshalIndent(t *testing.T) {
 
 	cv("multiple indents", func() {
 		type s struct {
-			Arr []interface{} `json:"arr,omitempty"`
+			Arr []any `json:"arr,omitempty"`
 			Obj *s            `json:"obj,omitempty"`
 			Str string        `json:"str,omitempty"`
 		}
@@ -506,7 +506,7 @@ func testMarshalIndent(t *testing.T) {
 				Obj: &s{
 					Str: "Lv.2",
 				},
-				Arr: []interface{}{
+				Arr: []any{
 					1,
 					"2",
 					&s{
@@ -532,7 +532,7 @@ func testMarshalIndent(t *testing.T) {
 		v.SetString("Hello, world").At("obj", "obj_in_obj", "msg")
 		b := v.MustMarshal(OptIndent("", ""))
 
-		var m interface{}
+		var m any
 		json.Unmarshal(b, &m)
 		bJS, _ := json.MarshalIndent(m, "", "")
 

@@ -59,7 +59,7 @@ v.Set(child).At(path...)
 
 对应英语中的语法：`SET value AT some position.`，请注意，value 在前，path 在后
 
-目前 jsonvalue 的函数使用 `interface{}`, 因此获得了一个类似于泛型的体验，如：
+目前 jsonvalue 的函数使用 `any`, 因此获得了一个类似于泛型的体验，如：
 
 ```go
 v := jsonvalue.NewObject()
@@ -74,7 +74,7 @@ fmt.Println(v.MustMarshalString())
 可以看到，通过 `Set` 系列函数后，还需要紧跟 `At` 函数来将欲设置的值落地到真正的 JSON 结构中。因此 `At` 函数的参数自然是重点。`At` 函数的原型如下：
 
 ```go
-func (s *Set) At(param1 interface{}, params ...interface{}) (*V, error)
+func (s *Set) At(param1 any, params ...any) (*V, error)
 ```
 
 At 函数的参数语义，与前文提及的 `Get` 函数语义基本一致。同样地，为了防止编程错误，这个函数至少需要传一个参数。
@@ -135,13 +135,13 @@ v.Set("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, object
 这几个函数的原型如下：
 
 ```go
-func (v *V) Append(child interface{}) *Append
-func (apd *Append) InTheBeginning(params ...interface{}) (*V, error)
-func (apd *Append) InTheEnd      (params ...interface{}) (*V, error)
+func (v *V) Append(child any) *Append
+func (apd *Append) InTheBeginning(params ...any) (*V, error)
+func (apd *Append) InTheEnd      (params ...any) (*V, error)
 
-func (v *V) Insert(child interface{}) *Insert
-func (ins *Insert) After (firstParam interface{}, otherParams ...interface{}) (*V, error)
-func (ins *Insert) Before(firstParam interface{}, otherParams ...interface{}) (*V, error)
+func (v *V) Insert(child any) *Insert
+func (ins *Insert) After (firstParam any, otherParams ...any) (*V, error)
+func (ins *Insert) Before(firstParam any, otherParams ...any) (*V, error)
 ```
 
 基本语义与前文的 `Set` 和配套函数基本一致，但有以下几点小差异：

@@ -19,7 +19,7 @@ type Append struct {
 // Append starts appending a child JSON value to a JSON array.
 //
 // Append 开始将一个 JSON 值添加到一个数组中。需结合 InTheEnd() 和 InTheBeginning() 函数使用。
-func (v *V) Append(child interface{}) *Append {
+func (v *V) Append(child any) *Append {
 	var ch *V
 	var err error
 
@@ -138,7 +138,7 @@ func (v *V) AppendArray() *Append {
 // InTheBeginning completes the following operation of Append().
 //
 // InTheBeginning 函数将 Append 函数指定的 JSON 值，添加到参数指定的数组的最前端
-func (apd *Append) InTheBeginning(params ...interface{}) (*V, error) {
+func (apd *Append) InTheBeginning(params ...any) (*V, error) {
 	v := apd.v
 	c := apd.c
 	if nil == v || v.valueType == NotExist {
@@ -179,7 +179,7 @@ func (apd *Append) InTheBeginning(params ...interface{}) (*V, error) {
 // InTheEnd completes the following operation of Append().
 //
 // InTheEnd 函数将 Append 函数指定的 JSON 值，添加到参数指定的数组的最后面
-func (apd *Append) InTheEnd(params ...interface{}) (*V, error) {
+func (apd *Append) InTheEnd(params ...any) (*V, error) {
 	v := apd.v
 	c := apd.c
 	if v.valueType == NotExist {

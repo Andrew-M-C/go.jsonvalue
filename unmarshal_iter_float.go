@@ -124,8 +124,8 @@ func (it iter) parseNumber(
 	return v, idx, len(it)-idx == 0, err
 }
 
-func (it iter) numErrorf(offset int, f string, a ...interface{}) error {
-	a = append([]interface{}{offset}, a...)
+func (it iter) numErrorf(offset int, f string, a ...any) error {
+	a = append([]any{offset}, a...)
 	return fmt.Errorf("parsing number at index %d: "+f, a...)
 
 	// debug ONLY below
@@ -146,7 +146,7 @@ func (it iter) numErrorf(offset int, f string, a ...interface{}) error {
 	// }
 	// ca := getCaller(1)
 
-	// a = append([]interface{}{ca, string(it), offset}, a...)
+	// a = append([]any{ca, string(it), offset}, a...)
 	// return fmt.Errorf("%s - parsing number \"%s\" at index %d: "+f, a...)
 }
 

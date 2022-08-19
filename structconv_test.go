@@ -130,7 +130,7 @@ func testExportBool(t *testing.T) {
 func testImport(t *testing.T) {
 	cv("integers", func() {
 
-		params := []interface{}{
+		params := []any{
 			int(1),
 			uint(2),
 			int8(3),
@@ -394,15 +394,15 @@ func testStructConv_Import_InvalidTypes(t *testing.T) {
 	})
 
 	cv("illegal type in slice", func() {
-		arr := []interface{}{
+		arr := []any{
 			1, complex(1, 2),
 		}
 		j, err := Import(arr)
 		so(err, isErr)
 		so(j, notNil)
 
-		arr = []interface{}{
-			1, []interface{}{complex(1, 2)},
+		arr = []any{
+			1, []any{complex(1, 2)},
 		}
 		j, err = Import(arr)
 		so(err, isErr)
@@ -410,15 +410,15 @@ func testStructConv_Import_InvalidTypes(t *testing.T) {
 	})
 
 	cv("illegal type in map", func() {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"complex": complex(1, 2),
 		}
 		j, err := Import(m)
 		so(err, isErr)
 		so(j, notNil)
 
-		m = map[string]interface{}{
-			"obj": map[string]interface{}{
+		m = map[string]any{
+			"obj": map[string]any{
 				"complex": complex(1, 2),
 			},
 		}
@@ -544,11 +544,11 @@ func testStructConv_Import_ArrayAndSlice(t *testing.T) {
 		}
 	})
 
-	cv("map[string]interface{}", func() {
-		m := map[string]interface{}{
+	cv("map[string]any", func() {
+		m := map[string]any{
 			"uint":   uint8(255),
 			"float":  float32(-0.25),
-			"string": "Hello, interface{}",
+			"string": "Hello, any",
 			"bool":   true,
 			"struct": struct{}{},
 		}

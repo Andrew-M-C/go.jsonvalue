@@ -11,7 +11,7 @@ import (
 // Export convert jsonvalue to another type of parameter. The target parameter type should match the type of *V.
 //
 // Export 将 *V 转到符合原生 encoding/json 的一个 struct 中。
-func (v *V) Export(dst interface{}) error {
+func (v *V) Export(dst any) error {
 	b, err := v.Marshal()
 	if err != nil {
 		return err
@@ -23,7 +23,7 @@ func (v *V) Export(dst interface{}) error {
 // Import convert json value from a marsalable parameter to *V. This a experimental function.
 //
 // Import 将符合 encoding/json 的 struct 转为 *V 类型。不经过 encoding/json，并且支持 Option.
-func Import(src interface{}, opts ...Option) (*V, error) {
+func Import(src any, opts ...Option) (*V, error) {
 	opt := combineOptions(opts)
 	ext := ext{}
 	ext.ignoreOmitempty = opt.ignoreJsonOmitempty
