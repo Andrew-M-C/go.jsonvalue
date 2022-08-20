@@ -1,7 +1,7 @@
 
 <font size=6>值的自动转换</font>
 
-[上一页](./09_option.md) | [总目录](./README.md) | [下一页](./11_comparation.md)
+[上一页](./08_caseless.md) | [总目录](./README.md) | [下一页](./10_scenarios.md)
 
 ---
 

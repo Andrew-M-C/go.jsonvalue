@@ -321,10 +321,12 @@ func (o *optMarshalKeySequence) mergeTo(opt *Opt) {
 
 // ==== marshalBySetSequence ====
 
-// OptSetSequence tells that when marshaling an object, the key sequences should
-// follow when it is set.
+// OptSetSequence tells that when marshaling an object, the key will be sorted by
+// the time they are added into or refreshed in its parent object. The later a key
+//  is set or updated, the later it and its value will be marshaled.
 //
-// OptSetSequence 指定在序列化 object 时，按照一个 key 被设置时的顺序进行序列化
+// OptSetSequence 指定在序列化 object 时，按照一个 key 被设置时的顺序进行序列化。如果一个
+// key 越晚添加到 object 类型，则在序列化的时候越靠后。
 func OptSetSequence() Option {
 	return optSetSequence{}
 }

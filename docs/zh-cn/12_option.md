@@ -1,7 +1,11 @@
 
 <font size=6>额外选项配置</font>
 
-[上一页](./08_caseless.md) | [总目录](./README.md) | [下一页](./10_conversion.md)
+[上一页](./11_comparation.md) | [总目录](./README.md) | [下一页](./13_beta.md)
+
+---
+
+本小节详细说明各种额外选项的功能。不过读者其实也可以先移步 “[应用场景](./12_scenarios.md)” 章节，这样就能够理解为什么会有这么选项了
 
 ---
 
@@ -9,6 +13,7 @@
 - [忽略 null 值](#忽略-null-值)
 - [可视化锁进](#可视化锁进)
 - [指定 key 顺序](#指定-key-顺序)
+  - [按照原字节流顺序或 key 被设置的顺序序列化](#按照原字节流顺序或-key-被设置的顺序序列化)
   - [使用回调排序](#使用回调排序)
   - [使用字母序](#使用字母序)
   - [使用预定义的 []string 指定 key 顺序](#使用预定义的-string-指定-key-顺序)
@@ -24,6 +29,7 @@
   - [原生 json SetEscapeHTML 支持](#原生-json-setescapehtml-支持)
   - [斜杠符号 `/`](#斜杠符号-)
   - [启用/禁用大于 `\u00FF` unicode 的转义](#启用禁用大于-u00ff-unicode-的转义)
+- [在 Import 时忽略结构体的 omitempty 标签](#在-import-时忽略结构体的-omitempty-标签)
 - [旧版 options](#旧版-options)
 
 ---
@@ -99,6 +105,21 @@ fmt.Println(s)
 - 需要对 JSON 的字节流进行哈希校验，因此需要保证同样的数据序列化后的字节流完全一致
 - 调试期间便于快速找到指定的 K-V 对
 - 对 JSON 的 object 进行了不规范的使用，对 key 的顺序有强要求
+
+### 按照原字节流顺序或 key 被设置的顺序序列化
+
+```go
+func OptSetSequence() Option
+```
+
+函数的字面意思是：按照 object JSON 的每一个键值对，被添加到该 object 的顺序，来决定序列化时的顺序。
+
+这个顺序由三个部分组成：
+
+- 在反序列化 (unmarshal) 时，在字节流越靠前的 key-value 肯定越早被加入到解析出来的 object
+- 在设置 object 中的 key 时，则是按照程序设置 `*V` 的 key-value 的顺序来。
+
+这个函数其实也额外带来了一个效果：**如果将一个 JSON 字节流反序列化，在不修改 *V 的前提下,使用此选项,可以保证重新进行序列化的字节流完全一致**。
 
 ### 使用回调排序
 
@@ -242,6 +263,10 @@ func OptUTF8() Option
 ```
 
 默认情况下，jsonvalue 在序列化时，针对所有大于 `\u00FF` 的 unicode 字符，均进行转义。但如果调用方可以确保对端解析时没有编码错误的话，那么可以在 Marshal 时采用该配置，直接将 string 序列化为 Go 原生所使用的 UTF-8 编码格式，特别是在 unicode 占数据的大头时，可以节省网络流量。
+
+## 在 Import 时忽略结构体的 omitempty 标签
+
+这个功能其实也是比较小众，读者可以查阅 [应用场景](./10_scenarios.md) 章节中的 “忽略 Go 结构体的 omitempty 标记” 小结。
 
 ## 旧版 options
 

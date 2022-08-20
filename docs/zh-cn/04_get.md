@@ -1,5 +1,5 @@
 
-<font size=6>解析并获取 JSON</font>
+<font size=6>获取 JSON 中的值</font>
 
 [上一页](./03_set.md) | [总目录](./README.md) | [下一页](./05_marshal_unmarshal.md)
 

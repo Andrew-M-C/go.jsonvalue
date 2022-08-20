@@ -8,6 +8,7 @@
 - [概述](#概述)
 - [遍历 array 类型值](#遍历-array-类型值)
 - [遍历 object 类型值](#遍历-object-类型值)
+- [获取 object 类型值的原始顺序](#获取-object-类型值的原始顺序)
 - [已弃用的函数](#已弃用的函数)
 
 ---
@@ -73,6 +74,26 @@ for key, v := range anArr.ForRangeObj() {
     // ...... handle with key and v
 }
 ```
+
+## 获取 object 类型值的原始顺序
+
+该功能的呼声其实还不小，但毕竟这个功能相对小众，笔者担心影响正常的 unmarshal 功能的性能。但是从 1.3.1 之后，笔者采用了一个简单的手段实现了它，对原有 unmarshal 性能几乎没有带来什么影响。
+
+在实际使用上，调用方还是可以先正常执行 `Unmarshal` 操作，然后使用 `RangeObjectsBySetSequence` 函数。这个函数的参数与 `RangeObjects` 完全相同，也是使用一个回调函数，通过返回 `true` 来继续下一迭代。
+
+比如下面的代码段
+
+```go
+const raw = `{"a":1,"b":2,"c":3}`
+v := jsonvalue.MustUnmarshalString(raw)
+keys := []string{}
+v.RangeObjectsBySetSequence(func(key string, _ *V) bool {
+    keys = append(keys, key)
+})
+fmt.Println(keys)
+```
+
+可以稳定地、保证获得 `[a, b, c]`。
 
 ## 已弃用的函数
 

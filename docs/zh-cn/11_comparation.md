@@ -1,15 +1,9 @@
 
 <font size=6>值的比较</font>
 
-[上一页](./10_conversion.md) | [总目录](./README.md) | [下一页](./12_scenarios.md)
+[上一页](./10_scenarios.md) | [总目录](./README.md) | [下一页](./12_option.md)
 
 ---
-
-- [判断两个 JSON 值是否相等](#判断两个-json-值是否相等)
-
----
-
-## 判断两个 JSON 值是否相等
 
 从 v1.3.0 开始，支持使用 `Equal` 函数判断两个 JSON 值是否相等。判断的规则如下：
 
