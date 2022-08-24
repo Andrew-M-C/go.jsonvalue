@@ -24,8 +24,8 @@ func testUnmarshalFloatErrors(t *testing.T) {
 	})
 
 	cv("stateStart", func() {
-		it := &iter{'E'}
-		_, _, _, err := it.parseNumber(0)
+		u := newUnmarshaler([]byte{'E'})
+		_, _, _, err := u.parseNumber(0)
 		so(err, isErr)
 	})
 

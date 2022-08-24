@@ -7,7 +7,7 @@ import (
 
 // For state machine chart, please refer to ./img/parse_float_state_chart.drawio
 
-func (it iter) parseNumber(
+func (u *unmarshaler) parseNumber(
 	offset int,
 ) (v *V, end int, reachEnd bool, err error) {
 
@@ -20,10 +20,10 @@ func (it iter) parseNumber(
 	integer := uint64(0)
 	edgeFound := false
 
-	// len(it)-idx means remain bytes
+	// len(u.b)-idx means remain bytes
 
-	for ; len(it)-idx > 0 && !edgeFound; idx++ {
-		b := it[idx]
+	for ; len(u.b)-idx > 0 && !edgeFound; idx++ {
+		b := u.b[idx]
 
 		switch b {
 		default:
@@ -38,11 +38,11 @@ func (it iter) parseNumber(
 				intAfterDotGot = true
 			} else if negative {
 				if integer == 0 && idx != offset+1 {
-					err = it.numErrorf(idx, "unexpected zero")
+					err = u.numErrorf(idx, "unexpected zero")
 					return
 				}
 			} else if integer == 0 {
-				err = it.numErrorf(idx, "unexpected zero")
+				err = u.numErrorf(idx, "unexpected zero")
 				return
 			}
 			integer *= 10
@@ -56,7 +56,7 @@ func (it iter) parseNumber(
 
 		case 'e', 'E':
 			if exponentGot {
-				err = it.numErrorf(idx, "unexpected exponent symbol")
+				err = u.numErrorf(idx, "unexpected exponent symbol")
 				return
 			}
 			exponentGot = true
@@ -65,14 +65,14 @@ func (it iter) parseNumber(
 		case '+':
 			// Codes below not needed because this error is caught in outer logic
 			// if !floated {
-			// 	err = it.numErrorf(idx, "unexpected positive symbol")
+			// 	err = u.numErrorf(idx, "unexpected positive symbol")
 			// 	return
 			// }
 
 		case '-':
 			if !floated {
 				if idx != offset {
-					err = it.numErrorf(idx, "unexpected negative symbol")
+					err = u.numErrorf(idx, "unexpected negative symbol")
 					return
 				}
 				negative = true
@@ -80,7 +80,7 @@ func (it iter) parseNumber(
 
 		case '.':
 			if idx == offset || floated || exponentGot || dotGot {
-				err = it.numErrorf(idx, "unexpected dot symbol")
+				err = u.numErrorf(idx, "unexpected dot symbol")
 				return
 			}
 			dotGot = true
@@ -94,37 +94,37 @@ func (it iter) parseNumber(
 
 	if floated {
 		if dotGot && !intAfterDotGot {
-			err = it.numErrorf(offset, "integer after dot missing")
+			err = u.numErrorf(offset, "integer after dot missing")
 			return
 		}
-		v, err = it.parseFloatResult(offset, idx)
+		v, err = u.parseFloatResult(offset, idx)
 	} else {
-		if integer > 0 && it[offset] == '0' {
-			err = it.numErrorf(offset, "non-zero integer should not start with zero")
+		if integer > 0 && u.b[offset] == '0' {
+			err = u.numErrorf(offset, "non-zero integer should not start with zero")
 			return
 		}
 
-		firstB := it[offset]
+		firstB := u.b[offset]
 		if idx-offset == 1 {
 			if firstB >= '0' && firstB <= '9' {
 				// OK
 			} else {
-				err = it.numErrorf(offset, "invalid number format")
+				err = u.numErrorf(offset, "invalid number format")
 				return
 			}
 		}
 
 		if negative {
-			v, err = it.parseNegativeIntResult(offset, idx, integer)
+			v, err = u.parseNegativeIntResult(offset, idx, integer)
 		} else {
-			v, err = it.parsePositiveIntResult(offset, idx, integer)
+			v, err = u.parsePositiveIntResult(offset, idx, integer)
 		}
 	}
 
-	return v, idx, len(it)-idx == 0, err
+	return v, idx, len(u.b)-idx == 0, err
 }
 
-func (it iter) numErrorf(offset int, f string, a ...any) error {
+func (u *unmarshaler) numErrorf(offset int, f string, a ...any) error {
 	a = append([]any{offset}, a...)
 	return fmt.Errorf("parsing number at index %d: "+f, a...)
 
@@ -146,7 +146,7 @@ func (it iter) numErrorf(offset int, f string, a ...any) error {
 	// }
 	// ca := getCaller(1)
 
-	// a = append([]any{ca, string(it), offset}, a...)
+	// a = append([]any{ca, string(u.b), offset}, a...)
 	// return fmt.Errorf("%s - parsing number \"%s\" at index %d: "+f, a...)
 }
 
@@ -158,14 +158,14 @@ const (
 	intMinAbs     = 9223372036854775808
 )
 
-func (it iter) parseFloatResult(start, end int) (*V, error) {
-	f, err := strconv.ParseFloat(unsafeBtoS(it[start:end]), 64)
+func (u *unmarshaler) parseFloatResult(start, end int) (*V, error) {
+	f, err := strconv.ParseFloat(unsafeBtoS(u.b[start:end]), 64)
 	if err != nil {
-		return nil, it.numErrorf(start, "%w", err)
+		return nil, u.numErrorf(start, "%w", err)
 	}
 
-	v := new(Number)
-	v.srcByte = it[start:end]
+	v := u.new(Number)
+	v.srcByte = u.b[start:end]
 
 	v.num.negative = f < 0
 	v.num.floated = true
@@ -176,19 +176,19 @@ func (it iter) parseFloatResult(start, end int) (*V, error) {
 	return v, nil
 }
 
-func (it iter) parsePositiveIntResult(start, end int, integer uint64) (*V, error) {
+func (u *unmarshaler) parsePositiveIntResult(start, end int, integer uint64) (*V, error) {
 	le := end - start
 
 	if le > len(uintMaxStr) {
-		return nil, it.numErrorf(start, "value too large")
+		return nil, u.numErrorf(start, "value too large")
 	} else if le == len(uintMaxStr) {
 		if integer < uintMaxDigits {
-			return nil, it.numErrorf(start, "value too large")
+			return nil, u.numErrorf(start, "value too large")
 		}
 	}
 
-	v := new(Number)
-	v.srcByte = it[start:end]
+	v := u.new(Number)
+	v.srcByte = u.b[start:end]
 
 	v.num.negative = false
 	v.num.floated = false
@@ -199,19 +199,19 @@ func (it iter) parsePositiveIntResult(start, end int, integer uint64) (*V, error
 	return v, nil
 }
 
-func (it iter) parseNegativeIntResult(start, end int, integer uint64) (*V, error) {
+func (u *unmarshaler) parseNegativeIntResult(start, end int, integer uint64) (*V, error) {
 	le := end - start
 
 	if le > len(intMinStr) {
-		return nil, it.numErrorf(start, "absolute value too large")
+		return nil, u.numErrorf(start, "absolute value too large")
 	} else if le == len(intMinStr) {
 		if integer > intMinAbs {
-			return nil, it.numErrorf(start, "absolute value too large")
+			return nil, u.numErrorf(start, "absolute value too large")
 		}
 	}
 
-	v := new(Number)
-	v.srcByte = it[start:end]
+	v := u.new(Number)
+	v.srcByte = u.b[start:end]
 
 	v.num.negative = true
 	v.num.floated = false

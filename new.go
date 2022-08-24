@@ -24,7 +24,7 @@ func New(value any) *V {
 //
 // NewString 用给定的 string 返回一个初始化好的字符串类型的 jsonvalue 值
 func NewString(s string) *V {
-	v := new(String)
+	v := alloc(String)
 	v.valueStr = s
 	return v
 }
@@ -41,7 +41,7 @@ func NewBytes(b []byte) *V {
 //
 // NewInt64 用给定的 int64 返回一个初始化好的数字类型的 jsonvalue 值
 func NewInt64(i int64) *V {
-	v := new(Number)
+	v := alloc(Number)
 	// v.num = &num{}
 	v.num.floated = false
 	v.num.negative = i < 0
@@ -57,7 +57,7 @@ func NewInt64(i int64) *V {
 //
 // NewUint64 用给定的 uint64 返回一个初始化好的数字类型的 jsonvalue 值
 func NewUint64(u uint64) *V {
-	v := new(Number)
+	v := alloc(Number)
 	// v.num = &num{}
 	v.num.floated = false
 	v.num.negative = false
@@ -101,7 +101,7 @@ func NewUint32(u uint32) *V {
 //
 // NewBool 用给定的 bool 返回一个初始化好的布尔类型的 jsonvalue 值
 func NewBool(b bool) *V {
-	v := new(Boolean)
+	v := alloc(Boolean)
 	v.valueBool = b
 	return v
 }
@@ -110,7 +110,7 @@ func NewBool(b bool) *V {
 //
 // NewNull 返回一个初始化好的 null 类型的 jsonvalue 值
 func NewNull() *V {
-	v := new(Null)
+	v := alloc(Null)
 	return v
 }
 
@@ -121,7 +121,7 @@ func NewNull() *V {
 // NewObject 返回一个初始化好的 object 类型的 jsonvalue 值。可以使用可选的 map[string]any 类型参数初始化该 object 的下一级键值对，
 // 不过目前只支持基础类型，也就是: int/uint, int/int8/int16/int32/int64, uint/uint8/uint16/uint32/uint64, string, bool, nil。
 func NewObject(keyValues ...M) *V {
-	v := newObject()
+	v := allocObject()
 
 	if len(keyValues) > 0 {
 		kv := keyValues[0]
@@ -171,7 +171,7 @@ func (v *V) parseNewObjectKV(kv M) {
 //
 // NewArray 返回一个初始化好的 array 类型的 jsonvalue 值。
 func NewArray() *V {
-	return newArray()
+	return allocArray()
 }
 
 // NewFloat64 returns an initialied num jsonvalue value by float64 type. The format and precision control is the same
@@ -228,7 +228,7 @@ func NewFloat32f(f float32, format byte, prec int) *V {
 }
 
 func newFloat64f(f float64, format byte, prec, bitsize int) *V {
-	v := new(Number)
+	v := alloc(Number)
 	// v.num = &num{}
 	v.num.negative = f < 0
 	v.num.f64 = f

@@ -5,12 +5,82 @@ import (
 	"fmt"
 )
 
+func alloc(t ValueType) *V {
+	v := &V{}
+	v.valueType = t
+	return v
+}
+
+func allocObject() *V {
+	v := alloc(Object)
+	v.children.object = make(map[string]childWithProperty)
+	v.children.lowerCaseKeys = nil
+	return v
+}
+
+func allocArray() *V {
+	v := alloc(Array)
+	return v
+}
+
+const predictBytesPerValue = 10
+
+type unmarshaler struct {
+	preAlloc struct {
+		lastPredict int
+		buffer      []V
+		next        int
+	}
+
+	b []byte
+}
+
+func newUnmarshaler(raw []byte) *unmarshaler {
+	u := &unmarshaler{
+		b: raw,
+	}
+	u.preAlloc.lastPredict = (len(raw)/predictBytesPerValue + 1) * 2
+	u.preAlloc.buffer = make([]V, u.preAlloc.lastPredict)
+	u.preAlloc.next = 0
+	return u
+}
+
+func (u *unmarshaler) popAnEmptyV() *V {
+	if u.preAlloc.next < len(u.preAlloc.buffer) {
+		v := u.preAlloc.buffer[u.preAlloc.next]
+		return &v
+	}
+
+	u.preAlloc.lastPredict = (u.preAlloc.lastPredict + 2) / 2
+	u.preAlloc.buffer = make([]V, u.preAlloc.lastPredict)
+	u.preAlloc.next = 1
+
+	return &u.preAlloc.buffer[0]
+}
+
+func (u *unmarshaler) new(t ValueType) *V {
+	v := u.popAnEmptyV()
+	v.valueType = t
+	return v
+}
+
+func (u *unmarshaler) newArray() *V {
+	return u.new(Array)
+}
+
+func (u *unmarshaler) newObject() *V {
+	v := u.new(Object)
+	v.children.object = make(map[string]childWithProperty)
+	v.children.lowerCaseKeys = nil
+	return v
+}
+
 // iter is used to iterate []byte text
 type iter []byte
 
-func (it iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuote int, sectEnd int, err error) {
+func (u *unmarshaler) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuote int, sectEnd int, err error) {
 	offset++ // skip "
-	end := len(it)
+	end := len(u.b)
 	sectEnd = offset
 
 	shift := func(i *int, le int) {
@@ -21,24 +91,24 @@ func (it iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuot
 			)
 			return
 		}
-		it.memcpy(sectEnd, *i, le)
+		u.memcpy(sectEnd, *i, le)
 		sectEnd += le
 		*i += le
 	}
 
 	// iterate every byte
 	for i := offset; i < end; {
-		chr := it[i]
+		chr := u.b[i]
 
 		// ACSII?
 		if chr == '\\' {
-			err = it.handleEscapeStart(&i, &sectEnd)
+			err = u.handleEscapeStart(&i, &sectEnd)
 		} else if chr == '"' {
 			// found end quote
 			return sectEnd - offset, i + 1, nil
 		} else if chr <= 0x7F {
 			// shift(&i, 1)
-			it[sectEnd] = it[i]
+			u.b[sectEnd] = u.b[i]
 			i++
 			sectEnd++
 		} else if runeIdentifyingBytes2(chr) {
@@ -60,54 +130,54 @@ func (it iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuot
 	return
 }
 
-func (it iter) handleEscapeStart(i *int, sectEnd *int) error {
-	if len(it)-1-*i < 1 {
+func (u *unmarshaler) handleEscapeStart(i *int, sectEnd *int) error {
+	if len(u.b)-1-*i < 1 {
 		return errors.New("escape symbol not followed by another character")
 	}
 
-	chr := it[*i+1]
+	chr := u.b[*i+1]
 	switch chr {
 	default:
 		return fmt.Errorf("unreconized character 0x%02X after escape symbol", chr)
 	case '"', '\'', '/', '\\':
-		it[*sectEnd] = chr
+		u.b[*sectEnd] = chr
 		*sectEnd++
 		*i += 2
 	case 'b':
-		it[*sectEnd] = '\b'
+		u.b[*sectEnd] = '\b'
 		*sectEnd++
 		*i += 2
 	case 'f':
-		it[*sectEnd] = '\f'
+		u.b[*sectEnd] = '\f'
 		*sectEnd++
 		*i += 2
 	case 'r':
-		it[*sectEnd] = '\r'
+		u.b[*sectEnd] = '\r'
 		*sectEnd++
 		*i += 2
 	case 'n':
-		it[*sectEnd] = '\n'
+		u.b[*sectEnd] = '\n'
 		*sectEnd++
 		*i += 2
 	case 't':
-		it[*sectEnd] = '\t'
+		u.b[*sectEnd] = '\t'
 		*sectEnd++
 		*i += 2
 	case 'u':
-		return it.handleEscapeUnicodeStartWithEnd(i, len(it)-1, sectEnd)
+		return u.handleEscapeUnicodeStartWithEnd(i, len(u.b)-1, sectEnd)
 	}
 	return nil
 }
 
-func (it iter) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (err error) {
+func (u *unmarshaler) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (err error) {
 	if end-*i <= 5 {
 		return errors.New("escape symbol not followed by another character")
 	}
 
-	b3 := chrToHex(it[*i+2], &err)
-	b2 := chrToHex(it[*i+3], &err)
-	b1 := chrToHex(it[*i+4], &err)
-	b0 := chrToHex(it[*i+5], &err)
+	b3 := chrToHex(u.b[*i+2], &err)
+	b2 := chrToHex(u.b[*i+3], &err)
+	b1 := chrToHex(u.b[*i+4], &err)
+	b0 := chrToHex(u.b[*i+5], &err)
 	if err != nil {
 		return
 	}
@@ -116,7 +186,7 @@ func (it iter) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (e
 
 	// this rune is smaller than 0x10000
 	if r <= 0xD7FF || r >= 0xE000 {
-		le := it.assignASCIICodedRune(*sectEnd, r)
+		le := u.assignASCIICodedRune(*sectEnd, r)
 		*i += 6
 		*sectEnd += le
 		return nil
@@ -127,14 +197,14 @@ func (it iter) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (e
 	if end-*i <= 11 {
 		return fmt.Errorf("insufficient UTF-16 data at offset %d", *i)
 	}
-	if it[*i+6] != '\\' || it[*i+7] != 'u' {
+	if u.b[*i+6] != '\\' || u.b[*i+7] != 'u' {
 		return fmt.Errorf("expect unicode escape character at position %d but not", *i+6)
 	}
 
-	ex3 := chrToHex(it[*i+8], &err)
-	ex2 := chrToHex(it[*i+9], &err)
-	ex1 := chrToHex(it[*i+10], &err)
-	ex0 := chrToHex(it[*i+11], &err)
+	ex3 := chrToHex(u.b[*i+8], &err)
+	ex2 := chrToHex(u.b[*i+9], &err)
+	ex1 := chrToHex(u.b[*i+10], &err)
+	ex0 := chrToHex(u.b[*i+11], &err)
 	if err != nil {
 		return
 	}
@@ -156,7 +226,7 @@ func (it iter) handleEscapeUnicodeStartWithEnd(i *int, end int, sectEnd *int) (e
 
 	r = ((r - 0xD800) << 10) + ex + 0x10000
 
-	le := it.assignASCIICodedRune(*sectEnd, r)
+	le := u.assignASCIICodedRune(*sectEnd, r)
 	*i += 12
 	*sectEnd += le
 	return nil
@@ -176,12 +246,12 @@ func chrToHex(chr byte, errOut *error) byte {
 	return 0
 }
 
-func (it iter) memcpy(dst, src, length int) {
+func (u *unmarshaler) memcpy(dst, src, length int) {
 	if dst == src {
 		return
 	}
-	copy(it[dst:dst+length], it[src:src+length])
-	// ptr := unsafe.Pointer(&it[0])
+	copy(u.b[dst:dst+length], u.b[src:src+length])
+	// ptr := unsafe.Pointer(&u.b[0])
 	// C.memcpy(
 	// 	unsafe.Pointer(uintptr(ptr)+uintptr(dst)),
 	// 	unsafe.Pointer(uintptr(ptr)+uintptr(src)),
@@ -189,37 +259,37 @@ func (it iter) memcpy(dst, src, length int) {
 	// )
 }
 
-func (it iter) assignASCIICodedRune(dst int, r rune) (offset int) {
+func (u *unmarshaler) assignASCIICodedRune(dst int, r rune) (offset int) {
 	// 0zzzzzzz ==>
 	// 0zzzzzzz
 	if r <= 0x7F {
-		it[dst+0] = byte(r)
+		u.b[dst+0] = byte(r)
 		return 1
 	}
 
 	// 00000yyy yyzzzzzz ==>
 	// 110yyyyy 10zzzzzz
 	if r <= 0x7FF {
-		it[dst+0] = byte((r&0x7C0)>>6) + 0xC0
-		it[dst+1] = byte((r&0x03F)>>0) + 0x80
+		u.b[dst+0] = byte((r&0x7C0)>>6) + 0xC0
+		u.b[dst+1] = byte((r&0x03F)>>0) + 0x80
 		return 2
 	}
 
 	// xxxxyyyy yyzzzzzz ==>
 	// 1110xxxx 10yyyyyy 10zzzzzz
 	if r <= 0xFFFF {
-		it[dst+0] = byte((r&0xF000)>>12) + 0xE0
-		it[dst+1] = byte((r&0x0FC0)>>6) + 0x80
-		it[dst+2] = byte((r&0x003F)>>0) + 0x80
+		u.b[dst+0] = byte((r&0xF000)>>12) + 0xE0
+		u.b[dst+1] = byte((r&0x0FC0)>>6) + 0x80
+		u.b[dst+2] = byte((r&0x003F)>>0) + 0x80
 		return 3
 	}
 
 	// 000wwwxx xxxxyyyy yyzzzzzz ==>
 	// 11110www 10xxxxxx 10yyyyyy 10zzzzzz
-	it[dst+0] = byte((r&0x1C0000)>>18) + 0xF0
-	it[dst+1] = byte((r&0x03F000)>>12) + 0x80
-	it[dst+2] = byte((r&0x000FC0)>>6) + 0x80
-	it[dst+3] = byte((r&0x00003F)>>0) + 0x80
+	u.b[dst+0] = byte((r&0x1C0000)>>18) + 0xF0
+	u.b[dst+1] = byte((r&0x03F000)>>12) + 0x80
+	u.b[dst+2] = byte((r&0x000FC0)>>6) + 0x80
+	u.b[dst+3] = byte((r&0x00003F)>>0) + 0x80
 	return 4
 }
 
@@ -235,46 +305,46 @@ func runeIdentifyingBytes4(chr byte) bool {
 	return (chr & 0xF8) == 0xF0
 }
 
-func (it iter) parseTrue(offset int) (end int, err error) {
-	if len(it)-offset < 4 {
+func (u *unmarshaler) parseTrue(offset int) (end int, err error) {
+	if len(u.b)-offset < 4 {
 		return -1, fmt.Errorf("%w, insufficient character from Position %d", ErrNotValidBoolValue, offset)
 	}
 
-	if it[offset] == 't' &&
-		it[offset+1] == 'r' &&
-		it[offset+2] == 'u' &&
-		it[offset+3] == 'e' {
+	if u.b[offset] == 't' &&
+		u.b[offset+1] == 'r' &&
+		u.b[offset+2] == 'u' &&
+		u.b[offset+3] == 'e' {
 		return offset + 4, nil
 	}
 
 	return -1, fmt.Errorf("%w, not 'true' at Position %d", ErrNotValidBoolValue, offset)
 }
 
-func (it iter) parseFalse(offset int) (end int, err error) {
-	if len(it)-offset < 5 {
+func (u *unmarshaler) parseFalse(offset int) (end int, err error) {
+	if len(u.b)-offset < 5 {
 		return -1, fmt.Errorf("%w, insufficient character from Position %d", ErrNotValidBoolValue, offset)
 	}
 
-	if it[offset] == 'f' &&
-		it[offset+1] == 'a' &&
-		it[offset+2] == 'l' &&
-		it[offset+3] == 's' &&
-		it[offset+4] == 'e' {
+	if u.b[offset] == 'f' &&
+		u.b[offset+1] == 'a' &&
+		u.b[offset+2] == 'l' &&
+		u.b[offset+3] == 's' &&
+		u.b[offset+4] == 'e' {
 		return offset + 5, nil
 	}
 
 	return -1, fmt.Errorf("%w, not 'false' at Position %d", ErrNotValidBoolValue, offset)
 }
 
-func (it iter) parseNull(offset int) (end int, err error) {
-	if len(it)-offset < 4 {
+func (u *unmarshaler) parseNull(offset int) (end int, err error) {
+	if len(u.b)-offset < 4 {
 		return -1, fmt.Errorf("%w, insufficient character from Position %d", ErrNotValidNulllValue, offset)
 	}
 
-	if it[offset] == 'n' &&
-		it[offset+1] == 'u' &&
-		it[offset+2] == 'l' &&
-		it[offset+3] == 'l' {
+	if u.b[offset] == 'n' &&
+		u.b[offset+1] == 'u' &&
+		u.b[offset+2] == 'l' &&
+		u.b[offset+3] == 'l' {
 		return offset + 4, nil
 	}
 
@@ -282,16 +352,16 @@ func (it iter) parseNull(offset int) (end int, err error) {
 }
 
 // skipBlanks skip blank characters until end or reaching a non-blank characher
-func (it iter) skipBlanks(offset int, endPos ...int) (newOffset int, reachEnd bool) {
+func (u *unmarshaler) skipBlanks(offset int, endPos ...int) (newOffset int, reachEnd bool) {
 	end := 0
 	if len(endPos) > 0 {
 		end = endPos[0]
 	} else {
-		end = len(it)
+		end = len(u.b)
 	}
 
 	for offset < end {
-		chr := it[offset]
+		chr := u.b[offset]
 		switch chr {
 		case ' ', '\r', '\n', '\t', '\b':
 			offset++ // continue

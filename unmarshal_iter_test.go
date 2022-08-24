@@ -8,21 +8,21 @@ import (
 )
 
 func testIter(t *testing.T) {
-	cv("iter.memcpy", func() { testIterMemcpy(t) })
-	cv("iter.assignWideRune", func() { testIterAssignWideRune(t) })
-	cv("iter.character searching", func() { testIterChrSearching(t) })
-	cv("iter.testIter_parseNumber", func() { testIterParseNumber(t) })
+	cv("u.memcpy", func() { testIterMemcpy(t) })
+	cv("u.assignWideRune", func() { testIterAssignWideRune(t) })
+	cv("u.character searching", func() { testIterChrSearching(t) })
+	cv("u.testIter_parseNumber", func() { testIterParseNumber(t) })
 }
 
 func testIterMemcpy(t *testing.T) {
 	b := []byte{0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xAA}
 
-	it := iter(b)
+	u := newUnmarshaler(b)
 
 	origByte := b[4]
 
 	t.Logf("before: %s", hex.EncodeToString(b))
-	it.memcpy(0, 4, 6)
+	u.memcpy(0, 4, 6)
 	t.Logf("result: %s", hex.EncodeToString(b))
 
 	So(b[0], ShouldEqual, origByte)
@@ -31,13 +31,13 @@ func testIterMemcpy(t *testing.T) {
 func testIterAssignWideRune(t *testing.T) {
 	b := make([]byte, 32)
 
-	it := iter(b)
+	u := newUnmarshaler(b)
 
 	len := 0
 
 	append := func(r rune) {
 		t.Logf("rune hex: %04x", r)
-		len += it.assignASCIICodedRune(len, r)
+		len += u.assignASCIICodedRune(len, r)
 		t.Logf("bytes: %v", hex.EncodeToString(b))
 	}
 
@@ -46,7 +46,7 @@ func testIterAssignWideRune(t *testing.T) {
 	append('世')
 	append('界')
 
-	it[len] = '!'
+	u.b[len] = '!'
 	len++
 
 	b = b[:len]
@@ -59,27 +59,27 @@ func testIterChrSearching(t *testing.T) {
 	t.Logf(string(raw))
 	t.Logf("01234567890123456789")
 
-	it := iter(raw)
+	u := newUnmarshaler(raw)
 
-	offset, reachEnd := it.skipBlanks(0)
+	offset, reachEnd := u.skipBlanks(0)
 	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
 	So(offset, ShouldNotBeZeroValue)
 	So(reachEnd, ShouldBeFalse)
 	So(raw[offset], ShouldEqual, '{')
 
-	offset, reachEnd = it.skipBlanks(offset + 1)
+	offset, reachEnd = u.skipBlanks(offset + 1)
 	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
 	So(offset, ShouldNotBeZeroValue)
 	So(reachEnd, ShouldBeFalse)
 	So(raw[offset], ShouldEqual, '[')
 
-	offset, reachEnd = it.skipBlanks(offset + 1)
+	offset, reachEnd = u.skipBlanks(offset + 1)
 	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
 	So(offset, ShouldNotBeZeroValue)
 	So(reachEnd, ShouldBeFalse)
 	So(raw[offset], ShouldEqual, '{')
 
-	offset, reachEnd = it.skipBlanks(offset + 1)
+	offset, reachEnd = u.skipBlanks(offset + 1)
 	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
 	So(offset, ShouldNotBeZeroValue)
 	So(reachEnd, ShouldBeFalse)
@@ -90,9 +90,9 @@ func testIterParseNumber(t *testing.T) {
 	b := []byte("-12345.6789  ")
 
 	Convey("reachEnd == true", func() {
-		it := iter(b[:11])
+		u := newUnmarshaler(b[:11])
 
-		v, end, reachEnd, err := it.parseNumber(0)
+		v, end, reachEnd, err := u.parseNumber(0)
 		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
 		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
 		t.Logf(string(b[:end]))
@@ -102,9 +102,9 @@ func testIterParseNumber(t *testing.T) {
 	})
 
 	Convey("reachEnd == false", func() {
-		it := iter(b)
+		u := newUnmarshaler(b)
 
-		v, end, reachEnd, err := it.parseNumber(0)
+		v, end, reachEnd, err := u.parseNumber(0)
 		So(err, ShouldBeNil)
 		So(v.num.f64, ShouldEqual, -12345.6789)
 		So(reachEnd, ShouldBeFalse)
