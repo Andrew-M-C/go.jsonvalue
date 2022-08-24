@@ -28,7 +28,7 @@ const predictBytesPerValue = 10
 type unmarshaler struct {
 	preAlloc struct {
 		lastPredict int
-		buffer      []V
+		buffer      []*V
 		next        int
 	}
 
@@ -39,23 +39,34 @@ func newUnmarshaler(raw []byte) *unmarshaler {
 	u := &unmarshaler{
 		b: raw,
 	}
+
 	u.preAlloc.lastPredict = (len(raw)/predictBytesPerValue + 1) * 2
-	u.preAlloc.buffer = make([]V, u.preAlloc.lastPredict)
 	u.preAlloc.next = 0
+
+	u.preAlloc.buffer = make([]*V, u.preAlloc.lastPredict)
+	for i := range u.preAlloc.buffer {
+		u.preAlloc.buffer[i] = &V{}
+	}
+
 	return u
 }
 
 func (u *unmarshaler) popAnEmptyV() *V {
 	if u.preAlloc.next < len(u.preAlloc.buffer) {
 		v := u.preAlloc.buffer[u.preAlloc.next]
-		return &v
+		u.preAlloc.next++
+		return v
 	}
 
 	u.preAlloc.lastPredict = (u.preAlloc.lastPredict + 2) / 2
-	u.preAlloc.buffer = make([]V, u.preAlloc.lastPredict)
 	u.preAlloc.next = 1
 
-	return &u.preAlloc.buffer[0]
+	u.preAlloc.buffer = make([]*V, u.preAlloc.lastPredict)
+	for i := range u.preAlloc.buffer {
+		u.preAlloc.buffer[i] = &V{}
+	}
+
+	return u.preAlloc.buffer[0]
 }
 
 func (u *unmarshaler) new(t ValueType) *V {
