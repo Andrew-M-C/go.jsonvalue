@@ -176,6 +176,19 @@ func testImport(t *testing.T) {
 		so(s, eq, th.String)
 	})
 
+	cv("float", func() {
+		m := map[string]interface{}{
+			"32": float32(0.023),
+			"64": float64(0.023),
+		}
+
+		v, err := Import(m)
+		so(err, isNil)
+
+		s := v.MustMarshalString(OptDefaultStringSequence())
+		so(s, eq, `{"32":0.023,"64":0.023}`)
+	})
+
 	cv("error", func() {
 		f := func() bool {
 			return false
@@ -468,13 +481,15 @@ func testStructConv_Import_NormalTypes(t *testing.T) {
 
 	cv("number", func() {
 		st := struct {
-			Int   int32   `json:"int,string"`
-			Uint  uint64  `json:"uint,string"`
-			Float float32 `json:"float,string"`
+			Int     int32   `json:"int,string"`
+			Uint    uint64  `json:"uint,string"`
+			Float32 float32 `json:"float32,string"`
+			Float64 float64 `json:"float64,string"`
 		}{
-			Int:   -100,
-			Uint:  10000,
-			Float: 123.125,
+			Int:     -100,
+			Uint:    10000,
+			Float32: 123.125,
+			Float64: 123.125,
 		}
 
 		j, err := Import(&st)
@@ -488,9 +503,13 @@ func testStructConv_Import_NormalTypes(t *testing.T) {
 		so(err, isNil)
 		so(s, eq, strconv.FormatUint(uint64(st.Uint), 10))
 
-		s, err = j.GetString("float")
+		s, err = j.GetString("float32")
 		so(err, isNil)
-		so(s, eq, strconv.FormatFloat(float64(st.Float), 'f', -1, 32))
+		so(s, eq, strconv.FormatFloat(float64(st.Float32), 'f', -1, 32))
+
+		s, err = j.GetString("float64")
+		so(err, isNil)
+		so(s, eq, strconv.FormatFloat(float64(st.Float64), 'f', -1, 64))
 	})
 }
 

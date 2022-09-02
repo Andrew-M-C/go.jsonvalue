@@ -78,8 +78,11 @@ func validateValAndReturnParser(v reflect.Value, ex ext) (out reflect.Value, fu 
 	case reflect.Uintptr, reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
 		fu = parseUintValue
 
-	case reflect.Float32, reflect.Float64:
-		fu = parseFloatValue
+	case reflect.Float32:
+		fu = parseFloat32Value
+
+	case reflect.Float64:
+		fu = parseFloat64Value
 
 	case reflect.Array:
 		fu = parseArrayValue
@@ -161,15 +164,28 @@ func parseUintValue(v reflect.Value, ex ext) (*V, error) {
 	return NewUint64(u), nil
 }
 
-func parseFloatValue(v reflect.Value, ex ext) (*V, error) {
+func parseFloat64Value(v reflect.Value, ex ext) (*V, error) {
 	f := v.Float()
 	if f == 0.0 && ex.shouldOmitEmpty() {
 		return nil, nil
 	}
 	if ex.toString {
-		return NewString(strconv.FormatFloat(f, 'f', -1, 64)), nil
+		f64 := NewFloat64(f)
+		return NewString(f64.MustMarshalString()), nil
 	}
 	return NewFloat64(f), nil
+}
+
+func parseFloat32Value(v reflect.Value, ex ext) (*V, error) {
+	f := v.Float()
+	if f == 0.0 && ex.shouldOmitEmpty() {
+		return nil, nil
+	}
+	if ex.toString {
+		f32 := NewFloat32(float32(f))
+		return NewString(f32.MustMarshalString()), nil
+	}
+	return NewFloat32(float32(f)), nil
 }
 
 func parseArrayValue(v reflect.Value, ex ext) (*V, error) {
