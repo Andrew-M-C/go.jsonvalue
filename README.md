@@ -4,8 +4,8 @@
 [![codecov](https://codecov.io/gh/Andrew-M-C/go.jsonvalue/branch/dev/github_workflow/graph/badge.svg?token=REDI4YDLPR)](https://codecov.io/gh/Andrew-M-C/go.jsonvalue)
 [![Go report](https://goreportcard.com/badge/github.com/Andrew-M-C/go.jsonvalue)](https://goreportcard.com/report/github.com/Andrew-M-C/go.jsonvalue)
 [![Codebeat](https://codebeat.co/badges/ecf87760-2987-48a7-a6dd-4d9fcad57256)](https://codebeat.co/projects/github-com-andrew-m-c-go-jsonvalue-master)<br>
-[![GoDoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue?status.svg)](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue@v1.3.1)
-[![Latest](https://img.shields.io/badge/latest-v1.3.1-blue.svg)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.3.1)
+[![GoDoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue?status.svg)](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue@v1.3.2)
+[![Latest](https://img.shields.io/badge/latest-v1.3.2-blue.svg)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.3.2)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![UsedBy](https://andrewmc.cn/v1/usedby/usedby/getBadge?repo=github.com/Andrew-M-C/go.jsonvalue)](https://github.com/Andrew-M-C/go.jsonvalue/network/dependents)
 
