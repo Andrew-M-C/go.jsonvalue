@@ -32,7 +32,7 @@
 
 ```go
 const raw = `{"obj": {"obj": {"obj": {"str": "Hello, JSON!"}}}}`
-s := jsonvalue.MustUnmarshalString(s).GetString("obj", "obj", "obj", "str")
+s := jsonvalue.MustUnmarshalString(s).MustGet("obj", "obj", "obj", "str").String()
 fmt.Println(s)
 ```
 
