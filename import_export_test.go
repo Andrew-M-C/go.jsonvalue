@@ -17,6 +17,8 @@ func testStructConv(t *testing.T) {
 	cv("export to bool", func() { testExportBool(t) })
 	cv("misc import", func() { testImport(t) })
 	cv("test structconv.go Import", func() { testStructConv_Import(t) })
+
+	cv("test Issue 19", func() { testImportBugIssue19(t) })
 }
 
 func testExportString(t *testing.T) {
@@ -707,4 +709,23 @@ func testStructConv_Import_ArrayAndSlice(t *testing.T) {
 		so(v.MustGet("bool").ValueType(), eq, String)
 		so(v.MustGet("bool").Bool(), eq, s.Bool)
 	})
+}
+
+func testImportBugIssue19(t *testing.T) {
+	type req struct {
+		IDs []uint64 `json:"ids,omitempty"`
+	}
+	type data struct {
+		Req *req `json:"req,omitempty"`
+	}
+
+	d := data{}
+	d.Req = &req{}
+	d.Req.IDs = []uint64{0}
+
+	j, err := Import(d)
+	so(err, isNil)
+
+	s := j.MustMarshalString()
+	so(s, eq, `{"req":{"ids":[0]}}`)
 }

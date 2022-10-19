@@ -189,6 +189,7 @@ func parseFloat32Value(v reflect.Value, ex ext) (*V, error) {
 }
 
 func parseArrayValue(v reflect.Value, ex ext) (*V, error) {
+	ex.omitempty = false
 	res := NewArray()
 	le := v.Len()
 
