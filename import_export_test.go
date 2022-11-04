@@ -761,6 +761,7 @@ func testImportMiscAnonymous(t *testing.T) {
 	cv("slice", func() { testImportMiscAnonymousSliceInStruct(t) })
 	cv("array", func() { testImportMiscAnonymousArrayInStruct(t) })
 	cv("slice pointer", func() { testImportMiscAnonymousSlicePtrInStruct(t) })
+	cv("invalid types", func() { testImportMiscAnonymousInvalidTypes(t) })
 }
 
 func testImportMiscAnonymousStructPtrInStruct(t *testing.T) {
@@ -810,15 +811,18 @@ func testImportMiscEmptyAnonymousStructPtrInStruct(t *testing.T) {
 func testImportMiscAnonymousExportableBasicTypeInStruct(t *testing.T) {
 	type Name string
 	type Age int
+	type Gender string
 
 	type outer struct {
 		Name
 		Age
+		Gender `json:"-"`
 	}
 
 	person := &outer{}
 	person.Name = "Andrew"
 	person.Age = 20
+	person.Gender = "male"
 
 	//lint:ignore SA9005 because the lint is error
 	b, _ := json.Marshal(person)
@@ -959,4 +963,20 @@ func testImportMiscAnonymousSlicePtrInStruct(t *testing.T) {
 	so(err, isNil)
 	so(s, eq, string(b))
 	so(s, eq, `{"Name":["Andrew","M","C"],"Age":20}`)
+}
+
+func testImportMiscAnonymousInvalidTypes(t *testing.T) {
+	type Inner chan int
+	type outer struct {
+		Inner
+		Age int
+	}
+
+	data := &outer{}
+	//lint:ignore SA1026 intent to test this
+	_, err := json.Marshal(data)
+	so(err, isErr)
+
+	_, err = Import(data)
+	so(err, isErr)
 }
