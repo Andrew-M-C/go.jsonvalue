@@ -19,6 +19,9 @@ func testStructConv(t *testing.T) {
 	cv("test structconv.go Import", func() { testStructConv_Import(t) })
 
 	cv("test Issue 19", func() { testImportBugIssue19(t) })
+	cv("test Issue 22", func() { testImportBugIssue22(t) })
+
+	cv("test miscellaneous anonymous situations", func() { testImportMiscAnonymous(t) })
 }
 
 func testExportString(t *testing.T) {
@@ -728,4 +731,232 @@ func testImportBugIssue19(t *testing.T) {
 
 	s := j.MustMarshalString()
 	so(s, eq, `{"req":{"ids":[0]}}`)
+}
+
+func testImportBugIssue22(t *testing.T) {
+	type inner struct {
+		Name string
+	}
+	type outer struct {
+		*inner
+		Age int
+	}
+	person := &outer{}
+	person.inner = &inner{}
+	person.Name = "Andrew"
+
+	b, _ := json.Marshal(person)
+	t.Logf("encoding/json: %s", b)
+
+	s := New(person).MustMarshalString(OptSetSequence())
+	so(s, eq, string(b))
+}
+
+func testImportMiscAnonymous(t *testing.T) {
+	cv("struct pointer", func() { testImportMiscAnonymousStructPtrInStruct(t) })
+	cv("empty struct pointer", func() { testImportMiscEmptyAnonymousStructPtrInStruct(t) })
+	cv("exportable basic types", func() { testImportMiscAnonymousExportableBasicTypeInStruct(t) })
+	cv("exportable basic types with tags", func() { testImportMiscAnonymousExportableBasicTypeInStructWithTags(t) })
+	cv("un-exportable basic types", func() { testImportMiscAnonymousPrivateBasicTypeInStruct(t) })
+	cv("slice", func() { testImportMiscAnonymousSliceInStruct(t) })
+	cv("array", func() { testImportMiscAnonymousArrayInStruct(t) })
+	cv("slice pointer", func() { testImportMiscAnonymousSlicePtrInStruct(t) })
+}
+
+func testImportMiscAnonymousStructPtrInStruct(t *testing.T) {
+	type inner struct {
+		Name string
+	}
+	type outer struct {
+		*inner
+		Age int
+	}
+
+	person := &outer{}
+	person.inner = &inner{}
+	person.Name = "Andrew"
+	person.Age = 20
+
+	b, _ := json.Marshal(person)
+	v, err := Import(person)
+	s := v.MustMarshalString(OptSetSequence())
+
+	so(err, isNil)
+	so(s, eq, string(b))
+	so(s, eq, `{"Name":"Andrew","Age":20}`)
+}
+
+func testImportMiscEmptyAnonymousStructPtrInStruct(t *testing.T) {
+	type inner struct {
+		Name string
+	}
+	type outer struct {
+		*inner
+		Age int
+	}
+
+	person := &outer{}
+	person.Age = 20
+
+	b, _ := json.Marshal(person)
+	v, err := Import(person)
+	s := v.MustMarshalString()
+
+	so(err, isNil)
+	so(s, eq, string(b))
+	so(s, eq, `{"Age":20}`)
+}
+
+func testImportMiscAnonymousExportableBasicTypeInStruct(t *testing.T) {
+	type Name string
+	type Age int
+
+	type outer struct {
+		Name
+		Age
+	}
+
+	person := &outer{}
+	person.Name = "Andrew"
+	person.Age = 20
+
+	//lint:ignore SA9005 because the lint is error
+	b, _ := json.Marshal(person)
+	v, err := Import(person)
+	s := v.MustMarshalString(OptSetSequence())
+
+	so(err, isNil)
+	so(s, eq, string(b))
+	so(s, eq, `{"Name":"Andrew","Age":20}`)
+}
+
+func testImportMiscAnonymousExportableBasicTypeInStructWithTags(t *testing.T) {
+	type Name string
+	type Age int
+
+	type outer struct {
+		Name `json:"n"`
+		Age  `json:"a"`
+	}
+
+	person := &outer{}
+	person.Name = "Andrew"
+	person.Age = 20
+
+	//lint:ignore SA9005 because the lint is error
+	b, _ := json.Marshal(person)
+	v, err := Import(person)
+	s := v.MustMarshalString(OptSetSequence())
+
+	so(err, isNil)
+	so(s, eq, string(b))
+	so(s, eq, `{"n":"Andrew","a":20}`)
+}
+
+func testImportMiscAnonymousPrivateBasicTypeInStruct(t *testing.T) {
+	type name string
+
+	type outer struct {
+		name `json:"n"`
+		Age  float64 `json:"a"`
+	}
+
+	person := &outer{}
+	person.name = "Andrew"
+	person.Age = 20
+
+	b, _ := json.Marshal(person)
+	v, err := Import(person)
+	s := v.MustMarshalString(OptSetSequence())
+
+	so(err, isNil)
+	so(s, eq, string(b))
+	so(s, eq, `{"a":20}`)
+}
+
+func testImportMiscAnonymousSliceInStruct(t *testing.T) {
+	type Name []string
+	type nickname []string
+
+	type outer struct {
+		Name
+		nickname
+		Age int
+	}
+
+	person := &outer{}
+	person.Name = []string{"Andrew", "M", "C"}
+	person.Age = 20
+
+	b, _ := json.Marshal(person)
+	v, err := Import(person)
+	s := v.MustMarshalString(OptSetSequence())
+
+	so(err, isNil)
+	so(s, eq, string(b))
+	so(s, eq, `{"Name":["Andrew","M","C"],"Age":20}`)
+
+	person.nickname = nickname{"AMC"}
+
+	b, _ = json.Marshal(person)
+	v, err = Import(person)
+	s = v.MustMarshalString(OptSetSequence())
+
+	so(err, isNil)
+	so(s, eq, string(b))
+	so(s, eq, `{"Name":["Andrew","M","C"],"Age":20}`)
+}
+
+func testImportMiscAnonymousArrayInStruct(t *testing.T) {
+	type Name [3]string
+
+	type outer struct {
+		Name
+		Age int
+	}
+
+	person := &outer{}
+	person.Name[0] = "Andrew"
+	person.Name[1] = "C"
+	person.Age = 20
+
+	b, _ := json.Marshal(person)
+	v, err := Import(person)
+	s := v.MustMarshalString(OptSetSequence())
+
+	so(err, isNil)
+	so(s, eq, string(b))
+	so(s, eq, `{"Name":["Andrew","C",""],"Age":20}`)
+}
+
+func testImportMiscAnonymousSlicePtrInStruct(t *testing.T) {
+	type Name []string
+
+	type outer struct {
+		*Name
+
+		Age int
+	}
+
+	person := &outer{}
+	person.Age = 20
+
+	b, _ := json.Marshal(person)
+	v, err := Import(person)
+	s := v.MustMarshalString(OptSetSequence())
+
+	so(err, isNil)
+	so(s, eq, string(b))
+	so(s, eq, `{"Name":null,"Age":20}`)
+
+	n := Name{"Andrew", "M", "C"}
+	person.Name = &n
+
+	b, _ = json.Marshal(person)
+	v, err = Import(person)
+	s = v.MustMarshalString(OptSetSequence())
+
+	so(err, isNil)
+	so(s, eq, string(b))
+	so(s, eq, `{"Name":["Andrew","M","C"],"Age":20}`)
 }

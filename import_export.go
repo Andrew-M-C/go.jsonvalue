@@ -46,12 +46,18 @@ type ext struct {
 	omitempty bool
 	toString  bool
 
+	// revert of isExported
+	private bool
+
 	// extended jsonvalue options
 	ignoreOmitempty bool
 }
 
 func (e ext) shouldOmitEmpty() bool {
-	return e.omitempty && !e.ignoreOmitempty
+	if e.ignoreOmitempty {
+		return false
+	}
+	return e.omitempty || e.private
 }
 
 // validateValAndReturnParser 检查入参合法性并返回相应的处理函数
@@ -319,12 +325,13 @@ func parseStructValue(v reflect.Value, ex ext) (*V, error) {
 		vv := v.Field(i)
 		tt := t.Field(i)
 
-		kv, err := parseStructFieldValue(vv, tt, ex)
+		keys, children, err := parseStructFieldValue(vv, tt, ex)
 		if err != nil {
 			return nil, err
 		}
 
-		for k, v := range kv {
+		for i, k := range keys {
+			v := children[i]
 			res.Set(v).At(k)
 		}
 	}
@@ -339,24 +346,12 @@ func parseNullValue(v reflect.Value, ex ext) (*V, error) {
 	return NewNull(), nil
 }
 
-func parseStructFieldValue(fv reflect.Value, ft reflect.StructField, parentEx ext) (m map[string]*V, err error) {
-	m = map[string]*V{}
+func parseStructFieldValue(
+	fv reflect.Value, ft reflect.StructField, parentEx ext,
+) (keys []string, children []*V, err error) {
 
 	if ft.Anonymous {
-		numField := fv.NumField()
-		for i := 0; i < numField; i++ {
-			ffv := fv.Field(i)
-			fft := ft.Type.Field(i)
-
-			mm, err := parseStructFieldValue(ffv, fft, parentEx)
-			if err != nil {
-				return nil, err
-			}
-			for k, v := range mm {
-				m[k] = v
-			}
-		}
-		return m, nil
+		return parseStructAnonymousFieldValue(fv, ft, parentEx)
 	}
 
 	if !fv.CanInterface() {
@@ -370,18 +365,70 @@ func parseStructFieldValue(fv reflect.Value, ft reflect.StructField, parentEx ex
 
 	fv, fu, err := validateValAndReturnParser(fv, ex)
 	if err != nil {
-		return m, fmt.Errorf("parsing field '%s' error: %w", fieldName, err)
+		err = fmt.Errorf("parsing field '%s' error: %w", fieldName, err)
+		return
 	}
 
 	child, err := fu(fv, ex)
 	if err != nil {
-		return m, fmt.Errorf("parsing field '%s' error: %w", fieldName, err)
+		err = fmt.Errorf("parsing field '%s' error: %w", fieldName, err)
+		return
 	}
 	if child != nil {
-		m[fieldName] = child
+		return []string{fieldName}, []*V{child}, nil
 	}
 
-	return m, nil
+	return nil, nil, nil
+}
+
+func parseStructAnonymousFieldValue(
+	fv reflect.Value, ft reflect.StructField, parentEx ext,
+) (keys []string, children []*V, err error) {
+
+	fieldName, ex := readAnonymousFieldTag(ft, "json", parentEx)
+	if fieldName == "-" {
+		return nil, nil, nil
+	}
+	if fv.Kind() == reflect.Ptr && fv.IsNil() {
+		if ex.shouldOmitEmpty() {
+			return nil, nil, nil
+		}
+		return []string{fieldName}, []*V{NewNull()}, nil
+	}
+
+	fv, fu, err := validateValAndReturnParser(fv, ex)
+	if err != nil {
+		err = fmt.Errorf("parsing anonymous field error: %w", err)
+		return
+	}
+
+	child, err := fu(fv, ex)
+	if err != nil {
+		err = fmt.Errorf("parsing anonymous field error: %w", err)
+		return
+	}
+	if child == nil {
+		return nil, nil, nil
+	}
+
+	switch child.ValueType() {
+	default: // invalid
+		return nil, nil, nil
+
+	case String, Number, Boolean, Null, Array:
+		if ex.private {
+			return nil, nil, nil
+		}
+		return []string{fieldName}, []*V{child}, nil
+
+	case Object:
+		child.RangeObjectsBySetSequence(func(k string, c *V) bool {
+			keys = append(keys, k)
+			children = append(children, c)
+			return true
+		})
+		return
+	}
 }
 
 func readFieldTag(ft reflect.StructField, name string, parentEx ext) (field string, ex ext) {
@@ -410,5 +457,18 @@ func readFieldTag(ft reflect.StructField, name string, parentEx ext) (field stri
 		field = ft.Name
 	}
 	ex.ignoreOmitempty = parentEx.ignoreOmitempty
+	return
+}
+
+func readAnonymousFieldTag(ft reflect.StructField, name string, parentEx ext) (field string, ex ext) {
+	field, ex = readFieldTag(ft, name, parentEx)
+
+	firstChar := ft.Name[0]
+	if firstChar >= 'A' && firstChar <= 'Z' {
+		ex.private = false
+	} else {
+		ex.private = true
+	}
+
 	return
 }
