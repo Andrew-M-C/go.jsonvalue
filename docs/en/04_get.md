@@ -1,31 +1,31 @@
 
-<font size=6>获取 JSON 中的值</font>
+<font size=6>Get Values from JSON Structure</font>
 
-[上一页](./03_set.md) | [总目录](./README.md) | [下一页](./05_marshal_unmarshal.md)
+[Prev Page](./03_set.md) | [Contents](./README.md) | [Next Page](./05_marshal_unmarshal.md)
 
 ---
 
-- [Get 系列函数](#get-系列函数)
-  - [函数参数含义](#函数参数含义)
-  - [GetXxx 系列函数](#getxxx-系列函数)
-- [MustGet 和相关函数](#mustget-和相关函数)
+- [Get Functions](#get-functions)
+  - [Parameters](#parameters)
+  - [GetXxx Series](#getxxx-series)
+- [`MustGet` and Other Related Methods](#mustget-and-other-related-methods)
 - [jsonvalue.V 对象的属性](#jsonvaluev-对象的属性)
   - [官方定义](#官方定义)
   - [jsonvalue 基础属性](#jsonvalue-基础属性)
 
 ---
 
-## Get 系列函数
+## Get Functions
 
-### 函数参数含义
+### Parameters
 
-Get 系列函数是 jsonvalue 中读取 JSON 信息的核心函数。函数格式如下：
+Get function is the core of reading information of jsonvalue. Here is the prototype:
 
 ```go
 func (v *V) Get(param1 any, params ...any) (*V, error)
 ```
 
-实际的使用示例为：
+For a practical example:
 
 ```go
 const raw = `{"someObject": {"someObject": {"someObject": {"message": "Hello, JSON!"}}}}`
@@ -33,38 +33,37 @@ child, _ := jsonvalue.MustUnmarshalString(s).Get("someObject", "someObject", "so
 fmt.Println(child.String())
 ```
 
-在上面的例子中，`Get` 函数的参数的含义为：
+The meaning of the `Get` parameters above are:
 
-- 获取 `*V` 对象中，key 为 `someObject` 的 object 值，再从这个值中，获取 key 为 `someObject` 的 object 值……
-  - 如果写成域格式，则相当于 `child = v.someObject.someObject.someObject.message`
+-  Locate and get the sub value with key `someObject` from the `*V` instance, and then get another value with key `someObject` from the previous located `*V` instance, and then go on...
+  - This operation could also be described as domain format, like: `child = v.someObject.someObject.someObject.message`
 
-`Get` 函数的参数是一个 `any`，但实际上，这个函数只接受两种类别的参数：一是字符串类型，二是整型数字（有符号无符号均可）。
+The type of parameters of `Get` is `any`. In fact, only ones with string or integer (both signed and unsigned are OK) kind are allowed. `Get` will check the parameter type and decide whether to treat the next value an object or array for the next iteration.
 
-`Get` 函数会解析入参，迭代检查每一个参数的类型，从而决定下一轮迭代的逻辑：
+If the [Kind](https://pkg.go.dev/reflect#Kind) of current path node's parameter is string, then:
 
-如果当前层级的参数是一个字符串时，则：
+- If value type of current `jsonvalue` value is "Object", then locate the sub value specified by the string key.
+  - If the sub value exists and it is "Object" typed, then continue iteration with this value and the parameter of next path node.
+  - If the value with specified key does not exist, a value with type `NotExist` will be returned, with error [ErrNotFound](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
+- If current value is not an "Object", a `NotExist` typed value will be returned, with another error [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
 
-- 如果当前的 `jsonvalue` 对象是一个 `Object` 类型时，则查找当浅层级字符串所指定的 value
-  - 如果找到，若有下一层参数，则使用当前 value 和下一层参数继续迭代查找
-  - 如果无法找到参数所指定的错误，则返回类型为 `NotExist` 的对象，以及 [ErrNotFound](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) 错误。
-- 如果当前的对象不是 `Object` 类型，则返回 `NotExist` 对象以及 [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) 错误。
+If the [Kind](https://pkg.go.dev/reflect#Kind) of current path node's parameter is integer, then:
 
-如果当前层级的参数是一个整数时，则：
+- If value type of current `jsonvalue` value is "Array", then find the sub value from specified index by the integer key. At this moment, the meaning of various value of this integer may be:
+  - If index >= 0, it will be a normal index value, and locate sub value just like a ordinary Go slice. If the index is out of range, `NotExist` value and [ErrOutOfRange](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) will be returned.
+  - If index < 0, it will be treated as "XXth to the last", counting backwards. But also, should be within range of the JSON array.
+    - For example, if the length of a JSON array is 5, then -5 locates the element in Index 0, while -6 leads to error returned.
+  - If the searching success in current JSON node, iterations will continue if there are more parameters remaining.
+- If current value of the path node is not an "Array", a `NotExist` typed value will be returned, with another error [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
 
-- 如果当前的对象是一个 `Array` 类型时，则将整数视为 index 参数，查找在指定 index 中是否包含 JSON value。此时 Index 的含义如下：
-  - 当 Index >= 0，则按照正常的切片下标逻辑来查找。如果 JSON array 的长度不足，则返回 `NotExist` 对象以及 [ErrOutOfRange](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) 错误。
-  - 当 Index < 0，则视为 “倒数第几个” 的语义，但最多依然不大于 JSON array 的长度。比如说 array 长度为 5，那么 -5 会返回下标为 0 的子成员，而 -6 则会返回错误。
-  - 如果找到，则根据后续参数情况继续迭代或返回。如果无法找到，则返回 `NotExist` 对象以及 [ErrNotFound](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) 错误。
-- 如果当前的对象不是 `Array` 类型，则返回 `NotExist` 对象以及 [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) 错误。
+You may curious that why do I cut parameters of `Get` function into two parts, instead of a simple `...any`? Just like I answered in [this issue](https://github.com/Andrew-M-C/go.jsonvalue/issues/4), I designed it in purpose:
 
-相信开发者会有[这样的一个疑问](https://github.com/Andrew-M-C/go.jsonvalue/issues/4)：为什么输入参数要强行切为两个部分，而不是直接一个 `...any` 就搞定呢？
+- This is to avoid the programming error like `v.Get` (lacking parameter). By making this method with at least one parameter, an error will thrown in compiling phase instead of runtime.
+- If you are 100% sure that there is at least one parameter for the input `[]any`, you may call this method like this: `subValue, _ := Get(para[0], para[1:]...)`
 
-- 理由是：这是为了是避免出现 `v.Get()` 这样的笔误。让函数至少需要一个参数，就可以在编译阶段就检查出类似的错误，而不会带到线上程序中。
-- 如果开发者需要传入类似参数的话，那么开发者需要检查 `[]any` 参数的长度是否大于一；如果能确保大于一的话，可以采用 `v, _ := Get(para[0], para[1:]...)` 的格式进行调用。
+### GetXxx Series
 
-### GetXxx 系列函数
-
-实际操作中，开发者完全不关心 `*V` 对象本身，而只关心它所承载的值。在开发者可以确定或限定某个字段只能是某个值的时候，可以使用以下函数：
+In practical codes the `Get` itself is rarely used, we use its "siblings" to access basic typed values instead:
 
 ```go
 func (v *V) GetObject (param1 any, params ...any) (*V, error)
@@ -83,16 +82,15 @@ func (v *V) GetFloat32(param1 any, params ...any) (float32, error)
 func (v *V) GetFloat64(param1 any, params ...any) (float64, error)
 ```
 
-这些函数都有以下共同点：
+There are some commons within this methods:
 
-- 如果参数指定的子值存在，并且类型匹配上，那么 error 字段为 nil；除了 `GetNull` 函数之外，其他函数都会返回对应的值。
-- 如果参数指定的子值不存在，或者值存在但是类型不匹配，则 error 必然非 nil；但在不同的情况下，返回的 error 值会有不同。
+- If the sub value exists, and with correct type specified by the method, the returned `error` is nil. And all methods will return the corresponding value besides `GetNull`.
+- If the sub value exists but the type does not match, the error will be [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
+- If the sub value does not exist, the error will be [ErrNotFound](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
 
-此外，这些函数并不是简简单单地只是匹配类型并返回，它们还拥有更加方便的功能，在后续小节中会着重说明，这里笔者先举一个小例子：
+Also, some of these methods do not simply match types and return, they also provide some additional features, which will be described later in later sections. Here I will show you an example:
 
-比如很多情况下，我们可能需要使用 JSON 的 string 类型，实际上承载数字值，比如: `{"number":"12345"}`。
-
-按照 JSON 标准的定义，`number` 成员是一个 string 值。但使用 jsonvalue 的 GetInt 值，是能够正确获得数字值的：
+In many cases, we need to extract number from a string typed value, such as: `{"number":"12345"}`. In this case, `GetInt` method would return the corresponding integer value from this string correctly:
 
 ```go
 raw := `{"number":"12345"}`
@@ -101,18 +99,18 @@ fmt.Println("n =", n)
 fmt.Println("err =", err)
 ```
 
-输出内容为：
+Output：
 
 ```
 n = 12345
 err = not match given type
 ```
 
-可见，n 和 err 都返回了值，这算是打了巴掌又给糖吃（笑）——一方面尽责地帮开发者解析 JSON 内容，另一方面还是提示开发者数据可能存在的错误。当然如果这是预期范围内的正常错误的话，在程序中完全可以忽略。
+As shown by the example, both `n` and `err` returns meaningful value. Now only a valid number is returned, but also the [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) error thrown.
 
 ---
 
-## MustGet 和相关函数
+## `MustGet` and Other Related Methods
 
 上文中提到了 `Get` 和 `GetXxx` 系列函数。除了 `GetNull` 之外，各个函数的返回值均为两个。而针对 Get 函数，jsonvalue 也提供了一个 `MustGet` 函数，仅返回一个参数，从而便于实现即为简单的逻辑。
 
