@@ -6,6 +6,371 @@ import (
 	"strconv"
 )
 
+// ================ OUTER UNMARSHAL ================
+
+// unmarshalWithIter parse bytes with unknown value type.
+func unmarshalWithIter(it iter, offset int) (v *V, err error) {
+	end := len(it)
+	offset, reachEnd := it.skipBlanks(offset)
+	if reachEnd {
+		return &V{}, fmt.Errorf("%w, cannot find any symbol characters found", ErrRawBytesUnrecignized)
+	}
+
+	chr := it[offset]
+	switch chr {
+	case '{':
+		v, offset, err = unmarshalObjectWithIterUnknownEnd(it, offset, end)
+
+	case '[':
+		v, offset, err = unmarshalArrayWithIterUnknownEnd(it, offset, end)
+
+	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
+		var n *V
+		n, offset, _, err = it.parseNumber(offset)
+		if err == nil {
+			v = n
+		}
+
+	case '"':
+		var sectLenWithoutQuote int
+		var sectEnd int
+		sectLenWithoutQuote, sectEnd, err = it.parseStrFromBytesForwardWithQuote(offset)
+		if err == nil {
+			v, err = NewString(unsafeBtoS(it[offset+1:offset+1+sectLenWithoutQuote])), nil
+			offset = sectEnd
+		}
+
+	case 't':
+		offset, err = it.parseTrue(offset)
+		if err == nil {
+			v = NewBool(true)
+		}
+
+	case 'f':
+		offset, err = it.parseFalse(offset)
+		if err == nil {
+			v = NewBool(false)
+		}
+
+	case 'n':
+		offset, err = it.parseNull(offset)
+		if err == nil {
+			v = NewNull()
+		}
+
+	default:
+		return &V{}, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+	}
+
+	if err != nil {
+		return &V{}, err
+	}
+
+	if offset, reachEnd = it.skipBlanks(offset, end); !reachEnd {
+		return &V{}, fmt.Errorf("%w, unnecessary trailing data remains at Position %d", ErrRawBytesUnrecignized, offset)
+	}
+
+	return v, nil
+}
+
+// unmarshalArrayWithIterUnknownEnd is similar with unmarshalArrayWithIter, though should start with '[',
+// but it does not known where its ']' is
+func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int, err error) {
+	offset++
+	arr := newArray()
+
+	reachEnd := false
+
+	for offset < right {
+		// search for ending ']'
+		offset, reachEnd = it.skipBlanks(offset, right)
+		if reachEnd {
+			// ']' not found
+			return nil, -1, fmt.Errorf("%w, cannot find ']'", ErrNotArrayValue)
+		}
+
+		chr := it[offset]
+		switch chr {
+		case ']':
+			return arr, offset + 1, nil
+
+		case ',':
+			offset++
+
+		case '{':
+			v, sectEnd, err := unmarshalObjectWithIterUnknownEnd(it, offset, right)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.appendToArr(v)
+			offset = sectEnd
+
+		case '[':
+			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(it, offset, right)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.appendToArr(v)
+			offset = sectEnd
+
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
+			var v *V
+			v, sectEnd, _, err := it.parseNumber(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.appendToArr(v)
+			offset = sectEnd
+
+		case '"':
+			sectLenWithoutQuote, sectEnd, err := it.parseStrFromBytesForwardWithQuote(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			v := NewString(unsafeBtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
+			arr.appendToArr(v)
+			offset = sectEnd
+
+		case 't':
+			sectEnd, err := it.parseTrue(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.appendToArr(NewBool(true))
+			offset = sectEnd
+
+		case 'f':
+			sectEnd, err := it.parseFalse(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.appendToArr(NewBool(false))
+			offset = sectEnd
+
+		case 'n':
+			sectEnd, err := it.parseNull(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			arr.appendToArr(NewNull())
+			offset = sectEnd
+
+		default:
+			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+		}
+	}
+
+	return nil, -1, fmt.Errorf("%w, cannot find ']'", ErrNotArrayValue)
+}
+
+func (v *V) appendToArr(child *V) {
+	if v.children.arr == nil {
+		v.children.arr = make([]*V, 0, initialArrayCapacity)
+	}
+	v.children.arr = append(v.children.arr, child)
+}
+
+// unmarshalObjectWithIterUnknownEnd unmarshal object from raw bytes. it[offset] must be '{'
+func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int, err error) {
+	offset++
+	obj := newObject()
+
+	keyStart, keyEnd := 0, 0
+	colonFound := false
+
+	reachEnd := false
+
+	keyNotFoundErr := func() error {
+		if keyEnd == 0 {
+			return fmt.Errorf(
+				"%w, missing key for another value at Position %d", ErrNotObjectValue, offset,
+			)
+		}
+		if !colonFound {
+			return fmt.Errorf(
+				"%w, missing colon for key at Position %d", ErrNotObjectValue, offset,
+			)
+		}
+		return nil
+	}
+
+	valNotFoundErr := func() error {
+		if keyEnd > 0 {
+			return fmt.Errorf(
+				"%w, missing value for key '%s' at Position %d",
+				ErrNotObjectValue, unsafeBtoS(it[keyStart:keyEnd]), keyStart,
+			)
+		}
+		return nil
+	}
+
+	for offset < right {
+		offset, reachEnd = it.skipBlanks(offset, right)
+		if reachEnd {
+			// '}' not found
+			return nil, -1, fmt.Errorf("%w, cannot find '}'", ErrNotObjectValue)
+		}
+
+		chr := it[offset]
+		switch chr {
+		case '}':
+			if err = valNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			return obj, offset + 1, nil
+
+		case ',':
+			if err = valNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			offset++
+			// continue
+
+		case ':':
+			if colonFound {
+				return nil, -1, fmt.Errorf("%w, duplicate colon at Position %d", ErrNotObjectValue, keyStart)
+			}
+			colonFound = true
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			offset++
+			// continue
+
+		case '{':
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			v, sectEnd, err := unmarshalObjectWithIterUnknownEnd(it, offset, right)
+			if err != nil {
+				return nil, -1, err
+			}
+			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
+			keyEnd, colonFound = 0, false
+			offset = sectEnd
+
+		case '[':
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(it, offset, right)
+			if err != nil {
+				return nil, -1, err
+			}
+			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
+			keyEnd, colonFound = 0, false
+			offset = sectEnd
+
+		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			var v *V
+			v, sectEnd, _, err := it.parseNumber(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
+			keyEnd, colonFound = 0, false
+			offset = sectEnd
+
+		case '"':
+			if keyEnd > 0 {
+				// string value
+				if !colonFound {
+					return nil, -1, fmt.Errorf("%w, missing value for key '%s' at Position %d",
+						ErrNotObjectValue, unsafeBtoS(it[keyStart:keyEnd]), keyStart,
+					)
+				}
+				sectLenWithoutQuote, sectEnd, err := it.parseStrFromBytesForwardWithQuote(offset)
+				if err != nil {
+					return nil, -1, err
+				}
+				v := NewString(unsafeBtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
+				obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
+				keyEnd, colonFound = 0, false
+				offset = sectEnd
+
+			} else {
+				// string key
+				sectLenWithoutQuote, sectEnd, err := it.parseStrFromBytesForwardWithQuote(offset)
+				if err != nil {
+					return nil, -1, err
+				}
+				keyStart, keyEnd = offset+1, offset+1+sectLenWithoutQuote
+				offset = sectEnd
+			}
+
+		case 't':
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			sectEnd, err := it.parseTrue(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), NewBool(true))
+			keyEnd, colonFound = 0, false
+			offset = sectEnd
+
+		case 'f':
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			sectEnd, err := it.parseFalse(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), NewBool(false))
+			keyEnd, colonFound = 0, false
+			offset = sectEnd
+
+		case 'n':
+			if err = keyNotFoundErr(); err != nil {
+				return nil, -1, err
+			}
+			sectEnd, err := it.parseNull(offset)
+			if err != nil {
+				return nil, -1, err
+			}
+			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), NewNull())
+			keyEnd, colonFound = 0, false
+			offset = sectEnd
+
+		default:
+			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+		}
+
+	}
+
+	return nil, -1, fmt.Errorf("%w, cannot find '}'", ErrNotObjectValue)
+}
+
+// parseNumber parse a number string. Reference:
+//
+// - [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html)
+func (v *V) parseNumber() (err error) {
+	it := iter(v.srcByte)
+
+	parsed, end, reachEnd, err := it.parseNumber(0)
+	if err != nil {
+		return err
+	}
+	if !reachEnd {
+		return fmt.Errorf("invalid character: 0x%02x", v.srcByte[end])
+	}
+
+	*v = *parsed
+	return nil
+}
+
+// ==== simple object parsing ====
+func newFromNumber(b []byte) (ret *V, err error) {
+	v := new(Number)
+	v.srcByte = b
+	return v, nil
+}
+
 // ================ GENERAL UNMARSHALING ================
 
 // iter is used to iterate []byte text

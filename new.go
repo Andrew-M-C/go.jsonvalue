@@ -227,6 +227,26 @@ func NewFloat32f(f float32, format byte, prec int) *V {
 	return newFloat64f(float64(f), format, prec, 64)
 }
 
+// -------- internal functions --------
+
+func new(t ValueType) *V {
+	v := &V{}
+	v.valueType = t
+	return v
+}
+
+func newObject() *V {
+	v := new(Object)
+	v.children.object = make(map[string]childWithProperty)
+	v.children.lowerCaseKeys = nil
+	return v
+}
+
+func newArray() *V {
+	v := new(Array)
+	return v
+}
+
 func newFloat64f(f float64, format byte, prec, bitsize int) *V {
 	v := new(Number)
 	// v.num = &num{}

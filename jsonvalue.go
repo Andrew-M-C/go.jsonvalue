@@ -1,43 +1,46 @@
 // Package jsonvalue is for JSON parsing and setting. It is used in situations those Go structures cannot achieve, or "map[string]any" could not do properbally.
 //
 // As a quick start:
-// 	v := jsonvalue.NewObject()
-// 	v.SetString("Hello, JSON").At("someObject", "someObject", "someObject", "message")  // automatically create sub objects
-// 	fmt.Println(v.MustMarshalString())                                                  // marshal to string type. Use MustMarshal if you want []byte instead.
-// 	// Output:
-// 	// {"someObject":{"someObject":{"someObject":{"message":"Hello, JSON!"}}}
+//
+//	v := jsonvalue.NewObject()
+//	v.SetString("Hello, JSON").At("someObject", "someObject", "someObject", "message")  // automatically create sub objects
+//	fmt.Println(v.MustMarshalString())                                                  // marshal to string type. Use MustMarshal if you want []byte instead.
+//	// Output:
+//	// {"someObject":{"someObject":{"someObject":{"message":"Hello, JSON!"}}}
 //
 // If you want to parse raw JSON data, use Unmarshal()
-// 	raw := []byte(`{"message":"hello, world"}`)
-// 	v, err := jsonvalue.Unmarshal(raw)
-// 	s, _ := v.GetString("message")
-// 	fmt.Println(s)
-// 	// Output:
-// 	// hello, world
+//
+//	raw := []byte(`{"message":"hello, world"}`)
+//	v, err := jsonvalue.Unmarshal(raw)
+//	s, _ := v.GetString("message")
+//	fmt.Println(s)
+//	// Output:
+//	// hello, world
 //
 // jsonvalue 包用于 JSON 的解析（反序列化）和编码（序列化）。通常情况下我们用 struct 来处理结构化的 JSON，但是有时候使用 struct 不方便或者是功能不足的时候，
 // go 一般而言使用的是 "map[string]any"，但是后者也有很多不方便的地方。本包即是用于替代这些不方便的情况的。
 //
 // 快速上手：
-// 	v := jsonvalue.NewObject()
-// 	v.SetString("Hello, JSON").At("someObject", "someObject", "someObject", "message")  // 自动创建子成员
-// 	fmt.Println(v.MustMarshalString())                                                  // 序列化为 string 类型，如果你要 []byte 类型，则使用 MustMarshal 函数。
-// 	// 输出:
-// 	// {"someObject":{"someObject":{"someObject":{"message":"Hello, JSON!"}}}
+//
+//	v := jsonvalue.NewObject()
+//	v.SetString("Hello, JSON").At("someObject", "someObject", "someObject", "message")  // 自动创建子成员
+//	fmt.Println(v.MustMarshalString())                                                  // 序列化为 string 类型，如果你要 []byte 类型，则使用 MustMarshal 函数。
+//	// 输出:
+//	// {"someObject":{"someObject":{"someObject":{"message":"Hello, JSON!"}}}
 //
 // 如果要反序列化原始的 JSON 文本，则使用 Unmarshal():
-// 	raw := []byte(`{"message":"hello, world"}`)
-// 	v, err := jsonvalue.Unmarshal(raw)
-// 	s, _ := v.GetString("message")
-// 	fmt.Println(s)
-// 	// 输出:
-// 	// hello, world
+//
+//	raw := []byte(`{"message":"hello, world"}`)
+//	v, err := jsonvalue.Unmarshal(raw)
+//	s, _ := v.GetString("message")
+//	fmt.Println(s)
+//	// 输出:
+//	// hello, world
 package jsonvalue
 
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -94,9 +97,6 @@ func (v *V) ValueType() ValueType {
 	return v.valueType
 }
 
-// test:
-// go test -v -failfast -cover -coverprofile ./cover.out && go tool cover -html=./cover.out -o ./cover.html && open ./cover.html
-
 // V is the main type of jsonvalue, representing a JSON value.
 //
 // V 是 jsonvalue 的主类型，表示一个 JSON 值。
@@ -133,24 +133,6 @@ type children struct {
 	lowerCaseKeys map[string]map[string]struct{}
 }
 
-func new(t ValueType) *V {
-	v := V{}
-	v.valueType = t
-	return &v
-}
-
-func newObject() *V {
-	v := new(Object)
-	v.children.object = make(map[string]childWithProperty)
-	v.children.lowerCaseKeys = nil
-	return v
-}
-
-func newArray() *V {
-	v := new(Array)
-	return v
-}
-
 func (v *V) addCaselessKey(k string) {
 	if v.children.lowerCaseKeys == nil {
 		return
@@ -181,7 +163,7 @@ func (v *V) delCaselessKey(k string) {
 	}
 }
 
-// MustUnmarshalString just like UnmarshalString(). If error occurres, a JSON value with "NotExist" type would be returned, which
+// MustUnmarshalString just like UnmarshalString(). If error occurs, a JSON value with "NotExist" type would be returned, which
 // could do nothing and return nothing in later use. It is useful to shorten codes.
 //
 // MustUnmarshalString 的逻辑与 UnmarshalString() 相同，不过如果错误的话，会返回一个类型未 "NotExist" 的 JSON 值，这个值在后续的操作中将无法返回
@@ -191,7 +173,7 @@ func MustUnmarshalString(s string) *V {
 	return v
 }
 
-// UnmarshalString is equavilent to Unmarshal([]byte(b)), but much more efficient.
+// UnmarshalString is equivalent to Unmarshal([]byte(b)), but more efficient.
 //
 // UnmarshalString 等效于 Unmarshal([]byte(b))，但效率更高。
 func UnmarshalString(s string) (*V, error) {
@@ -205,344 +187,6 @@ func UnmarshalString(s string) (*V, error) {
 	// b := *(*[]byte)(unsafe.Pointer(&bh))
 	b := []byte(s)
 	return UnmarshalNoCopy(b)
-}
-
-// unmarshalWithIter parse bytes with unknown value type.
-func unmarshalWithIter(it iter, offset int) (v *V, err error) {
-	end := len(it)
-	offset, reachEnd := it.skipBlanks(offset)
-	if reachEnd {
-		return &V{}, fmt.Errorf("%w, cannot find any symbol characters found", ErrRawBytesUnrecignized)
-	}
-
-	chr := it[offset]
-	switch chr {
-	case '{':
-		v, offset, err = unmarshalObjectWithIterUnknownEnd(it, offset, end)
-
-	case '[':
-		v, offset, err = unmarshalArrayWithIterUnknownEnd(it, offset, end)
-
-	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-		var n *V
-		n, offset, _, err = it.parseNumber(offset)
-		if err == nil {
-			v = n
-		}
-
-	case '"':
-		var sectLenWithoutQuote int
-		var sectEnd int
-		sectLenWithoutQuote, sectEnd, err = it.parseStrFromBytesForwardWithQuote(offset)
-		if err == nil {
-			v, err = NewString(unsafeBtoS(it[offset+1:offset+1+sectLenWithoutQuote])), nil
-			offset = sectEnd
-		}
-
-	case 't':
-		offset, err = it.parseTrue(offset)
-		if err == nil {
-			v = NewBool(true)
-		}
-
-	case 'f':
-		offset, err = it.parseFalse(offset)
-		if err == nil {
-			v = NewBool(false)
-		}
-
-	case 'n':
-		offset, err = it.parseNull(offset)
-		if err == nil {
-			v = NewNull()
-		}
-
-	default:
-		return &V{}, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
-	}
-
-	if err != nil {
-		return &V{}, err
-	}
-
-	if offset, reachEnd = it.skipBlanks(offset, end); !reachEnd {
-		return &V{}, fmt.Errorf("%w, unnecessary trailing data remains at Position %d", ErrRawBytesUnrecignized, offset)
-	}
-
-	return v, nil
-}
-
-// unmarshalArrayWithIterUnknownEnd is similar with unmarshalArrayWithIter, though should start with '[',
-// but it does not known where its ']' is
-func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int, err error) {
-	offset++
-	arr := newArray()
-
-	reachEnd := false
-
-	for offset < right {
-		// search for ending ']'
-		offset, reachEnd = it.skipBlanks(offset, right)
-		if reachEnd {
-			// ']' not found
-			return nil, -1, fmt.Errorf("%w, cannot find ']'", ErrNotArrayValue)
-		}
-
-		chr := it[offset]
-		switch chr {
-		case ']':
-			return arr, offset + 1, nil
-
-		case ',':
-			offset++
-
-		case '{':
-			v, sectEnd, err := unmarshalObjectWithIterUnknownEnd(it, offset, right)
-			if err != nil {
-				return nil, -1, err
-			}
-			arr.appendToArr(v)
-			offset = sectEnd
-
-		case '[':
-			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(it, offset, right)
-			if err != nil {
-				return nil, -1, err
-			}
-			arr.appendToArr(v)
-			offset = sectEnd
-
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-			var v *V
-			v, sectEnd, _, err := it.parseNumber(offset)
-			if err != nil {
-				return nil, -1, err
-			}
-			arr.appendToArr(v)
-			offset = sectEnd
-
-		case '"':
-			sectLenWithoutQuote, sectEnd, err := it.parseStrFromBytesForwardWithQuote(offset)
-			if err != nil {
-				return nil, -1, err
-			}
-			v := NewString(unsafeBtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
-			arr.appendToArr(v)
-			offset = sectEnd
-
-		case 't':
-			sectEnd, err := it.parseTrue(offset)
-			if err != nil {
-				return nil, -1, err
-			}
-			arr.appendToArr(NewBool(true))
-			offset = sectEnd
-
-		case 'f':
-			sectEnd, err := it.parseFalse(offset)
-			if err != nil {
-				return nil, -1, err
-			}
-			arr.appendToArr(NewBool(false))
-			offset = sectEnd
-
-		case 'n':
-			sectEnd, err := it.parseNull(offset)
-			if err != nil {
-				return nil, -1, err
-			}
-			arr.appendToArr(NewNull())
-			offset = sectEnd
-
-		default:
-			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
-		}
-	}
-
-	return nil, -1, fmt.Errorf("%w, cannot find ']'", ErrNotArrayValue)
-}
-
-func (v *V) appendToArr(child *V) {
-	if v.children.arr == nil {
-		v.children.arr = make([]*V, 0, initialArrayCapacity)
-	}
-	v.children.arr = append(v.children.arr, child)
-}
-
-// unmarshalObjectWithIterUnknownEnd unmarshal object from raw bytes. it[offset] must be '{'
-func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int, err error) {
-	offset++
-	obj := newObject()
-
-	keyStart, keyEnd := 0, 0
-	colonFound := false
-
-	reachEnd := false
-
-	keyNotFoundErr := func() error {
-		if keyEnd == 0 {
-			return fmt.Errorf(
-				"%w, missing key for another value at Position %d", ErrNotObjectValue, offset,
-			)
-		}
-		if !colonFound {
-			return fmt.Errorf(
-				"%w, missing colon for key at Position %d", ErrNotObjectValue, offset,
-			)
-		}
-		return nil
-	}
-
-	valNotFoundErr := func() error {
-		if keyEnd > 0 {
-			return fmt.Errorf(
-				"%w, missing value for key '%s' at Position %d",
-				ErrNotObjectValue, unsafeBtoS(it[keyStart:keyEnd]), keyStart,
-			)
-		}
-		return nil
-	}
-
-	for offset < right {
-		offset, reachEnd = it.skipBlanks(offset, right)
-		if reachEnd {
-			// '}' not found
-			return nil, -1, fmt.Errorf("%w, cannot find '}'", ErrNotObjectValue)
-		}
-
-		chr := it[offset]
-		switch chr {
-		case '}':
-			if err = valNotFoundErr(); err != nil {
-				return nil, -1, err
-			}
-			return obj, offset + 1, nil
-
-		case ',':
-			if err = valNotFoundErr(); err != nil {
-				return nil, -1, err
-			}
-			offset++
-			// continue
-
-		case ':':
-			if colonFound {
-				return nil, -1, fmt.Errorf("%w, duplicate colon at Position %d", ErrNotObjectValue, keyStart)
-			}
-			colonFound = true
-			if err = keyNotFoundErr(); err != nil {
-				return nil, -1, err
-			}
-			offset++
-			// continue
-
-		case '{':
-			if err = keyNotFoundErr(); err != nil {
-				return nil, -1, err
-			}
-			v, sectEnd, err := unmarshalObjectWithIterUnknownEnd(it, offset, right)
-			if err != nil {
-				return nil, -1, err
-			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
-			keyEnd, colonFound = 0, false
-			offset = sectEnd
-
-		case '[':
-			if err = keyNotFoundErr(); err != nil {
-				return nil, -1, err
-			}
-			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(it, offset, right)
-			if err != nil {
-				return nil, -1, err
-			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
-			keyEnd, colonFound = 0, false
-			offset = sectEnd
-
-		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
-			if err = keyNotFoundErr(); err != nil {
-				return nil, -1, err
-			}
-			var v *V
-			v, sectEnd, _, err := it.parseNumber(offset)
-			if err != nil {
-				return nil, -1, err
-			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
-			keyEnd, colonFound = 0, false
-			offset = sectEnd
-
-		case '"':
-			if keyEnd > 0 {
-				// string value
-				if !colonFound {
-					return nil, -1, fmt.Errorf("%w, missing value for key '%s' at Position %d",
-						ErrNotObjectValue, unsafeBtoS(it[keyStart:keyEnd]), keyStart,
-					)
-				}
-				sectLenWithoutQuote, sectEnd, err := it.parseStrFromBytesForwardWithQuote(offset)
-				if err != nil {
-					return nil, -1, err
-				}
-				v := NewString(unsafeBtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
-				obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
-				keyEnd, colonFound = 0, false
-				offset = sectEnd
-
-			} else {
-				// string key
-				sectLenWithoutQuote, sectEnd, err := it.parseStrFromBytesForwardWithQuote(offset)
-				if err != nil {
-					return nil, -1, err
-				}
-				keyStart, keyEnd = offset+1, offset+1+sectLenWithoutQuote
-				offset = sectEnd
-			}
-
-		case 't':
-			if err = keyNotFoundErr(); err != nil {
-				return nil, -1, err
-			}
-			sectEnd, err := it.parseTrue(offset)
-			if err != nil {
-				return nil, -1, err
-			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), NewBool(true))
-			keyEnd, colonFound = 0, false
-			offset = sectEnd
-
-		case 'f':
-			if err = keyNotFoundErr(); err != nil {
-				return nil, -1, err
-			}
-			sectEnd, err := it.parseFalse(offset)
-			if err != nil {
-				return nil, -1, err
-			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), NewBool(false))
-			keyEnd, colonFound = 0, false
-			offset = sectEnd
-
-		case 'n':
-			if err = keyNotFoundErr(); err != nil {
-				return nil, -1, err
-			}
-			sectEnd, err := it.parseNull(offset)
-			if err != nil {
-				return nil, -1, err
-			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), NewNull())
-			keyEnd, colonFound = 0, false
-			offset = sectEnd
-
-		default:
-			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
-		}
-
-	}
-
-	return nil, -1, fmt.Errorf("%w, cannot find '}'", ErrNotObjectValue)
 }
 
 // MustUnmarshal just like Unmarshal(). If error occurres, a JSON value with "NotExist" type would be returned, which
@@ -591,31 +235,6 @@ func UnmarshalNoCopy(b []byte) (ret *V, err error) {
 		return &V{}, ErrNilParameter
 	}
 	return unmarshalWithIter(iter(b), 0)
-}
-
-// parseNumber parse a number string. Reference:
-//
-// - [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html)
-func (v *V) parseNumber() (err error) {
-	it := iter(v.srcByte)
-
-	parsed, end, reachEnd, err := it.parseNumber(0)
-	if err != nil {
-		return err
-	}
-	if !reachEnd {
-		return fmt.Errorf("invalid character: 0x%02x", v.srcByte[end])
-	}
-
-	*v = *parsed
-	return nil
-}
-
-// ==== simple object parsing ====
-func newFromNumber(b []byte) (ret *V, err error) {
-	v := new(Number)
-	v.srcByte = b
-	return v, nil
 }
 
 // ==== type access ====
@@ -690,14 +309,14 @@ func (v *V) IsPositive() bool {
 }
 
 // GreaterThanInt64Max return true when ALL conditions below are met:
-// 	1. It is a number value.
-// 	2. It is a positive interger.
-// 	3. Its value is greater than 0x7fffffffffffffff.
+//  1. It is a number value.
+//  2. It is a positive integer.
+//  3. Its value is greater than 0x7fffffffffffffff.
 //
 // GreaterThanInt64Max 判断当前值是否超出 int64 可表示的范围。当以下条件均成立时，返回 true，否则返回 false：
-// 	1. 是一个数字类型值.
-// 	2. 是一个正整型数字.
-// 	3. 该正整数的值大于 0x7fffffffffffffff.
+//  1. 是一个数字类型值.
+//  2. 是一个正整型数字.
+//  3. 该正整数的值大于 0x7fffffffffffffff.
 func (v *V) GreaterThanInt64Max() bool {
 	if v.valueType != Number {
 		return false
@@ -720,57 +339,6 @@ func (v *V) IsBoolean() bool {
 // IsBoolean 判断当前值是不是一个空类型
 func (v *V) IsNull() bool {
 	return v.valueType == Null
-}
-
-// ==== value access ====
-
-func getNumberFromNotNumberValue(v *V) *V {
-	if !v.IsString() {
-		return NewInt(0)
-	}
-	ret, _ := newFromNumber(bytes.TrimSpace([]byte(v.valueStr)))
-	err := ret.parseNumber()
-	if err != nil {
-		return NewInt64(0)
-	}
-	return ret
-}
-
-func getNumberAndErrorFromValue(v *V) (*V, error) {
-	switch v.valueType {
-	default:
-		return NewInt(0), ErrTypeNotMatch
-
-	case Number:
-		return v, nil
-
-	case String:
-		ret, _ := newFromNumber(bytes.TrimSpace([]byte(v.valueStr)))
-		err := ret.parseNumber()
-		if err != nil {
-			return NewInt(0), fmt.Errorf("%w: %v", ErrParseNumberFromString, err)
-		}
-		return ret, ErrTypeNotMatch
-	}
-}
-
-func getBoolAndErrorFromValue(v *V) (*V, error) {
-	switch v.valueType {
-	default:
-		return NewBool(false), ErrTypeNotMatch
-
-	case Number:
-		return NewBool(v.Float64() != 0), ErrTypeNotMatch
-
-	case String:
-		if v.valueStr == "true" {
-			return NewBool(true), ErrTypeNotMatch
-		}
-		return NewBool(false), ErrTypeNotMatch
-
-	case Boolean:
-		return v, nil
-	}
 }
 
 // Bool returns represented bool value. If value is not boolean, returns false.

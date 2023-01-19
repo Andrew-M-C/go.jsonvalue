@@ -1,6 +1,7 @@
 package jsonvalue
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 )
@@ -475,4 +476,55 @@ func (g *caselessOper) GetArray(firstParam any, otherParams ...any) (*V, error) 
 
 func (g *caselessOper) Delete(firstParam any, otherParams ...any) error {
 	return g.v.delete(true, firstParam, otherParams...)
+}
+
+// ==== internal value access functions ====
+
+func getNumberFromNotNumberValue(v *V) *V {
+	if !v.IsString() {
+		return NewInt(0)
+	}
+	ret, _ := newFromNumber(bytes.TrimSpace([]byte(v.valueStr)))
+	err := ret.parseNumber()
+	if err != nil {
+		return NewInt64(0)
+	}
+	return ret
+}
+
+func getNumberAndErrorFromValue(v *V) (*V, error) {
+	switch v.valueType {
+	default:
+		return NewInt(0), ErrTypeNotMatch
+
+	case Number:
+		return v, nil
+
+	case String:
+		ret, _ := newFromNumber(bytes.TrimSpace([]byte(v.valueStr)))
+		err := ret.parseNumber()
+		if err != nil {
+			return NewInt(0), fmt.Errorf("%w: %v", ErrParseNumberFromString, err)
+		}
+		return ret, ErrTypeNotMatch
+	}
+}
+
+func getBoolAndErrorFromValue(v *V) (*V, error) {
+	switch v.valueType {
+	default:
+		return NewBool(false), ErrTypeNotMatch
+
+	case Number:
+		return NewBool(v.Float64() != 0), ErrTypeNotMatch
+
+	case String:
+		if v.valueStr == "true" {
+			return NewBool(true), ErrTypeNotMatch
+		}
+		return NewBool(false), ErrTypeNotMatch
+
+	case Boolean:
+		return v, nil
+	}
 }
