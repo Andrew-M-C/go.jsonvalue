@@ -134,7 +134,7 @@ func (v *V) getBytes(caseless bool, firstParam any, otherParams ...any) ([]byte,
 	if ret.valueType != String {
 		return []byte{}, ErrTypeNotMatch
 	}
-	b, err := b64.DecodeString(ret.valueStr)
+	b, err := internal.b64.DecodeString(ret.valueStr)
 	if err != nil {
 		return []byte{}, err
 	}

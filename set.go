@@ -61,7 +61,7 @@ func (v *V) SetString(s string) *Set {
 //
 // SetBytes 等效于 Set(NewString(base64.StdEncoding.EncodeToString(b)))
 func (v *V) SetBytes(b []byte) *Set {
-	s := b64.EncodeToString(b)
+	s := internal.b64.EncodeToString(b)
 	return v.SetString(s)
 }
 

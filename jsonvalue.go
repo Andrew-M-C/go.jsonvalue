@@ -40,13 +40,8 @@ package jsonvalue
 
 import (
 	"bytes"
-	"encoding/base64"
 	"strconv"
 	"strings"
-)
-
-var (
-	b64 = base64.StdEncoding
 )
 
 // ValueType identifying JSON value type
@@ -441,7 +436,7 @@ func (v *V) Bytes() []byte {
 	if v.valueType != String {
 		return []byte{}
 	}
-	b, err := b64.DecodeString(v.valueStr)
+	b, err := internal.b64.DecodeString(v.valueStr)
 	if err != nil {
 		return []byte{}
 	}
