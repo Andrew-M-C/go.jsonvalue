@@ -20,7 +20,7 @@ func New(value any) *V {
 	return v
 }
 
-// NewString returns an initialied string jsonvalue object
+// NewString returns an initialized string jsonvalue object
 //
 // NewString 用给定的 string 返回一个初始化好的字符串类型的 jsonvalue 值
 func NewString(s string) *V {
@@ -37,7 +37,7 @@ func NewBytes(b []byte) *V {
 	return NewString(s)
 }
 
-// NewInt64 returns an initialied num jsonvalue object by int64 type
+// NewInt64 returns an initialized num jsonvalue object by int64 type
 //
 // NewInt64 用给定的 int64 返回一个初始化好的数字类型的 jsonvalue 值
 func NewInt64(i int64) *V {
@@ -53,7 +53,7 @@ func NewInt64(i int64) *V {
 	return v
 }
 
-// NewUint64 returns an initialied num jsonvalue object by uint64 type
+// NewUint64 returns an initialized num jsonvalue object by uint64 type
 //
 // NewUint64 用给定的 uint64 返回一个初始化好的数字类型的 jsonvalue 值
 func NewUint64(u uint64) *V {
@@ -69,35 +69,35 @@ func NewUint64(u uint64) *V {
 	return v
 }
 
-// NewInt returns an initialied num jsonvalue object by int type
+// NewInt returns an initialized num jsonvalue object by int type
 //
 // NewInt 用给定的 int 返回一个初始化好的数字类型的 jsonvalue 值
 func NewInt(i int) *V {
 	return NewInt64(int64(i))
 }
 
-// NewUint returns an initialied num jsonvalue object by uint type
+// NewUint returns an initialized num jsonvalue object by uint type
 //
 // NewUint 用给定的 uint 返回一个初始化好的数字类型的 jsonvalue 值
 func NewUint(u uint) *V {
 	return NewUint64(uint64(u))
 }
 
-// NewInt32 returns an initialied num jsonvalue object by int32 type
+// NewInt32 returns an initialized num jsonvalue object by int32 type
 //
 // NewInt32 用给定的 int32 返回一个初始化好的数字类型的 jsonvalue 值
 func NewInt32(i int32) *V {
 	return NewInt64(int64(i))
 }
 
-// NewUint32 returns an initialied num jsonvalue object by uint32 type
+// NewUint32 returns an initialized num jsonvalue object by uint32 type
 //
 // NewUint32 用给定的 uint32 返回一个初始化好的数字类型的 jsonvalue 值
 func NewUint32(u uint32) *V {
 	return NewUint64(uint64(u))
 }
 
-// NewBool returns an initialied boolean jsonvalue object
+// NewBool returns an initialized boolean jsonvalue object
 //
 // NewBool 用给定的 bool 返回一个初始化好的布尔类型的 jsonvalue 值
 func NewBool(b bool) *V {
@@ -106,7 +106,7 @@ func NewBool(b bool) *V {
 	return v
 }
 
-// NewNull returns an initialied null jsonvalue object
+// NewNull returns an initialized null jsonvalue object
 //
 // NewNull 返回一个初始化好的 null 类型的 jsonvalue 值
 func NewNull() *V {
@@ -167,14 +167,14 @@ func (v *V) parseNewObjectKV(kv M) {
 	}
 }
 
-// NewArray returns an emty array-typed jsonvalue object
+// NewArray returns an empty array-typed jsonvalue object
 //
 // NewArray 返回一个初始化好的 array 类型的 jsonvalue 值。
 func NewArray() *V {
 	return newArray()
 }
 
-// NewFloat64 returns an initialied num jsonvalue value by float64 type. The format and precision control is the same
+// NewFloat64 returns an initialized num jsonvalue value by float64 type. The format and precision control is the same
 // with encoding/json: https://github.com/golang/go/blob/master/src/encoding/json/encode.go#L575
 //
 // NewFloat64 根据指定的 flout64 类型返回一个初始化好的数字类型的 jsonvalue 值。数字转出来的字符串格式参照 encoding/json 中的逻辑。
@@ -188,7 +188,7 @@ func NewFloat64(f float64) *V {
 	return newFloat64f(f, format, -1, 64)
 }
 
-// NewFloat64f returns an initialied num jsonvalue value by float64 type. The format and prec parameter are used in
+// NewFloat64f returns an initialized num jsonvalue value by float64 type. The format and prec parameter are used in
 // strconv.FormatFloat(). Only 'f', 'E', 'e', 'G', 'g' formats are supported, other formats will be mapped to 'g'.
 //
 // NewFloat64f 根据指定的 float64 类型返回一个初始化好的数字类型的 jsonvalue 值。其中参数 format 和 prec 分别用于
@@ -200,7 +200,7 @@ func NewFloat64f(f float64, format byte, prec int) *V {
 	return newFloat64f(f, format, prec, 64)
 }
 
-// NewFloat32 returns an initialied num jsonvalue value by float32 type. The format and precision control is the same
+// NewFloat32 returns an initialized num jsonvalue value by float32 type. The format and precision control is the same
 // with encoding/json: https://github.com/golang/go/blob/master/src/encoding/json/encode.go#L575
 //
 // NewFloat32 根据指定的 float32 类型返回一个初始化好的数字类型的 jsonvalue 值。数字转出来的字符串格式参照 encoding/json 中的逻辑。
@@ -215,7 +215,7 @@ func NewFloat32(f float32) *V {
 	return newFloat64f(f64, format, -1, 32)
 }
 
-// NewFloat32f returns an initialied num jsonvalue value by float64 type. The format and prec parameter are used in
+// NewFloat32f returns an initialized num jsonvalue value by float64 type. The format and prec parameter are used in
 // strconv.FormatFloat(). Only 'f', 'E', 'e', 'G', 'g' formats are supported, other formats will be mapped to 'g'.
 //
 // NewFloat32f 根据指定的 float64 类型返回一个初始化好的数字类型的 jsonvalue 值。其中参数 format 和 prec 分别用于

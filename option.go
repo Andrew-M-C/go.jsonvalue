@@ -583,8 +583,8 @@ func (o *Opt) parseEscapingFuncs() {
 	// ASCII characters always to be escaped
 	o.asciiCharEscapingFunc['"'] = escDoubleQuote
 	o.asciiCharEscapingFunc['/'] = escSlash
-	o.asciiCharEscapingFunc['\\'] = escBaskslash
-	o.asciiCharEscapingFunc['\b'] = escBaskspace
+	o.asciiCharEscapingFunc['\\'] = escBackslash
+	o.asciiCharEscapingFunc['\b'] = escBackspace
 	o.asciiCharEscapingFunc['\f'] = escVertTab
 	o.asciiCharEscapingFunc['\t'] = escTab
 	o.asciiCharEscapingFunc['\n'] = escNewLine

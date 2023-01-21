@@ -35,17 +35,19 @@ func (v *V) MustMarshalString(opt ...Option) string {
 // Marshal 返回序列化后的 JSON 字节序列。
 func (v *V) Marshal(opts ...Option) (b []byte, err error) {
 	if NotExist == v.valueType {
-		return []byte{}, ErrValueUninitialized
+		return nil, ErrValueUninitialized
 	}
 
-	buf := bytes.Buffer{}
+	buf := &bytes.Buffer{}
 	opt := combineOptions(opts)
 
-	err = v.marshalToBuffer(nil, &buf, opt)
+	err = v.marshalToBuffer(nil, buf, opt)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
-	return buf.Bytes(), nil
+
+	b = buf.Bytes()
+	return b, nil
 }
 
 // MarshalString is same with Marshal, but returns string. It is much more efficient than string(b).

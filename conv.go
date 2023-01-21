@@ -81,11 +81,11 @@ func escSlash(_ byte, buf *bytes.Buffer) {
 	buf.Write([]byte{'\\', '/'})
 }
 
-func escBaskslash(_ byte, buf *bytes.Buffer) {
+func escBackslash(_ byte, buf *bytes.Buffer) {
 	buf.Write([]byte{'\\', '\\'})
 }
 
-func escBaskspace(_ byte, buf *bytes.Buffer) {
+func escBackspace(_ byte, buf *bytes.Buffer) {
 	buf.Write([]byte{'\\', 'b'})
 }
 
