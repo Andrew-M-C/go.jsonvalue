@@ -92,7 +92,7 @@ func testIterParseNumber(t *testing.T) {
 	Convey("reachEnd == true", func() {
 		it := iter(b[:11])
 
-		v, end, reachEnd, err := it.parseNumber(0)
+		v, end, reachEnd, err := it.parseNumber(globalPool{}, 0)
 		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
 		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
 		t.Logf(string(b[:end]))
@@ -104,7 +104,7 @@ func testIterParseNumber(t *testing.T) {
 	Convey("reachEnd == false", func() {
 		it := iter(b)
 
-		v, end, reachEnd, err := it.parseNumber(0)
+		v, end, reachEnd, err := it.parseNumber(globalPool{}, 0)
 		So(err, ShouldBeNil)
 		So(v.num.f64, ShouldEqual, -12345.6789)
 		So(reachEnd, ShouldBeFalse)
@@ -137,7 +137,7 @@ func testUnmarshalFloatErrors(t *testing.T) {
 
 	cv("stateStart", func() {
 		it := &iter{'E'}
-		_, _, _, err := it.parseNumber(0)
+		_, _, _, err := it.parseNumber(globalPool{}, 0)
 		so(err, isErr)
 	})
 

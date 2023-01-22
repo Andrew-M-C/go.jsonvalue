@@ -206,7 +206,10 @@ func Unmarshal(b []byte) (ret *V, err error) {
 	trueB := make([]byte, len(b))
 	copy(trueB, b)
 	it := iter(trueB)
-	return unmarshalWithIter(it, 0)
+	p := newPool(len(b))
+	ret, err = unmarshalWithIter(p, it, 0)
+	p.release()
+	return
 }
 
 // MustUnmarshalNoCopy just like UnmarshalNoCopy(). If error occurres, a JSON value with "NotExist" type would be returned, which
@@ -229,7 +232,10 @@ func UnmarshalNoCopy(b []byte) (ret *V, err error) {
 	if le == 0 {
 		return &V{}, ErrNilParameter
 	}
-	return unmarshalWithIter(iter(b), 0)
+	p := newPool(len(b))
+	ret, err = unmarshalWithIter(p, iter(b), 0)
+	p.release()
+	return
 }
 
 // ==== type access ====
