@@ -9,7 +9,7 @@ import (
 // ================ OUTER UNMARSHAL ================
 
 // unmarshalWithIter parse bytes with unknown value type.
-func unmarshalWithIter(it iter, offset int) (v *V, err error) {
+func unmarshalWithIter(p pool, it iter, offset int) (v *V, err error) {
 	end := len(it)
 	offset, reachEnd := it.skipBlanks(offset)
 	if reachEnd {
@@ -19,14 +19,14 @@ func unmarshalWithIter(it iter, offset int) (v *V, err error) {
 	chr := it[offset]
 	switch chr {
 	case '{':
-		v, offset, err = unmarshalObjectWithIterUnknownEnd(it, offset, end)
+		v, offset, err = unmarshalObjectWithIterUnknownEnd(p, it, offset, end)
 
 	case '[':
-		v, offset, err = unmarshalArrayWithIterUnknownEnd(it, offset, end)
+		v, offset, err = unmarshalArrayWithIterUnknownEnd(p, it, offset, end)
 
 	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
 		var n *V
-		n, offset, _, err = it.parseNumber(offset)
+		n, offset, _, err = it.parseNumber(p, offset)
 		if err == nil {
 			v = n
 		}
@@ -75,9 +75,9 @@ func unmarshalWithIter(it iter, offset int) (v *V, err error) {
 
 // unmarshalArrayWithIterUnknownEnd is similar with unmarshalArrayWithIter, though should start with '[',
 // but it does not known where its ']' is
-func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int, err error) {
+func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V, end int, err error) {
 	offset++
-	arr := newArray()
+	arr := newArray(p)
 
 	reachEnd := false
 
@@ -98,7 +98,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			offset++
 
 		case '{':
-			v, sectEnd, err := unmarshalObjectWithIterUnknownEnd(it, offset, right)
+			v, sectEnd, err := unmarshalObjectWithIterUnknownEnd(p, it, offset, right)
 			if err != nil {
 				return nil, -1, err
 			}
@@ -106,7 +106,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 			offset = sectEnd
 
 		case '[':
-			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(it, offset, right)
+			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(p, it, offset, right)
 			if err != nil {
 				return nil, -1, err
 			}
@@ -115,7 +115,7 @@ func unmarshalArrayWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
 			var v *V
-			v, sectEnd, _, err := it.parseNumber(offset)
+			v, sectEnd, _, err := it.parseNumber(p, offset)
 			if err != nil {
 				return nil, -1, err
 			}
@@ -171,9 +171,9 @@ func (v *V) appendToArr(child *V) {
 }
 
 // unmarshalObjectWithIterUnknownEnd unmarshal object from raw bytes. it[offset] must be '{'
-func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end int, err error) {
+func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V, end int, err error) {
 	offset++
-	obj := newObject()
+	obj := newObject(p)
 
 	keyStart, keyEnd := 0, 0
 	colonFound := false
@@ -241,7 +241,7 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 			if err = keyNotFoundErr(); err != nil {
 				return nil, -1, err
 			}
-			v, sectEnd, err := unmarshalObjectWithIterUnknownEnd(it, offset, right)
+			v, sectEnd, err := unmarshalObjectWithIterUnknownEnd(p, it, offset, right)
 			if err != nil {
 				return nil, -1, err
 			}
@@ -253,7 +253,7 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 			if err = keyNotFoundErr(); err != nil {
 				return nil, -1, err
 			}
-			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(it, offset, right)
+			v, sectEnd, err := unmarshalArrayWithIterUnknownEnd(p, it, offset, right)
 			if err != nil {
 				return nil, -1, err
 			}
@@ -266,7 +266,7 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 				return nil, -1, err
 			}
 			var v *V
-			v, sectEnd, _, err := it.parseNumber(offset)
+			v, sectEnd, _, err := it.parseNumber(p, offset)
 			if err != nil {
 				return nil, -1, err
 			}
@@ -349,10 +349,10 @@ func unmarshalObjectWithIterUnknownEnd(it iter, offset, right int) (_ *V, end in
 // parseNumber parse a number string. Reference:
 //
 // - [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html)
-func (v *V) parseNumber() (err error) {
+func (v *V) parseNumber(p pool) (err error) {
 	it := iter(v.srcByte)
 
-	parsed, end, reachEnd, err := it.parseNumber(0)
+	parsed, end, reachEnd, err := it.parseNumber(p, 0)
 	if err != nil {
 		return err
 	}
@@ -365,8 +365,8 @@ func (v *V) parseNumber() (err error) {
 }
 
 // ==== simple object parsing ====
-func newFromNumber(b []byte) (ret *V, err error) {
-	v := new(Number)
+func newFromNumber(p pool, b []byte) (ret *V, err error) {
+	v := new(p, Number)
 	v.srcByte = b
 	return v, nil
 }
@@ -676,7 +676,7 @@ func (it iter) skipBlanks(offset int, endPos ...int) (newOffset int, reachEnd bo
 // For state machine chart, please refer to ./img/parse_float_state_chart.drawio
 
 func (it iter) parseNumber(
-	offset int,
+	p pool, offset int,
 ) (v *V, end int, reachEnd bool, err error) {
 
 	idx := offset
@@ -765,7 +765,7 @@ func (it iter) parseNumber(
 			err = it.numErrorf(offset, "integer after dot missing")
 			return
 		}
-		v, err = it.parseFloatResult(offset, idx)
+		v, err = it.parseFloatResult(p, offset, idx)
 	} else {
 		if integer > 0 && it[offset] == '0' {
 			err = it.numErrorf(offset, "non-zero integer should not start with zero")
@@ -783,9 +783,9 @@ func (it iter) parseNumber(
 		}
 
 		if negative {
-			v, err = it.parseNegativeIntResult(offset, idx, integer)
+			v, err = it.parseNegativeIntResult(p, offset, idx, integer)
 		} else {
-			v, err = it.parsePositiveIntResult(offset, idx, integer)
+			v, err = it.parsePositiveIntResult(p, offset, idx, integer)
 		}
 	}
 
@@ -826,13 +826,13 @@ const (
 	intMinAbs     = 9223372036854775808
 )
 
-func (it iter) parseFloatResult(start, end int) (*V, error) {
+func (it iter) parseFloatResult(p pool, start, end int) (*V, error) {
 	f, err := strconv.ParseFloat(unsafeBtoS(it[start:end]), 64)
 	if err != nil {
 		return nil, it.numErrorf(start, "%w", err)
 	}
 
-	v := new(Number)
+	v := new(p, Number)
 	v.srcByte = it[start:end]
 
 	v.num.negative = f < 0
@@ -844,7 +844,7 @@ func (it iter) parseFloatResult(start, end int) (*V, error) {
 	return v, nil
 }
 
-func (it iter) parsePositiveIntResult(start, end int, integer uint64) (*V, error) {
+func (it iter) parsePositiveIntResult(p pool, start, end int, integer uint64) (*V, error) {
 	le := end - start
 
 	if le > len(uintMaxStr) {
@@ -855,7 +855,7 @@ func (it iter) parsePositiveIntResult(start, end int, integer uint64) (*V, error
 		}
 	}
 
-	v := new(Number)
+	v := new(p, Number)
 	v.srcByte = it[start:end]
 
 	v.num.negative = false
@@ -867,7 +867,7 @@ func (it iter) parsePositiveIntResult(start, end int, integer uint64) (*V, error
 	return v, nil
 }
 
-func (it iter) parseNegativeIntResult(start, end int, integer uint64) (*V, error) {
+func (it iter) parseNegativeIntResult(p pool, start, end int, integer uint64) (*V, error) {
 	le := end - start
 
 	if le > len(intMinStr) {
@@ -878,7 +878,7 @@ func (it iter) parseNegativeIntResult(start, end int, integer uint64) (*V, error
 		}
 	}
 
-	v := new(Number)
+	v := new(p, Number)
 	v.srcByte = it[start:end]
 
 	v.num.negative = true
