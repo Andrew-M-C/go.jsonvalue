@@ -31,6 +31,7 @@ func (e *structExporter) Export(rv any) *jsonvalue.V {
 			field.exporter = e.exportersByType[field.typ]
 		}
 		if field.exporter == nil {
+			internal.debugf("%v - type not found: '%v'", e.typ, field.typ)
 			continue
 		}
 
@@ -69,6 +70,7 @@ func (e *structExporter) markTypeToParse(typ reflect.Type) {
 	}
 
 	if _, exist := e.exportersByType[typ]; !exist {
+		internal.debugf("%v - mark type to analyze '%v'", e.typ, typ)
 		e.typesToAnalyze[typ] = struct{}{}
 	}
 }
@@ -115,6 +117,39 @@ func (e *structExporter) parse() {
 	}
 
 	// TODO: 处理 typesToAnalyze
+	internal.debugf("%v: remaining struct to analyze: %+v", e.typ, e.typesToAnalyze)
+	for len(e.typesToAnalyze) > 0 {
+		// get one
+		var t reflect.Type
+		for typ := range e.typesToAnalyze {
+			t = typ
+			break
+		}
+
+		internal.debugf("%v - now parse type '%v'", e.typ, t)
+
+		// 解析类型
+		switch t.Kind() {
+		default:
+			// do nothing
+			// TODO:
+
+		case reflect.Pointer:
+			// 检查一下是不是 struct pointer
+			elemType := t.Elem()
+			if elemType == e.typ { // 如果是自己的话, 那么直接取
+				elemE := &pointerExporter{}
+				elemE.typ = t
+				elemE.elemExporter = e
+				e.exportersByType[t] = elemE
+				internal.debugf("%v - add exporter for type %v", e.typ, t)
+			} else {
+				// TODO: 如果不是自己的话, 那么就重新取
+			}
+		}
+
+		delete(e.typesToAnalyze, t)
+	}
 }
 
 // 这个函数返回的数据结构可能是 nil, 这个时候要从 exportersByType 中取 exporter
@@ -136,6 +171,7 @@ func (e *structExporter) parseStructFieldExporter(
 		return
 	}
 
+	// 解析 exporter
 	switch ft.Type.Kind() {
 	default:
 		fallthrough
@@ -162,8 +198,13 @@ func (e *structExporter) parseStructFieldExporter(
 	case reflect.Map:
 		// TODO:
 
-	case reflect.Ptr:
-		// TODO: 只允许 struct ptr
+	case reflect.Pointer:
+		elemType := ft.Type.Elem()
+		if elemType.Kind() != reflect.Struct {
+			internal.debugf("%v: skip field type %v", ft.Type, elemType)
+			return
+		}
+		e.markTypeToParse(ft.Type) // FIXME: 这里不对!!
 
 	case reflect.Slice:
 		// TODO:
@@ -177,6 +218,7 @@ func (e *structExporter) parseStructFieldExporter(
 	field.getter = func(val reflect.Value) reflect.Value {
 		return val.Field(index)
 	}
+
 	fields = append(fields, field)
 	return
 }
@@ -237,7 +279,7 @@ func (e *structExporter) parseStructAnonymousFieldExporter(
 	case reflect.Map:
 		// TODO:
 
-	case reflect.Ptr:
+	case reflect.Pointer:
 		// TODO: 只允许 struct ptr
 
 	case reflect.Slice:
