@@ -4,8 +4,8 @@ import (
 	jsonvalue "github.com/Andrew-M-C/go.jsonvalue"
 )
 
-// Contains identidies whether a value has a subset. This only takes effect to object
-// and array types.
+// Contains tells whether a value has a subset. This only takes effect to object
+// and array types, otherwise, this function acts like Equal().
 //
 // Contains 表示是否包含某个子集。只对 object 和 array 类型有效, 其他类型则需完全相等时,
 // 才返回 true

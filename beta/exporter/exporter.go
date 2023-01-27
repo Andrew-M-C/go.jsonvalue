@@ -88,8 +88,20 @@ func validateTypeAndReturnExporter(t reflect.Type) (e omnipotentExporter, err er
 	case reflect.Map:
 		// TODO:
 
-	case reflect.Ptr:
-		// TODO: 只允许 struct ptr
+	case reflect.Pointer:
+		elemType := t.Elem()
+		if elemType.Kind() != reflect.Struct {
+			return nil, fmt.Errorf("%w: %v", ErrUnsupportedType, t)
+		}
+		elemExporter, err := validateTypeAndReturnExporter(elemType)
+		if err != nil {
+			return nil, err
+		}
+		internal.storeExporterByType(elemType, elemExporter)
+		e = &pointerExporter{
+			baseExporter: base,
+			elemExporter: elemExporter,
+		}
 
 	case reflect.Slice:
 		// TODO:
@@ -150,7 +162,7 @@ func (e *boolExporter) Export(rv any) *jsonvalue.V {
 	return jsonvalue.NewBool(val.Bool())
 }
 
-// exportField 用于实现 structFieldExporter
+// exportField implements structFieldExporter interface
 func (e *boolExporter) exportField(field reflect.Value) (*jsonvalue.V, bool) {
 	v := e.Export(field.Interface())
 	return v, v.Bool()
@@ -170,7 +182,7 @@ func (e *intExporter) Export(rv any) *jsonvalue.V {
 	return jsonvalue.NewInt64(val.Int())
 }
 
-// exportField 用于实现 structFieldExporter
+// exportField implements structFieldExporter interface
 func (e *intExporter) exportField(field reflect.Value) (*jsonvalue.V, bool) {
 	v := e.Export(field.Interface())
 	return v, v.Int64() != 0
@@ -190,7 +202,7 @@ func (e *uintExporter) Export(rv any) *jsonvalue.V {
 	return jsonvalue.NewUint64(val.Uint())
 }
 
-// exportField 用于实现 structFieldExporter
+// exportField implements structFieldExporter interface
 func (e *uintExporter) exportField(field reflect.Value) (*jsonvalue.V, bool) {
 	v := e.Export(field.Interface())
 	return v, v.Uint64() != 0
@@ -210,7 +222,7 @@ func (e *float32Exporter) Export(rv any) *jsonvalue.V {
 	return jsonvalue.NewFloat32(float32(val.Float()))
 }
 
-// exportField 用于实现 structFieldExporter
+// exportField implements structFieldExporter interface
 func (e *float32Exporter) exportField(field reflect.Value) (*jsonvalue.V, bool) {
 	v := e.Export(field.Interface())
 	return v, v.Float32() != 0
@@ -230,7 +242,7 @@ func (e *float64Exporter) Export(rv any) *jsonvalue.V {
 	return jsonvalue.NewFloat64(val.Float())
 }
 
-// exportField 用于实现 structFieldExporter
+// exportField implements structFieldExporter interface
 func (e *float64Exporter) exportField(field reflect.Value) (*jsonvalue.V, bool) {
 	v := e.Export(field.Interface())
 	return v, v.Float64() != 0
@@ -250,8 +262,33 @@ func (e *stringExporter) Export(rv any) *jsonvalue.V {
 	return jsonvalue.NewString(val.String())
 }
 
-// exportField 用于实现 structFieldExporter
+// exportField implements structFieldExporter interface
 func (e *stringExporter) exportField(field reflect.Value) (*jsonvalue.V, bool) {
 	v := e.Export(field.Interface())
 	return v, field.String() != ""
+}
+
+// -------- pointer --------
+
+type pointerExporter struct {
+	baseExporter
+
+	elemExporter omnipotentExporter
+}
+
+func (e *pointerExporter) Export(rv any) *jsonvalue.V {
+	val, ok := e.checkInputType(rv)
+	if !ok {
+		return invalidJSON()
+	}
+	if val.IsNil() {
+		return jsonvalue.NewNull()
+	}
+	return e.elemExporter.Export(val.Elem().Interface())
+}
+
+// exportField implements structFieldExporter interface
+func (e *pointerExporter) exportField(field reflect.Value) (*jsonvalue.V, bool) {
+	v := e.Export(field.Interface())
+	return v, v.Len() > 0
 }
