@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	jsonvalue "github.com/Andrew-M-C/go.jsonvalue"
+	// "github.com/Andrew-M-C/go.util/runtime/caller"
 )
 
 type any = interface{}
@@ -139,6 +140,7 @@ func (e *baseExporter) checkInputType(v any) (reflect.Value, bool) {
 	ok := e.typ == typ
 	if !ok {
 		internal.debugf("exporter type '%v', but given '%v'", e.typ, typ)
+		// internal.debugf("caller: %v", caller.GetCaller(2))
 		return reflect.Value{}, false
 	}
 	return reflect.ValueOf(v), ok

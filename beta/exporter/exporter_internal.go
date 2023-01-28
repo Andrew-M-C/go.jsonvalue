@@ -9,7 +9,7 @@ import (
 type g struct {
 	lock sync.RWMutex
 
-	exportersByType map[reflect.Type]Exporter
+	exportersByType map[reflect.Type]omnipotentExporter
 
 	debugf func(string, ...any)
 }
@@ -17,11 +17,11 @@ type g struct {
 var internal = &g{}
 
 func init() {
-	internal.exportersByType = make(map[reflect.Type]Exporter)
+	internal.exportersByType = make(map[reflect.Type]omnipotentExporter)
 	internal.debugf = func(string, ...any) {}
 }
 
-func (i *g) loadExportersByType(typ reflect.Type) (Exporter, bool) {
+func (i *g) loadExportersByType(typ reflect.Type) (omnipotentExporter, bool) {
 	i.lock.RLock()
 	defer i.lock.RUnlock()
 
@@ -29,7 +29,7 @@ func (i *g) loadExportersByType(typ reflect.Type) (Exporter, bool) {
 	return e, exist
 }
 
-func (i *g) storeExporterByType(typ reflect.Type, e Exporter) {
+func (i *g) storeExporterByType(typ reflect.Type, e omnipotentExporter) {
 	internal.lock.Lock()
 	defer internal.lock.Unlock()
 

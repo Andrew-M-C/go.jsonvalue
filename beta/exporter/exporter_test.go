@@ -18,11 +18,7 @@ func TestExporter(t *testing.T) {
 
 	cv("最基本的 struct", t, func() { testSimplestStruct(t) })
 	cv("struct 嵌套自己", t, func() { testNestedStruct(t) })
-}
-
-type simplestStruct struct {
-	S string `json:"s"`
-	I int    `json:"i"`
+	cv("struct 嵌套别的 struct", t, func() { testStructNestingOtherStruct(t) })
 }
 
 func testSimplestStruct(t *testing.T) {
@@ -42,11 +38,9 @@ func testSimplestStruct(t *testing.T) {
 	so(s, eq, `{"s":"Hello","i":2023}`)
 }
 
-type nestedStruct struct {
-	ID string `json:"id"`
-
-	SubWithEmpty *nestedStruct `json:"sub_with_empty"`
-	Sub          *nestedStruct `json:"sub,omitempty"`
+type simplestStruct struct {
+	S string `json:"s"`
+	I int    `json:"i"`
 }
 
 func testNestedStruct(t *testing.T) {
@@ -66,4 +60,41 @@ func testNestedStruct(t *testing.T) {
 	s := v.MustMarshalString(jsonvalue.OptSetSequence())
 	t.Log(s)
 	so(s, eq, `{"id":"parent","sub_with_empty":null,"sub":{"id":"child","sub_with_empty":null}}`)
+}
+
+type nestedStruct struct {
+	ID string `json:"id"`
+
+	SubWithEmpty *nestedStruct `json:"sub_with_empty"`
+	Sub          *nestedStruct `json:"sub,omitempty"`
+}
+
+func testStructNestingOtherStruct(t *testing.T) {
+	st := nestingOtherStruct{
+		ID: "nesting",
+	}
+	st.Simple.S = "nested"
+	st.Simple.I = 1
+	st.Anonymous.Name = "anonymous name"
+
+	e, err := ParseExporter(st)
+	so(err, eq, nil)
+
+	t.Log("Got:", e)
+
+	v := e.Export(st)
+	s := v.MustMarshalString(jsonvalue.OptSetSequence())
+	t.Log(s)
+
+	so(s, eq, `{"id":"nesting","simplest":{"s":"nested","i":1},"anonymous":{"name":"anonymous name"}}`)
+}
+
+type nestingOtherStruct struct {
+	ID string `json:"id"`
+
+	Simple simplestStruct `json:"simplest"`
+
+	Anonymous struct {
+		Name string `json:"name"`
+	} `json:"anonymous"`
 }

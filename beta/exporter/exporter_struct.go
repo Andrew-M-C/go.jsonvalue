@@ -13,7 +13,7 @@ type structExporter struct {
 
 	fields []*structField
 
-	exportersByType map[reflect.Type]structFieldExporter // 这个类型主要用于无锁调用
+	exportersByType map[reflect.Type]structFieldExporter // 内部引用其他类型的 exporter
 	typesToAnalyze  map[reflect.Type]struct{}            // 仅在初始化过程中使用, 当遇到了未处理的 struct 类型时, 则继续处理
 }
 
@@ -52,7 +52,7 @@ func (e *structExporter) Export(rv any) *jsonvalue.V {
 
 // exportField implements structFieldExporter interface
 func (e *structExporter) exportField(field reflect.Value) (fieldV *jsonvalue.V, valid bool) {
-	fieldV = e.Export(field)
+	fieldV = e.Export(field.Interface())
 	return fieldV, fieldV.Len() > 0
 }
 
@@ -73,6 +73,12 @@ func (e *structExporter) markTypeToParse(typ reflect.Type) {
 		internal.debugf("%v - mark type to analyze '%v'", e.typ, typ)
 		e.typesToAnalyze[typ] = struct{}{}
 	}
+}
+
+func (e *structExporter) storeExporter(t reflect.Type, exp omnipotentExporter) {
+	delete(e.typesToAnalyze, t)
+	e.exportersByType[t] = exp
+	internal.debugf("%v - type analyzed: '%v'", e.typ, t)
 }
 
 type structField struct {
@@ -102,8 +108,9 @@ func parseStructExporter(typ reflect.Type) *structExporter {
 		typ: {},
 	}
 
-	e.parse()
 	e.exportersByType[e.typ] = e
+	e.parse()
+
 	return e
 }
 
@@ -118,6 +125,7 @@ func (e *structExporter) parse() {
 
 	// TODO: 处理 typesToAnalyze
 	internal.debugf("%v: remaining struct to analyze: %+v", e.typ, e.typesToAnalyze)
+
 	for len(e.typesToAnalyze) > 0 {
 		// get one
 		var t reflect.Type
@@ -127,12 +135,33 @@ func (e *structExporter) parse() {
 		}
 
 		internal.debugf("%v - now parse type '%v'", e.typ, t)
+		if exp, exist := internal.loadExportersByType(t); exist {
+			internal.debugf("%v - found type in cache: '%v'", e.typ, t)
+			e.storeExporter(t, exp)
+			continue
+		}
 
 		// 解析类型
 		switch t.Kind() {
 		default:
 			// do nothing
+
+		case reflect.Array:
 			// TODO:
+
+		case reflect.Interface:
+			// TODO:
+
+		case reflect.Map:
+			// TODO:
+
+		case reflect.Slice:
+			// TODO:
+
+		case reflect.Struct:
+			// TODO: FIXME: 有 bug, 递归了
+			exporter := e.parseNotSelfStruct(t)
+			e.storeExporter(t, exporter)
 
 		case reflect.Pointer:
 			// 检查一下是不是 struct pointer
@@ -141,10 +170,28 @@ func (e *structExporter) parse() {
 				elemE := &pointerExporter{}
 				elemE.typ = t
 				elemE.elemExporter = e
-				e.exportersByType[t] = elemE
+				e.storeExporter(t, elemE)
+				// internal.storeExporterByType(e.typ, elemE)
 				internal.debugf("%v - add exporter for type %v", e.typ, t)
-			} else {
-				// TODO: 如果不是自己的话, 那么就重新取
+
+			} else { // 如果不是自己的话, 那么就重新取
+				var exporter omnipotentExporter
+				var err error
+				if elemType.Kind() == reflect.Struct {
+					exporter = e.parseNotSelfStruct(elemType) // struct 类型的逻辑与前面相同, 避免嵌套
+				} else {
+					exporter, err = validateTypeAndReturnExporter(elemType)
+				}
+				if err != nil {
+					internal.debugf("%v - ERROR: parse type '%v' error: %v", e.typ, elemType, err)
+				} else {
+					elemE := &pointerExporter{}
+					elemE.typ = t
+					elemE.elemExporter = exporter
+					e.storeExporter(t, elemE)
+					// internal.storeExporterByType(e.typ, elemE)
+					internal.debugf("%v - add exporter for type %v", e.typ, t)
+				}
 			}
 		}
 
@@ -204,7 +251,7 @@ func (e *structExporter) parseStructFieldExporter(
 			internal.debugf("%v: skip field type %v", ft.Type, elemType)
 			return
 		}
-		e.markTypeToParse(ft.Type) // FIXME: 这里不对!!
+		e.markTypeToParse(ft.Type)
 
 	case reflect.Slice:
 		// TODO:
@@ -294,6 +341,26 @@ func (e *structExporter) parseStructAnonymousFieldExporter(
 	}
 
 	return
+}
+
+// 解析 struct 类型成员, 但不是自己。
+//
+// 针对 struct in struct, 需要再创建一个 *structExporter, 但它的 exportersByType 和
+// typesToAnalyze 可以取 parent 的, 以避免循环嵌套
+func (e *structExporter) parseNotSelfStruct(t reflect.Type) omnipotentExporter {
+	subE := &structExporter{}
+	subE.typ = t
+	subE.exportersByType = e.exportersByType
+	subE.typesToAnalyze = e.typesToAnalyze
+
+	for i := 0; i < t.NumField(); i++ {
+		tt := t.Field(i)
+
+		fields := subE.parseStructFieldExporter(i, tt)
+		subE.fields = append(subE.fields, fields...)
+	}
+
+	return subE
 }
 
 func readFieldTag(ft reflect.StructField, name string) (field string, ex structFieldExt) {
