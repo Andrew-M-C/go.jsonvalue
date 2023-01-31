@@ -4,7 +4,11 @@ import (
 	"encoding/base64"
 )
 
-var internal = struct {
+// ======== internal global variable ========
+
+var internal = g{}
+
+type g struct {
 	b64 *base64.Encoding
 
 	defaultMarshalOption *Opt
@@ -13,7 +17,7 @@ var internal = struct {
 		bytesPerValue int
 		calcStorage   uint64 // upper 32 bits - size; lower 32 bits - value count
 	}
-}{}
+}
 
 func init() {
 	internal.b64 = base64.StdEncoding
@@ -21,7 +25,7 @@ func init() {
 	internal.predict.calcStorage = (10 << 32) + 1
 }
 
-func internalLoadPredictSizePerValue() int {
+func (internal *g) loadPredictSizePerValue() int {
 	if n := internal.predict.bytesPerValue; n > 0 {
 		return int(n)
 	}
@@ -32,7 +36,7 @@ func internalLoadPredictSizePerValue() int {
 	return total / num
 }
 
-func internalAddPredictSizePerValue(total, num int) {
+func (internal *g) addPredictSizePerValue(total, num int) {
 	v := internal.predict.calcStorage
 	preTotal := v >> 32
 	preNum := v & 0xFFFFFFFF
@@ -51,13 +55,15 @@ func internalAddPredictSizePerValue(total, num int) {
 	internal.predict.calcStorage = (per << 32) + 1
 }
 
-type pool interface {
+// ======== value pool ========
+
+type valuePool interface {
 	get() *V
 }
 
-type globalPool struct{}
+type globalValuePool struct{}
 
-func (globalPool) get() *V {
+func (globalValuePool) get() *V {
 	return &V{}
 }
 
@@ -71,7 +77,7 @@ type poolImpl struct {
 }
 
 func newPool(rawSize int) *poolImpl {
-	per := internalLoadPredictSizePerValue()
+	per := internal.loadPredictSizePerValue()
 	cnt := rawSize / per
 
 	p := &poolImpl{
@@ -92,9 +98,11 @@ func (p *poolImpl) get() *V {
 	}
 
 	p.actual++
-	return globalPool{}.get()
+	return globalValuePool{}.get()
 }
 
 func (p *poolImpl) release() {
-	internalAddPredictSizePerValue(p.rawSize, p.actual)
+	internal.addPredictSizePerValue(p.rawSize, p.actual)
 }
+
+// ======== bytes buffer ========

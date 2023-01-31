@@ -4,12 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+
+	"github.com/Andrew-M-C/go.jsonvalue/utils/unsafe"
 )
 
 // ================ OUTER UNMARSHAL ================
 
 // unmarshalWithIter parse bytes with unknown value type.
-func unmarshalWithIter(p pool, it iter, offset int) (v *V, err error) {
+func unmarshalWithIter(p valuePool, it iter, offset int) (v *V, err error) {
 	end := len(it)
 	offset, reachEnd := it.skipBlanks(offset)
 	if reachEnd {
@@ -36,7 +38,7 @@ func unmarshalWithIter(p pool, it iter, offset int) (v *V, err error) {
 		var sectEnd int
 		sectLenWithoutQuote, sectEnd, err = it.parseStrFromBytesForwardWithQuote(offset)
 		if err == nil {
-			v, err = NewString(unsafeBtoS(it[offset+1:offset+1+sectLenWithoutQuote])), nil
+			v, err = NewString(unsafe.BtoS(it[offset+1:offset+1+sectLenWithoutQuote])), nil
 			offset = sectEnd
 		}
 
@@ -75,7 +77,7 @@ func unmarshalWithIter(p pool, it iter, offset int) (v *V, err error) {
 
 // unmarshalArrayWithIterUnknownEnd is similar with unmarshalArrayWithIter, though should start with '[',
 // but it does not known where its ']' is
-func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V, end int, err error) {
+func unmarshalArrayWithIterUnknownEnd(p valuePool, it iter, offset, right int) (_ *V, end int, err error) {
 	offset++
 	arr := newArray(p)
 
@@ -127,7 +129,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			v := NewString(unsafeBtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
+			v := NewString(unsafe.BtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
 			arr.appendToArr(v)
 			offset = sectEnd
 
@@ -171,7 +173,7 @@ func (v *V) appendToArr(child *V) {
 }
 
 // unmarshalObjectWithIterUnknownEnd unmarshal object from raw bytes. it[offset] must be '{'
-func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V, end int, err error) {
+func unmarshalObjectWithIterUnknownEnd(p valuePool, it iter, offset, right int) (_ *V, end int, err error) {
 	offset++
 	obj := newObject(p)
 
@@ -198,7 +200,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 		if keyEnd > 0 {
 			return fmt.Errorf(
 				"%w, missing value for key '%s' at Position %d",
-				ErrNotObjectValue, unsafeBtoS(it[keyStart:keyEnd]), keyStart,
+				ErrNotObjectValue, unsafe.BtoS(it[keyStart:keyEnd]), keyStart,
 			)
 		}
 		return nil
@@ -245,7 +247,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
+			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), v)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -257,7 +259,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
+			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), v)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -270,7 +272,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
+			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), v)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -279,15 +281,15 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 				// string value
 				if !colonFound {
 					return nil, -1, fmt.Errorf("%w, missing value for key '%s' at Position %d",
-						ErrNotObjectValue, unsafeBtoS(it[keyStart:keyEnd]), keyStart,
+						ErrNotObjectValue, unsafe.BtoS(it[keyStart:keyEnd]), keyStart,
 					)
 				}
 				sectLenWithoutQuote, sectEnd, err := it.parseStrFromBytesForwardWithQuote(offset)
 				if err != nil {
 					return nil, -1, err
 				}
-				v := NewString(unsafeBtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
-				obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), v)
+				v := NewString(unsafe.BtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
+				obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), v)
 				keyEnd, colonFound = 0, false
 				offset = sectEnd
 
@@ -309,7 +311,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), NewBool(true))
+			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), NewBool(true))
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -321,7 +323,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), NewBool(false))
+			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), NewBool(false))
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -333,7 +335,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafeBtoS(it[keyStart:keyEnd]), NewNull())
+			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), NewNull())
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -349,7 +351,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 // parseNumber parse a number string. Reference:
 //
 // - [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html)
-func (v *V) parseNumber(p pool) (err error) {
+func (v *V) parseNumber(p valuePool) (err error) {
 	it := iter(v.srcByte)
 
 	parsed, end, reachEnd, err := it.parseNumber(p, 0)
@@ -365,7 +367,7 @@ func (v *V) parseNumber(p pool) (err error) {
 }
 
 // ==== simple object parsing ====
-func newFromNumber(p pool, b []byte) (ret *V, err error) {
+func newFromNumber(p valuePool, b []byte) (ret *V, err error) {
 	v := new(p, Number)
 	v.srcByte = b
 	return v, nil
@@ -676,7 +678,7 @@ func (it iter) skipBlanks(offset int, endPos ...int) (newOffset int, reachEnd bo
 // For state machine chart, please refer to ./img/parse_float_state_chart.drawio
 
 func (it iter) parseNumber(
-	p pool, offset int,
+	p valuePool, offset int,
 ) (v *V, end int, reachEnd bool, err error) {
 
 	idx := offset
@@ -826,8 +828,8 @@ const (
 	intMinAbs     = 9223372036854775808
 )
 
-func (it iter) parseFloatResult(p pool, start, end int) (*V, error) {
-	f, err := strconv.ParseFloat(unsafeBtoS(it[start:end]), 64)
+func (it iter) parseFloatResult(p valuePool, start, end int) (*V, error) {
+	f, err := strconv.ParseFloat(unsafe.BtoS(it[start:end]), 64)
 	if err != nil {
 		return nil, it.numErrorf(start, "%w", err)
 	}
@@ -844,7 +846,7 @@ func (it iter) parseFloatResult(p pool, start, end int) (*V, error) {
 	return v, nil
 }
 
-func (it iter) parsePositiveIntResult(p pool, start, end int, integer uint64) (*V, error) {
+func (it iter) parsePositiveIntResult(p valuePool, start, end int, integer uint64) (*V, error) {
 	le := end - start
 
 	if le > len(uintMaxStr) {
@@ -867,7 +869,7 @@ func (it iter) parsePositiveIntResult(p pool, start, end int, integer uint64) (*
 	return v, nil
 }
 
-func (it iter) parseNegativeIntResult(p pool, start, end int, integer uint64) (*V, error) {
+func (it iter) parseNegativeIntResult(p valuePool, start, end int, integer uint64) (*V, error) {
 	le := end - start
 
 	if le > len(intMinStr) {

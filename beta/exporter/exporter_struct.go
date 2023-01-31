@@ -159,7 +159,6 @@ func (e *structExporter) parse() {
 			// TODO:
 
 		case reflect.Struct:
-			// TODO: FIXME: 有 bug, 递归了
 			exporter := e.parseNotSelfStruct(t)
 			e.storeExporter(t, exporter)
 

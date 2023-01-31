@@ -484,8 +484,8 @@ func getNumberFromNotNumberValue(v *V) *V {
 	if !v.IsString() {
 		return NewInt(0)
 	}
-	ret, _ := newFromNumber(globalPool{}, bytes.TrimSpace([]byte(v.valueStr)))
-	err := ret.parseNumber(globalPool{})
+	ret, _ := newFromNumber(globalValuePool{}, bytes.TrimSpace([]byte(v.valueStr)))
+	err := ret.parseNumber(globalValuePool{})
 	if err != nil {
 		return NewInt64(0)
 	}
@@ -501,8 +501,8 @@ func getNumberAndErrorFromValue(v *V) (*V, error) {
 		return v, nil
 
 	case String:
-		ret, _ := newFromNumber(globalPool{}, bytes.TrimSpace([]byte(v.valueStr)))
-		err := ret.parseNumber(globalPool{})
+		ret, _ := newFromNumber(globalValuePool{}, bytes.TrimSpace([]byte(v.valueStr)))
+		err := ret.parseNumber(globalValuePool{})
 		if err != nil {
 			return NewInt(0), fmt.Errorf("%w: %v", ErrParseNumberFromString, err)
 		}
