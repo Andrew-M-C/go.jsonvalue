@@ -1,17 +1,17 @@
-package unsafe
+package jsonvalue
 
 import (
 	"reflect"
 	"unsafe"
 )
 
-// BtoS []byte to string
-func BtoS(b []byte) string {
+// unsafeBtoS []byte to string
+func unsafeBtoS(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-// StoB string to []byte
-func StoB(s string) []byte {
+// unsafeStoB string to []byte
+func unsafeStoB(s string) []byte {
 	sh := (*reflect.SliceHeader)(unsafe.Pointer(&s))
 	sh.Cap = sh.Len
 	return *(*[]byte)(unsafe.Pointer(sh))

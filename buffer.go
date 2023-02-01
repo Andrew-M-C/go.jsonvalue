@@ -1,10 +1,7 @@
-// Package buffer provides specified buffer tool for jsonvalue
-package buffer
+package jsonvalue
 
 import (
 	"unicode/utf8"
-
-	"github.com/Andrew-M-C/go.jsonvalue/utils/unsafe"
 )
 
 // Buffer provides interface like *bytes.Buffer
@@ -123,5 +120,5 @@ func (b *bufferImpl) Write(data []byte) (n int, err error) {
 }
 
 func (b *bufferImpl) WriteString(s string) (n int, err error) {
-	return b.Write(unsafe.StoB(s))
+	return b.Write(unsafeStoB(s))
 }

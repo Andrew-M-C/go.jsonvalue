@@ -74,6 +74,7 @@ func TestJsonvalue(t *testing.T) {
 	test(t, "test insert, append, delete", testInsertAppendDelete)
 	test(t, "test structconv", testStructConv)
 	test(t, "test Equal functions", testEqual)
+	test(t, "test buffer", testBuffer)
 }
 
 func testBasicFunction(t *testing.T) {

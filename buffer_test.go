@@ -1,26 +1,16 @@
-package buffer_test
+package jsonvalue
 
 import (
 	"testing"
-
-	"github.com/Andrew-M-C/go.jsonvalue/utils/buffer"
-	"github.com/smartystreets/goconvey/convey"
 )
 
-var (
-	cv = convey.Convey
-	so = convey.So
-	eq = convey.ShouldEqual
-	ne = convey.ShouldNotEqual
-)
-
-func TestBuffer(t *testing.T) {
-	cv("general", t, func() { testGeneral(t) })
-	cv("JSON-like text", t, func() { testJSONLikeText(t) })
+func testBuffer(t *testing.T) {
+	cv("general", func() { testGeneral(t) })
+	cv("JSON-like text", func() { testJSONLikeText(t) })
 }
 
 func testGeneral(t *testing.T) {
-	buf := buffer.NewBuffer()
+	buf := NewBuffer()
 	so(buf, ne, nil)
 
 	buf.WriteString("12345678")
@@ -32,7 +22,7 @@ func testGeneral(t *testing.T) {
 }
 
 func testJSONLikeText(t *testing.T) {
-	buf := buffer.NewBuffer()
+	buf := NewBuffer()
 	buf.WriteByte('{')
 
 	buf.WriteByte('"')

@@ -42,8 +42,6 @@ import (
 	"bytes"
 	"strconv"
 	"strings"
-
-	"github.com/Andrew-M-C/go.jsonvalue/utils/unsafe"
 )
 
 // ValueType identifying JSON value type
@@ -465,7 +463,7 @@ func (v *V) String() string {
 		return "null"
 	case Number:
 		if len(v.srcByte) > 0 {
-			return unsafe.BtoS(v.srcByte)
+			return unsafeBtoS(v.srcByte)
 		}
 		return strconv.FormatFloat(v.num.f64, 'g', -1, 64)
 	case String:

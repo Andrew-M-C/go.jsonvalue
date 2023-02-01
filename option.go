@@ -1,7 +1,5 @@
 package jsonvalue
 
-import "github.com/Andrew-M-C/go.jsonvalue/utils/buffer"
-
 const (
 	initialArrayCapacity = 32
 	asciiSize            = 128
@@ -99,11 +97,11 @@ type Opt struct {
 	// 不允许指定为 NaN, +Inf 或 -Inf。如果不指定，则映射为 0
 	FloatInfToFloat float64
 
-	// unicodeEscapingFunc defines how to escaping a unicode greater than 0x7F to buffer.Buffer.
-	unicodeEscapingFunc func(r rune, buf buffer.Buffer)
+	// unicodeEscapingFunc defines how to escaping a unicode greater than 0x7F to Buffer.
+	unicodeEscapingFunc func(r rune, buf Buffer)
 
 	// asciiCharEscapingFunc defines how to marshal bytes lower than 0x80.
-	asciiCharEscapingFunc [asciiSize]func(b byte, buf buffer.Buffer)
+	asciiCharEscapingFunc [asciiSize]func(b byte, buf Buffer)
 
 	// escProperties
 	escProperties escapingProperties
