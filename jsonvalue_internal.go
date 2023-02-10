@@ -18,7 +18,7 @@ var internal = struct {
 func init() {
 	internal.b64 = base64.StdEncoding
 	internal.defaultMarshalOption = emptyOptions()
-	internal.predict.calcStorage = (10 << 32) + 1
+	internalAddPredictSizePerValue(16, 1)
 }
 
 func internalLoadPredictSizePerValue() int {
@@ -27,9 +27,9 @@ func internalLoadPredictSizePerValue() int {
 	}
 
 	v := internal.predict.calcStorage
-	total := int(v >> 32)
-	num := int(v & 0xFFFFFFFF)
-	return total / num
+	total := v >> 32
+	num := v & 0xFFFFFFFF
+	return int(total / num)
 }
 
 func internalAddPredictSizePerValue(total, num int) {
