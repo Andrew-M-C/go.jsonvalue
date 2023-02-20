@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/Andrew-M-C/go.jsonvalue/internal/buffer"
 )
 
 // ---------------- array sorting ----------------
@@ -184,7 +186,7 @@ func DefaultStringSequence(parent *ParentInfo, key1, key2 string, v1, v2 *V) boo
 	return strings.Compare(key1, key2) <= 0
 }
 
-func (sov *sortObjectV) marshalObjectWithLessFunc(buf *bytes.Buffer, opt *Opt) {
+func (sov *sortObjectV) marshalObjectWithLessFunc(buf buffer.Buffer, opt *Opt) {
 	// sort
 	sort.Sort(sov)
 
@@ -233,7 +235,7 @@ func (v *V) newSortObjectV(parentInfo *ParentInfo, opt *Opt) *sortObjectV {
 }
 
 // marshalObjectWithStringSlice use a slice to determine sequence of object
-func (sssv *sortStringSliceV) marshalObjectWithStringSlice(buf *bytes.Buffer, opt *Opt) {
+func (sssv *sortStringSliceV) marshalObjectWithStringSlice(buf buffer.Buffer, opt *Opt) {
 	// sort
 	sort.Sort(sssv)
 

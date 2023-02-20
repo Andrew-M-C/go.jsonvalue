@@ -339,7 +339,7 @@ func parseStructValue(v reflect.Value, ex ext) (*V, error) {
 	return res, nil
 }
 
-func parseNullValue(v reflect.Value, ex ext) (*V, error) {
+func parseNullValue(_ reflect.Value, ex ext) (*V, error) {
 	if ex.shouldOmitEmpty() {
 		return nil, nil
 	}

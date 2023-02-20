@@ -1,11 +1,13 @@
 package jsonvalue
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
+
+	"github.com/Andrew-M-C/go.jsonvalue/internal/buffer"
+	"github.com/Andrew-M-C/go.jsonvalue/internal/unsafe"
 )
 
 // MustMarshal is the same as Marshal. If error pccurred, an empty byte slice will be returned.
@@ -38,7 +40,7 @@ func (v *V) Marshal(opts ...Option) (b []byte, err error) {
 		return nil, ErrValueUninitialized
 	}
 
-	buf := &bytes.Buffer{}
+	buf := buffer.NewBuffer()
 	opt := combineOptions(opts)
 
 	err = v.marshalToBuffer(nil, buf, opt)
@@ -58,10 +60,10 @@ func (v *V) MarshalString(opts ...Option) (s string, err error) {
 	if err != nil {
 		return "", err
 	}
-	return unsafeBtoS(b), nil
+	return unsafe.BtoS(b), nil
 }
 
-func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) (err error) {
+func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) (err error) {
 	switch v.valueType {
 	default:
 		// do nothing
@@ -81,17 +83,17 @@ func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt)
 	return err
 }
 
-func (v *V) marshalString(buf *bytes.Buffer, opt *Opt) {
+func (v *V) marshalString(buf buffer.Buffer, opt *Opt) {
 	buf.WriteByte('"')
 	escapeStringToBuff(v.valueStr, buf, opt)
 	buf.WriteByte('"')
 }
 
-func (v *V) marshalBoolean(buf *bytes.Buffer) {
+func (v *V) marshalBoolean(buf buffer.Buffer) {
 	buf.WriteString(formatBool(v.valueBool))
 }
 
-func (v *V) marshalNumber(buf *bytes.Buffer, opt *Opt) error {
+func (v *V) marshalNumber(buf buffer.Buffer, opt *Opt) error {
 	if b := v.srcByte; len(b) > 0 {
 		buf.Write(b)
 		return nil
@@ -107,7 +109,7 @@ func (v *V) marshalNumber(buf *bytes.Buffer, opt *Opt) error {
 	return marshalNaN(buf, opt)
 }
 
-func marshalNaN(buf *bytes.Buffer, opt *Opt) error {
+func marshalNaN(buf buffer.Buffer, opt *Opt) error {
 	switch opt.FloatNaNHandleType {
 	default:
 		fallthrough
@@ -137,7 +139,7 @@ func marshalNaN(buf *bytes.Buffer, opt *Opt) error {
 	return nil
 }
 
-func marshalInfP(buf *bytes.Buffer, opt *Opt) error {
+func marshalInfP(buf buffer.Buffer, opt *Opt) error {
 	switch opt.FloatInfHandleType {
 	default:
 		fallthrough
@@ -167,7 +169,7 @@ func marshalInfP(buf *bytes.Buffer, opt *Opt) error {
 	return nil
 }
 
-func marshalInfN(buf *bytes.Buffer, opt *Opt) error {
+func marshalInfN(buf buffer.Buffer, opt *Opt) error {
 	switch opt.FloatInfHandleType {
 	default:
 		fallthrough
@@ -210,11 +212,11 @@ func isValidFloat(f float64) bool {
 	return true
 }
 
-func (v *V) marshalNull(buf *bytes.Buffer) {
+func (v *V) marshalNull(buf buffer.Buffer) {
 	buf.WriteString("null")
 }
 
-func (v *V) marshalObject(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
+func (v *V) marshalObject(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 	if len(v.children.object) == 0 {
 		buf.WriteString("{}")
 		return
@@ -248,7 +250,7 @@ func (v *V) marshalObject(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
 }
 
 func writeObjectChildren(
-	parentInfo *ParentInfo, buf *bytes.Buffer, isFirstOne bool, key string, child *V, opt *Opt,
+	parentInfo *ParentInfo, buf buffer.Buffer, isFirstOne bool, key string, child *V, opt *Opt,
 ) (written bool) {
 	if child.IsNull() && opt.OmitNull {
 		return false
@@ -275,14 +277,14 @@ func writeObjectChildren(
 	return true
 }
 
-func writeIndent(buf *bytes.Buffer, opt *Opt) {
+func writeIndent(buf buffer.Buffer, opt *Opt) {
 	buf.WriteString(opt.indent.prefix)
 	for i := 0; i < opt.indent.cnt; i++ {
 		buf.WriteString(opt.indent.indent)
 	}
 }
 
-func (v *V) marshalArray(parentInfo *ParentInfo, buf *bytes.Buffer, opt *Opt) {
+func (v *V) marshalArray(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 	if len(v.children.arr) == 0 {
 		buf.WriteString("[]")
 		return
