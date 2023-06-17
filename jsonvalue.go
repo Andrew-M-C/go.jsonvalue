@@ -513,7 +513,6 @@ func (v *V) bufArrChildren(buf *bytes.Buffer) {
 			buf.WriteString(", ")
 		}
 		buf.WriteString(v.String())
-		i++
 		return true
 	})
 	buf.WriteByte(']')

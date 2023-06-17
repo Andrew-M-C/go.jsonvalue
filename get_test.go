@@ -322,7 +322,7 @@ func testCaselessGet(t *testing.T) {
 	raw := `{"data":{"STRING":"hello, world","INTEGER":12345,"TRUE":true,"FALSE":false,"NULL":null,"FLOAT":1234.5678,"OBJECT":{},"ARRAY":[]}}`
 
 	v, err := UnmarshalString(raw)
-	v.SetBytes([]byte{1, 2, 3, 4}).At("data", "BYTES")
+	v.MustSetBytes([]byte{1, 2, 3, 4}).At("data", "BYTES")
 
 	t.Log(v.MustMarshalString())
 

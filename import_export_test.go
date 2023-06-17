@@ -344,6 +344,7 @@ func testStructConv_Import_InvalidTypes(t *testing.T) {
 		}
 
 		//lint:ignore SA1026 intend to do this to check error in uni-test
+		//nolint:all
 		_, err := json.Marshal(&st)
 		so(err, isErr)
 		t.Logf("expect error: %v", err)
@@ -377,6 +378,7 @@ func testStructConv_Import_InvalidTypes(t *testing.T) {
 		}
 
 		//lint:ignore SA1026 intend to do this to check error in uni-test
+		//nolint:all
 		_, err := json.Marshal(&st)
 		so(err, isErr)
 		t.Logf("expect error: %v", err)
@@ -825,6 +827,7 @@ func testImportMiscAnonymousExportableBasicTypeInStruct(t *testing.T) {
 	person.Gender = "male"
 
 	//lint:ignore SA9005 because the lint is error
+	//nolint:all
 	b, _ := json.Marshal(person)
 	v, err := Import(person)
 	s := v.MustMarshalString(OptSetSequence())
@@ -848,6 +851,7 @@ func testImportMiscAnonymousExportableBasicTypeInStructWithTags(t *testing.T) {
 	person.Age = 20
 
 	//lint:ignore SA9005 because the lint is error
+	//nolint:all
 	b, _ := json.Marshal(person)
 	v, err := Import(person)
 	s := v.MustMarshalString(OptSetSequence())
@@ -974,6 +978,7 @@ func testImportMiscAnonymousInvalidTypes(t *testing.T) {
 
 	data := &outer{}
 	//lint:ignore SA1026 intent to test this
+	//nolint:all
 	_, err := json.Marshal(data)
 	so(err, isErr)
 

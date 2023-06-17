@@ -141,17 +141,17 @@ func (v *V) parseNewObjectKV(kv M) {
 		rv := reflect.ValueOf(val)
 		switch rv.Kind() {
 		case reflect.Invalid:
-			v.SetNull().At(k)
+			v.MustSetNull().At(k)
 		case reflect.Bool:
-			v.SetBool(rv.Bool()).At(k)
+			v.MustSetBool(rv.Bool()).At(k)
 		case reflect.Int, reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8:
-			v.SetInt64(rv.Int()).At(k)
+			v.MustSetInt64(rv.Int()).At(k)
 		case reflect.Uint, reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8:
-			v.SetUint64(rv.Uint()).At(k)
+			v.MustSetUint64(rv.Uint()).At(k)
 		case reflect.Float32, reflect.Float64:
-			v.SetFloat64(rv.Float()).At(k)
+			v.MustSetFloat64(rv.Float()).At(k)
 		case reflect.String:
-			v.SetString(rv.String()).At(k)
+			v.MustSetString(rv.String()).At(k)
 		// case reflect.Map:
 		// 	if rv.Type().Key().Kind() == reflect.String && rv.Type().Elem().Kind() == reflect.Interface {
 		// 		if m, ok := rv.Interface().(M); ok {

@@ -651,7 +651,7 @@ func testValueError(t *testing.T) {
 
 	cv("marshaling with option", func() {
 		v = NewObject()
-		v.SetNull().At("null")
+		v.MustSetNull().At("null")
 		raw, _ = v.MarshalString()
 		so(raw, eq, `{"null":null}`)
 

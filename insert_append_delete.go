@@ -8,12 +8,44 @@ import (
 
 // ================ INSERT ================
 
-// Insert type is for After() and Before() function. Please refer for realated function.
+// Inserter type is for After() and Before() methods.
 //
-// Should be generated ONLY BY V.Insert function!
+// # Should be generated ONLY BY V.Insert() !
 //
-// Insert 类型适用于 After() 和 Before() 函数。请参见相关函数。请注意：该类型仅应由 V.Insert 函数生成！
-type Insert struct {
+// Insert 类型适用于 After() 和 Before() 方法。请注意：该类型仅应由 V.Insert 函数生成！
+type Inserter interface {
+	// After completes the following operation of Insert(). It inserts value AFTER specified position.
+	//
+	// The last parameter identifies the postion where a new JSON is inserted after, it should ba an interger, no matter signed or unsigned.
+	// If the position is zero or positive interger, it tells the index of an array. If the position is negative, it tells the backward index of an array.
+	//
+	// For example, 0 represents the first, and -2 represents the second last.
+	//
+	// After 结束并完成 Insert() 函数的后续插入操作，表示插入到指定位置的前面。
+	//
+	// 在 Before 函数的最后一个参数指定了被插入的 JSON 数组的位置，这个参数应当是一个整型（有无符号类型均可）。
+	// 如果这个值等于0或者正整数，那么它指定的是在 JSON 数组中的位置（从0开始）。如果这个值是负数，那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
+	//
+	// 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
+	After(firstParam interface{}, otherParams ...interface{}) (*V, error)
+
+	// Before completes the following operation of Insert(). It inserts value BEFORE specified position.
+	//
+	// The last parameter identifies the postion where a new JSON is inserted after, it should ba an interger, no matter signed or unsigned.
+	// If the position is zero or positive interger, it tells the index of an array. If the position is negative, it tells the backward index of an array.
+	//
+	// For example, 0 represents the first, and -2 represents the second last.
+	//
+	// Before 结束并完成 Insert() 函数的后续插入操作，表示插入到指定位置的后面。
+	//
+	// 在 Before 函数的最后一个参数指定了被插入的 JSON 数组的位置，这个参数应当是一个整型（有无符号类型均可）。
+	// 如果这个值等于0或者正整数，那么它指定的是在 JSON 数组中的位置（从0开始）。如果这个值是负数，那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
+	//
+	// 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
+	Before(firstParam interface{}, otherParams ...interface{}) (*V, error)
+}
+
+type insert struct {
 	v *V
 	c *V // child
 
@@ -23,7 +55,7 @@ type Insert struct {
 // Insert starts inserting a child JSON value
 //
 // Insert 开启一个 JSON 数组成员的插入操作.
-func (v *V) Insert(child any) *Insert {
+func (v *V) Insert(child any) Inserter {
 	var ch *V
 	var err error
 
@@ -35,7 +67,7 @@ func (v *V) Insert(child any) *Insert {
 		ch, err = Import(child)
 	}
 
-	return &Insert{
+	return &insert{
 		v:   v,
 		c:   ch,
 		err: err,
@@ -45,108 +77,95 @@ func (v *V) Insert(child any) *Insert {
 // InsertString is equivalent to Insert(jsonvalue.NewString(s))
 //
 // InsertString 等效于 Insert(jsonvalue.NewString(s))
-func (v *V) InsertString(s string) *Insert {
+func (v *V) InsertString(s string) Inserter {
 	return v.Insert(NewString(s))
 }
 
 // InsertBool is equivalent to Insert(jsonvalue.NewBool(b))
 //
 // InsertBool 等效于 Insert(jsonvalue.NewBool(b))
-func (v *V) InsertBool(b bool) *Insert {
+func (v *V) InsertBool(b bool) Inserter {
 	return v.Insert(NewBool(b))
 }
 
 // InsertInt is equivalent to Insert(jsonvalue.NewInt(b))
 //
 // InsertInt 等效于 Insert(jsonvalue.NewInt(b))
-func (v *V) InsertInt(i int) *Insert {
+func (v *V) InsertInt(i int) Inserter {
 	return v.Insert(NewInt(i))
 }
 
 // InsertInt64 is equivalent to Insert(jsonvalue.NewInt64(b))
 //
 // InsertInt64 等效于 Insert(jsonvalue.NewInt64(b))
-func (v *V) InsertInt64(i int64) *Insert {
+func (v *V) InsertInt64(i int64) Inserter {
 	return v.Insert(NewInt64(i))
 }
 
 // InsertInt32 is equivalent to Insert(jsonvalue.NewInt32(b))
 //
 // InsertInt32 等效于 Insert(jsonvalue.NewInt32(b))
-func (v *V) InsertInt32(i int32) *Insert {
+func (v *V) InsertInt32(i int32) Inserter {
 	return v.Insert(NewInt32(i))
 }
 
 // InsertUint is equivalent to Insert(jsonvalue.NewUint(b))
 //
 // InsertUint 等效于 Insert(jsonvalue.NewUint(b))
-func (v *V) InsertUint(u uint) *Insert {
+func (v *V) InsertUint(u uint) Inserter {
 	return v.Insert(NewUint(u))
 }
 
 // InsertUint64 is equivalent to Insert(jsonvalue.NewUint64(b))
 //
 // InsertUint64 等效于 Insert(jsonvalue.NewUint64(b))
-func (v *V) InsertUint64(u uint64) *Insert {
+func (v *V) InsertUint64(u uint64) Inserter {
 	return v.Insert(NewUint64(u))
 }
 
 // InsertUint32 is equivalent to Insert(jsonvalue.NewUint32(b))
 //
 // InsertUint32 等效于 Insert(jsonvalue.NewUint32(b))
-func (v *V) InsertUint32(u uint32) *Insert {
+func (v *V) InsertUint32(u uint32) Inserter {
 	return v.Insert(NewUint32(u))
 }
 
 // InsertFloat64 is equivalent to Insert(jsonvalue.NewFloat64(b))
 //
 // InsertFloat64 等效于 Insert(jsonvalue.NewFloat64(b))
-func (v *V) InsertFloat64(f float64) *Insert {
+func (v *V) InsertFloat64(f float64) Inserter {
 	return v.Insert(NewFloat64(f))
 }
 
 // InsertFloat32 is equivalent to Insert(jsonvalue.NewFloat32(b))
 //
 // InsertFloat32 等效于 Insert(jsonvalue.NewFloat32(b))
-func (v *V) InsertFloat32(f float32) *Insert {
+func (v *V) InsertFloat32(f float32) Inserter {
 	return v.Insert(NewFloat32(f))
 }
 
 // InsertNull is equivalent to Insert(jsonvalue.NewNull())
 //
 // InsertNull 等效于 Insert(jsonvalue.NewNull())
-func (v *V) InsertNull() *Insert {
+func (v *V) InsertNull() Inserter {
 	return v.Insert(NewNull())
 }
 
 // InsertObject is equivalent to Insert(jsonvalue.NewObject())
 //
 // InsertObject 等效于 Insert(jsonvalue.NewObject())
-func (v *V) InsertObject() *Insert {
+func (v *V) InsertObject() Inserter {
 	return v.Insert(NewObject())
 }
 
 // InsertArray is equivalent to Insert(jsonvalue.NewArray())
 //
 // InsertArray 等效于 Insert(jsonvalue.NewArray())
-func (v *V) InsertArray() *Insert {
+func (v *V) InsertArray() Inserter {
 	return v.Insert(NewArray())
 }
 
-// Before completes the following operation of Insert(). It inserts value BEFORE specified position.
-//
-// The last parameter identifies the postion where a new JSON is inserted after, it should ba an interger, no matter signed or unsigned.
-// If the position is zero or positive interger, it tells the index of an array. If the position is negative, it tells the backward index of an array.
-//
-// For example, 0 represents the first, and -2 represents the second last.
-//
-// Before 结束并完成 Insert() 函数的后续插入操作，表示插入到指定位置的后面。
-//
-// 在 Before 函数的最后一个参数指定了被插入的 JSON 数组的位置，这个参数应当是一个整型（有无符号类型均可）。
-// 如果这个值等于0或者正整数，那么它指定的是在 JSON 数组中的位置（从0开始）。如果这个值是负数，那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
-//
-// 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
-func (ins *Insert) Before(firstParam any, otherParams ...any) (*V, error) {
+func (ins *insert) Before(firstParam any, otherParams ...any) (*V, error) {
 	if ins.err != nil {
 		return &V{}, ins.err
 	}
@@ -182,27 +201,14 @@ func (ins *Insert) Before(firstParam any, otherParams ...any) (*V, error) {
 		return &V{}, err
 	}
 
-	childIns := Insert{
+	childIns := &insert{
 		v: child,
 		c: c,
 	}
 	return childIns.Before(otherParams[paramCount-1])
 }
 
-// After completes the following operation of Insert(). It inserts value AFTER specified position.
-//
-// The last parameter identifies the postion where a new JSON is inserted after, it should ba an interger, no matter signed or unsigned.
-// If the position is zero or positive interger, it tells the index of an array. If the position is negative, it tells the backward index of an array.
-//
-// For example, 0 represents the first, and -2 represents the second last.
-//
-// After 结束并完成 Insert() 函数的后续插入操作，表示插入到指定位置的前面。
-//
-// 在 Before 函数的最后一个参数指定了被插入的 JSON 数组的位置，这个参数应当是一个整型（有无符号类型均可）。
-// 如果这个值等于0或者正整数，那么它指定的是在 JSON 数组中的位置（从0开始）。如果这个值是负数，那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
-//
-// 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
-func (ins *Insert) After(firstParam any, otherParams ...any) (*V, error) {
+func (ins *insert) After(firstParam any, otherParams ...any) (*V, error) {
 	if ins.err != nil {
 		return &V{}, ins.err
 	}
@@ -242,7 +248,7 @@ func (ins *Insert) After(firstParam any, otherParams ...any) (*V, error) {
 		return &V{}, err
 	}
 
-	childIns := Insert{
+	childIns := &insert{
 		v: child,
 		c: c,
 	}
@@ -257,12 +263,16 @@ func (v *V) insertToArr(pos int, child *V) {
 
 // ================ APPEND ================
 
-// Append type is for InTheEnd() or InTheBeginning() function. Please refer to related functions.
+// Appender type is for InTheEnd() or InTheBeginning() function.
 //
-// Should ONLY be generated by V.Append() function
-//
-// Append 类型是用于 InTheEnd() 和 InTheBeginning() 函数的。使用者可以不用关注这个类型。并且这个类型只应当由 V.Append() 产生。
-type Append struct {
+// Appender 类型是用于 InTheEnd() 和 InTheBeginning() 函数的。使用者可以不用关注这个类型。
+// 并且这个类型只应当由 V.Append() 产生。
+type Appender interface {
+	InTheBeginning(params ...interface{}) (*V, error)
+	InTheEnd(params ...interface{}) (*V, error)
+}
+
+type appender struct {
 	v *V
 	c *V // child
 
@@ -272,7 +282,7 @@ type Append struct {
 // Append starts appending a child JSON value to a JSON array.
 //
 // Append 开始将一个 JSON 值添加到一个数组中。需结合 InTheEnd() 和 InTheBeginning() 函数使用。
-func (v *V) Append(child any) *Append {
+func (v *V) Append(child any) Appender {
 	var ch *V
 	var err error
 
@@ -283,7 +293,7 @@ func (v *V) Append(child any) *Append {
 	} else {
 		ch, err = Import(child)
 	}
-	return &Append{
+	return &appender{
 		v:   v,
 		c:   ch,
 		err: err,
@@ -293,105 +303,105 @@ func (v *V) Append(child any) *Append {
 // AppendString is equivalent to Append(jsonvalue.NewString(s))
 //
 // AppendString 等价于 Append(jsonvalue.NewString(s))
-func (v *V) AppendString(s string) *Append {
+func (v *V) AppendString(s string) Appender {
 	return v.Append(NewString(s))
 }
 
 // AppendBytes is equivalent to Append(jsonvalue.NewBytes(b))
 //
 // AppendBytes 等价于 Append(jsonvalue.NewBytes(b))
-func (v *V) AppendBytes(b []byte) *Append {
+func (v *V) AppendBytes(b []byte) Appender {
 	return v.Append(NewBytes(b))
 }
 
 // AppendBool is equivalent to Append(jsonvalue.NewBool(b))
 //
 // AppendBool 等价于 Append(jsonvalue.NewBool(b))
-func (v *V) AppendBool(b bool) *Append {
+func (v *V) AppendBool(b bool) Appender {
 	return v.Append(NewBool(b))
 }
 
 // AppendInt is equivalent to Append(jsonvalue.NewInt(b))
 //
 // AppendInt 等价于 Append(jsonvalue.NewInt(b))
-func (v *V) AppendInt(i int) *Append {
+func (v *V) AppendInt(i int) Appender {
 	return v.Append(NewInt(i))
 }
 
 // AppendInt64 is equivalent to Append(jsonvalue.NewInt64(b))
 //
 // AppendInt64 等价于 Append(jsonvalue.NewInt64(b))
-func (v *V) AppendInt64(i int64) *Append {
+func (v *V) AppendInt64(i int64) Appender {
 	return v.Append(NewInt64(i))
 }
 
 // AppendInt32 is equivalent to Append(jsonvalue.NewInt32(b))
 //
 // AppendInt32 等价于 Append(jsonvalue.NewInt32(b))
-func (v *V) AppendInt32(i int32) *Append {
+func (v *V) AppendInt32(i int32) Appender {
 	return v.Append(NewInt32(i))
 }
 
 // AppendUint is equivalent to Append(jsonvalue.NewUint(b))
 //
 // AppendUint 等价于 Append(jsonvalue.NewUint(b))
-func (v *V) AppendUint(u uint) *Append {
+func (v *V) AppendUint(u uint) Appender {
 	return v.Append(NewUint(u))
 }
 
 // AppendUint64 is equivalent to Append(jsonvalue.NewUint64(b))
 //
 // AppendUint64 等价于 Append(jsonvalue.NewUint64(b))
-func (v *V) AppendUint64(u uint64) *Append {
+func (v *V) AppendUint64(u uint64) Appender {
 	return v.Append(NewUint64(u))
 }
 
 // AppendUint32 is equivalent to Append(jsonvalue.NewUint32(b))
 //
 // AppendUint32 等价于 Append(jsonvalue.NewUint32(b))
-func (v *V) AppendUint32(u uint32) *Append {
+func (v *V) AppendUint32(u uint32) Appender {
 	return v.Append(NewUint32(u))
 }
 
 // AppendFloat64 is equivalent to Append(jsonvalue.NewFloat64(b))
 //
 // AppendUint32 等价于 Append(jsonvalue.NewUint32(b))
-func (v *V) AppendFloat64(f float64) *Append {
+func (v *V) AppendFloat64(f float64) Appender {
 	return v.Append(NewFloat64(f))
 }
 
 // AppendFloat32 is equivalent to Append(jsonvalue.NewFloat32(b))
 //
 // AppendFloat32 等价于 Append(jsonvalue.NewFloat32(b))
-func (v *V) AppendFloat32(f float32) *Append {
+func (v *V) AppendFloat32(f float32) Appender {
 	return v.Append(NewFloat32(f))
 }
 
 // AppendNull is equivalent to Append(jsonvalue.NewNull())
 //
 // AppendNull 等价于 Append(jsonvalue.NewNull())
-func (v *V) AppendNull() *Append {
+func (v *V) AppendNull() Appender {
 	return v.Append(NewNull())
 }
 
 // AppendObject is equivalent to Append(jsonvalue.NewObject())
 //
 // AppendObject 等价于 Append(jsonvalue.NewObject())
-func (v *V) AppendObject() *Append {
+func (v *V) AppendObject() Appender {
 	return v.Append(NewObject())
 }
 
 // AppendArray is equivalent to Append(jsonvalue.NewArray())
 //
 // AppendArray 等价于 Append(jsonvalue.NewArray())
-func (v *V) AppendArray() *Append {
+func (v *V) AppendArray() Appender {
 	return v.Append(NewArray())
 }
 
 // InTheBeginning completes the following operation of Append().
 //
 // InTheBeginning 函数将 Append 函数指定的 JSON 值，添加到参数指定的数组的最前端
-func (apd *Append) InTheBeginning(params ...any) (*V, error) {
+func (apd *appender) InTheBeginning(params ...any) (*V, error) {
 	v := apd.v
 	c := apd.c
 	if nil == v || v.valueType == NotExist {
@@ -432,7 +442,7 @@ func (apd *Append) InTheBeginning(params ...any) (*V, error) {
 // InTheEnd completes the following operation of Append().
 //
 // InTheEnd 函数将 Append 函数指定的 JSON 值，添加到参数指定的数组的最后面
-func (apd *Append) InTheEnd(params ...any) (*V, error) {
+func (apd *appender) InTheEnd(params ...any) (*V, error) {
 	v := apd.v
 	c := apd.c
 	if v.valueType == NotExist {

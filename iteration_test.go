@@ -39,7 +39,7 @@ func testRangeArray(t *testing.T) {
 
 	cv("nil array callback", func() {
 		v := NewArray()
-		v.AppendNull().InTheEnd()
+		v.MustAppendNull().InTheEnd()
 		v.RangeArray(nil) // just do not panic
 
 		for iter := range v.IterArray() {
@@ -128,7 +128,7 @@ func testRangeObject(t *testing.T) {
 
 	cv("nil object callback", func() {
 		v := NewObject()
-		v.SetString("world").At("hello")
+		v.MustSetString("world").At("hello")
 		v.RangeObjects(nil) // just do not panic
 
 		iterCount := 0
@@ -207,7 +207,7 @@ func testRangeObjectsBySetSequence(t *testing.T) {
 		const size = 50
 		const iterate = 100
 		for i := 0; i < size; i++ {
-			v.Set(i).At(strconv.FormatInt(int64(i), 10))
+			v.MustSet(i).At(strconv.FormatInt(int64(i), 10))
 		}
 		so(v.Len(), eq, size)
 

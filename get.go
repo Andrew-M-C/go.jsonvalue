@@ -382,6 +382,7 @@ type Caseless interface {
 	GetArray(firstParam any, otherParams ...any) (*V, error)
 
 	Delete(firstParam any, otherParams ...any) error
+	MustDelete(firstParam any, otherParams ...any)
 }
 
 var _ Caseless = (*V)(nil)
@@ -476,6 +477,10 @@ func (g *caselessOper) GetArray(firstParam any, otherParams ...any) (*V, error) 
 
 func (g *caselessOper) Delete(firstParam any, otherParams ...any) error {
 	return g.v.delete(true, firstParam, otherParams...)
+}
+
+func (g *caselessOper) MustDelete(firstParam any, otherParams ...any) {
+	_ = g.v.delete(true, firstParam, otherParams...)
 }
 
 // ==== internal value access functions ====

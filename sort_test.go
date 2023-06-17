@@ -16,16 +16,16 @@ func testSort(t *testing.T) {
 func testSortArray(t *testing.T) {
 	arr := NewArray()
 
-	arr.AppendInt(0).InTheEnd()
-	arr.AppendInt(1).InTheEnd()
-	arr.AppendInt(2).InTheEnd()
-	arr.AppendInt(3).InTheEnd()
-	arr.AppendInt(4).InTheEnd()
-	arr.AppendInt(5).InTheEnd()
-	arr.AppendInt(6).InTheEnd()
-	arr.AppendInt(7).InTheEnd()
-	arr.AppendInt(8).InTheEnd()
-	arr.AppendInt(9).InTheEnd()
+	arr.MustAppendInt(0).InTheEnd()
+	arr.MustAppendInt(1).InTheEnd()
+	arr.MustAppendInt(2).InTheEnd()
+	arr.MustAppendInt(3).InTheEnd()
+	arr.MustAppendInt(4).InTheEnd()
+	arr.MustAppendInt(5).InTheEnd()
+	arr.MustAppendInt(6).InTheEnd()
+	arr.MustAppendInt(7).InTheEnd()
+	arr.MustAppendInt(8).InTheEnd()
+	arr.MustAppendInt(9).InTheEnd()
 
 	t.Logf("pre-sorted: '%s'", arr.MustMarshalString())
 
@@ -59,9 +59,9 @@ func testSortMarshal(t *testing.T) {
 		for i := 0; i < 10; i++ {
 			iStr := strconv.Itoa(i)
 			if i&1 == 0 {
-				v.SetInt(i).At(iStr)
+				v.MustSetInt(i).At(iStr)
 			} else {
-				v.SetString(iStr).At(iStr)
+				v.MustSetString(iStr).At(iStr)
 			}
 		}
 
@@ -128,15 +128,15 @@ func testSortByStringSlice(t *testing.T) {
 	}
 
 	v := NewObject()
-	v.SetString("Beef").At("friendB")
-	v.SetString("Fish").At("friendA")
-	v.SetString("Mayonnaise").At("daughter")
-	v.SetString("Ketchup").At("son")
-	v.SetString("Kentucky").At("grandpa")
-	v.SetString("McDonald").At("grandma")
-	v.SetString("Hanberger").At("father")
-	v.SetString("Chips").At("mother")
-	v.SetNull().At("relative")
+	v.MustSetString("Beef").At("friendB")
+	v.MustSetString("Fish").At("friendA")
+	v.MustSetString("Mayonnaise").At("daughter")
+	v.MustSetString("Ketchup").At("son")
+	v.MustSetString("Kentucky").At("grandpa")
+	v.MustSetString("McDonald").At("grandma")
+	v.MustSetString("Hanberger").At("father")
+	v.MustSetString("Chips").At("mother")
+	v.MustSetNull().At("relative")
 
 	s := v.MustMarshalString(Opt{
 		OmitNull:           true,

@@ -209,7 +209,7 @@ func parseArrayValue(v reflect.Value, ex ext) (*V, error) {
 		if err != nil {
 			return nil, err
 		}
-		res.Append(child).InTheEnd()
+		res.MustAppend(child).InTheEnd()
 	}
 
 	return res, nil
@@ -240,7 +240,7 @@ func parseMapValue(v reflect.Value, ex ext, keyFunc func(key reflect.Value) stri
 		if err != nil {
 			return res, err
 		}
-		res.Set(child).At(keyFunc(kk))
+		res.MustSet(child).At(keyFunc(kk))
 	}
 
 	return res, nil
@@ -332,7 +332,7 @@ func parseStructValue(v reflect.Value, ex ext) (*V, error) {
 
 		for i, k := range keys {
 			v := children[i]
-			res.Set(v).At(k)
+			res.MustSet(v).At(k)
 		}
 	}
 

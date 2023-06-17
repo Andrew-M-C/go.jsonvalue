@@ -34,8 +34,8 @@ func testSetInteger(t *testing.T) {
 
 	// SetInt()
 	o = NewObject()
-	_, err = o.SetInt(integer).At("data", "integer")
-	so(err, isNil)
+	o.MustSetInt(integer).At("data", "integer")
+	so(o.MustGet("data", "integer").Int(), eq, integer)
 
 	s, _ = o.MarshalString()
 	t.Logf("\tafter SetInt:    %v", s)
@@ -91,42 +91,42 @@ func testSetMisc(t *testing.T) {
 	var err error
 
 	v := NewObject()
-	v.SetObject().At("data")
+	v.MustSetObject().At("data")
 
-	v.SetBool(true).At("data", "true")
+	v.MustSetBool(true).At("data", "true")
 	b, err := v.GetBool("data", "true")
 	so(err, isNil)
 	so(b, isTrue)
 
-	v.SetBool(false).At("data", "false")
+	v.MustSetBool(false).At("data", "false")
 	b, err = v.GetBool("data", "false")
 	so(err, isNil)
 	so(b, isFalse)
 
-	v.SetFloat64(1234.12345678).At("data", "float64")
+	v.MustSetFloat64(1234.12345678).At("data", "float64")
 	f, err := v.Get("data", "float64")
 	so(err, isNil)
 	so(f.String(), eq, "1234.12345678")
 
-	v.Set(NewFloat32f(1234.123, 'f', 4)).At("data", "float32")
+	v.MustSet(NewFloat32f(1234.123, 'f', 4)).At("data", "float32")
 	f, err = v.Get("data", "float32")
 	so(err, isNil)
 	so(f.String(), eq, "1234.1230")
 
-	v.SetFloat32(1234.123).At("data", "float32")
+	v.MustSetFloat32(1234.123).At("data", "float32")
 	f, err = v.Get("data", "float32")
 	so(err, isNil)
 	so(f.String(), eq, "1234.123")
 
-	v.SetObject().At("data", "object")
-	v.SetString("hello").At("data", "object", "message")
+	v.MustSetObject().At("data", "object")
+	v.MustSetString("hello").At("data", "object", "message")
 	o, err := v.Get("data", "object")
 	so(err, isNil)
 	so(o.IsObject(), isTrue)
 	so(o.Len(), eq, 1)
 
-	v.SetArray().At("data", "array")
-	v.AppendNull().InTheEnd("data", "array")
+	v.MustSetArray().At("data", "array")
+	v.MustAppendNull().InTheEnd("data", "array")
 	a, err := v.Get("data", "array")
 	so(err, isNil)
 	so(a.IsArray(), isTrue)
@@ -134,8 +134,8 @@ func testSetMisc(t *testing.T) {
 
 	s := "1234567890"
 	data, _ := hex.DecodeString(s)
-	v.SetString(s).At("string")
-	v.SetBytes(data).At("bytes")
+	v.MustSetString(s).At("string")
+	v.MustSetBytes(data).At("bytes")
 	dataRead, err := v.GetBytes("bytes")
 	so(err, isNil)
 
@@ -154,7 +154,7 @@ func testSetMisc(t *testing.T) {
 	so(bytes.Equal(data, child.Bytes()), isTrue)
 
 	a = NewArray()
-	a.AppendObject().InTheBeginning()
+	a.MustAppendObject().InTheBeginning()
 	_, err = a.SetString("hello").At(0)
 	so(err, isNil)
 	s, err = a.GetString(0)
@@ -162,7 +162,7 @@ func testSetMisc(t *testing.T) {
 	so(s, eq, "hello")
 
 	// Set(nil)
-	v.Set(nil).At("data", "nil")
+	v.MustSet(nil).At("data", "nil")
 	err = v.GetNull("data", "nil")
 	so(err, isNil)
 
@@ -214,7 +214,7 @@ func testSetError(t *testing.T) {
 		c := &V{}
 		_, err := v.Set(c).At("uninitialized")
 		so(err, isErr)
-		v.SetString("hello").At("object", "message")
+		v.MustSetString("hello").At("object", "message")
 		_, err = v.SetNull().At("object", "message", "null")
 		so(err, isErr)
 		t.Logf("v: %s", v.MustMarshalString())
@@ -245,9 +245,9 @@ func testSetError(t *testing.T) {
 
 	{
 		v := NewArray()
-		v.AppendArray().InTheBeginning()
-		v.AppendArray().InTheBeginning(0)
-		v.AppendObject().InTheEnd(0)
+		v.MustAppendArray().InTheBeginning()
+		v.MustAppendArray().InTheBeginning(0)
+		v.MustAppendObject().InTheEnd(0)
 		_, err := v.SetNull().At(0, true)
 		so(err, isErr)
 		_, err = v.SetNull().At(0, 0, true)
@@ -258,8 +258,8 @@ func testSetError(t *testing.T) {
 
 	{
 		v := NewArray()
-		v.SetNull().At(0)
-		v.SetNull().At(1)
+		v.MustSetNull().At(0)
+		v.MustSetNull().At(1)
 		if v.MustMarshalString() != `[null,null]` {
 			t.Errorf("unexpected object: %v", v.MustMarshalString())
 			return

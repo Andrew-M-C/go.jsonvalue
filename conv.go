@@ -20,7 +20,7 @@ func formatBool(b bool) string {
 // - [Meaning of escaped unicode characters in JSON](https://stackoverflow.com/questions/21995410/meaning-of-escaped-unicode-characters-in-json)
 func escapeGreaterUnicodeToBuffByUTF16(r rune, buf buffer.Buffer) {
 	if r <= '\uffff' {
-		buf.WriteString(fmt.Sprintf("\\u%04X", r))
+		_, _ = buf.WriteString(fmt.Sprintf("\\u%04X", r))
 		return
 	}
 	// if r > 0x10FFFF {
@@ -32,8 +32,8 @@ func escapeGreaterUnicodeToBuffByUTF16(r rune, buf buffer.Buffer) {
 	r = r - 0x10000
 	lo := r & 0x003FF
 	hi := (r & 0xFFC00) >> 10
-	buf.WriteString(fmt.Sprintf("\\u%04X", hi+0xD800))
-	buf.WriteString(fmt.Sprintf("\\u%04X", lo+0xDC00))
+	_, _ = buf.WriteString(fmt.Sprintf("\\u%04X", hi+0xD800))
+	_, _ = buf.WriteString(fmt.Sprintf("\\u%04X", lo+0xDC00))
 }
 
 func escapeGreaterUnicodeToBuffByUTF8(r rune, buf buffer.Buffer) {
@@ -49,12 +49,12 @@ func escapeGreaterUnicodeToBuffByUTF8(r rune, buf buffer.Buffer) {
 	if r == '\u2028' || r == '\u2029' {
 		escapeGreaterUnicodeToBuffByUTF16(r, buf)
 	} else {
-		buf.WriteRune(r)
+		_, _ = buf.WriteRune(r)
 	}
 }
 
 func escapeNothing(b byte, buf buffer.Buffer) {
-	buf.WriteByte(b)
+	_ = buf.WriteByte(b)
 }
 
 func escAsciiControlChar(b byte, buf buffer.Buffer) {
@@ -63,59 +63,59 @@ func escAsciiControlChar(b byte, buf buffer.Buffer) {
 
 	writeChar := func(c byte) {
 		if c < 0xA {
-			buf.WriteByte('0' + c)
+			_ = buf.WriteByte('0' + c)
 		} else {
-			buf.WriteByte('A' + (c - 0xA))
+			_ = buf.WriteByte('A' + (c - 0xA))
 		}
 	}
 
-	buf.Write([]byte{'\\', 'u', '0', '0'})
+	_, _ = buf.Write([]byte{'\\', 'u', '0', '0'})
 	writeChar(upper)
 	writeChar(lower)
 }
 
 func escDoubleQuote(_ byte, buf buffer.Buffer) {
-	buf.Write([]byte{'\\', '"'})
+	_, _ = buf.Write([]byte{'\\', '"'})
 }
 
 func escSlash(_ byte, buf buffer.Buffer) {
-	buf.Write([]byte{'\\', '/'})
+	_, _ = buf.Write([]byte{'\\', '/'})
 }
 
 func escBackslash(_ byte, buf buffer.Buffer) {
-	buf.Write([]byte{'\\', '\\'})
+	_, _ = buf.Write([]byte{'\\', '\\'})
 }
 
 func escBackspace(_ byte, buf buffer.Buffer) {
-	buf.Write([]byte{'\\', 'b'})
+	_, _ = buf.Write([]byte{'\\', 'b'})
 }
 
 func escVertTab(_ byte, buf buffer.Buffer) {
-	buf.Write([]byte{'\\', 'f'})
+	_, _ = buf.Write([]byte{'\\', 'f'})
 }
 
 func escTab(_ byte, buf buffer.Buffer) {
-	buf.Write([]byte{'\\', 't'})
+	_, _ = buf.Write([]byte{'\\', 't'})
 }
 
 func escNewLine(_ byte, buf buffer.Buffer) {
-	buf.Write([]byte{'\\', 'n'})
+	_, _ = buf.Write([]byte{'\\', 'n'})
 }
 
 func escReturn(_ byte, buf buffer.Buffer) {
-	buf.Write([]byte{'\\', 'r'})
+	_, _ = buf.Write([]byte{'\\', 'r'})
 }
 
 func escLeftAngle(_ byte, buf buffer.Buffer) {
-	buf.Write([]byte{'\\', 'u', '0', '0', '3', 'C'})
+	_, _ = buf.Write([]byte{'\\', 'u', '0', '0', '3', 'C'})
 }
 
 func escRightAngle(_ byte, buf buffer.Buffer) {
-	buf.Write([]byte{'\\', 'u', '0', '0', '3', 'E'})
+	_, _ = buf.Write([]byte{'\\', 'u', '0', '0', '3', 'E'})
 }
 
 func escAnd(_ byte, buf buffer.Buffer) {
-	buf.Write([]byte{'\\', 'u', '0', '0', '2', '6'})
+	_, _ = buf.Write([]byte{'\\', 'u', '0', '0', '2', '6'})
 }
 
 // func escPercent(_ byte, buf buffer.Buffer) {

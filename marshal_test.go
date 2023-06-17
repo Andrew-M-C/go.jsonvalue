@@ -455,11 +455,11 @@ func testMarshalEscapeSlash(t *testing.T) {
 func testMarshalIndent(t *testing.T) {
 	cv("object", func() {
 		v := NewObject()
-		v.SetString("Hello, world").At("obj", "obj_in_obj", "msg")
+		v.MustSetString("Hello, world").At("obj", "obj_in_obj", "msg")
 		b := v.MustMarshal(OptIndent("", "  "))
 
 		var m any
-		json.Unmarshal(b, &m)
+		_ = json.Unmarshal(b, &m)
 		bJS, _ := json.MarshalIndent(m, "", "  ")
 
 		so(string(b), eq, string(bJS))
@@ -473,14 +473,14 @@ func testMarshalIndent(t *testing.T) {
 
 	cv("array", func() {
 		v := NewArray()
-		v.Append(1).InTheEnd()
-		v.Append(2).InTheEnd()
-		v.Append(3).InTheEnd()
+		v.MustAppend(1).InTheEnd()
+		v.MustAppend(2).InTheEnd()
+		v.MustAppend(3).InTheEnd()
 
 		b := v.MustMarshal(OptIndent("", "  "))
 
 		var m any
-		json.Unmarshal(b, &m)
+		_ = json.Unmarshal(b, &m)
 		bJS, _ := json.MarshalIndent(m, "", "  ")
 
 		so(string(b), eq, string(bJS))
@@ -494,9 +494,9 @@ func testMarshalIndent(t *testing.T) {
 
 	cv("multiple indents", func() {
 		type s struct {
-			Arr []any `json:"arr,omitempty"`
-			Obj *s            `json:"obj,omitempty"`
-			Str string        `json:"str,omitempty"`
+			Arr []any  `json:"arr,omitempty"`
+			Obj *s     `json:"obj,omitempty"`
+			Str string `json:"str,omitempty"`
 		}
 
 		data := &s{
@@ -529,11 +529,11 @@ func testMarshalIndent(t *testing.T) {
 
 	cv("empty indent", func() {
 		v := NewObject()
-		v.SetString("Hello, world").At("obj", "obj_in_obj", "msg")
+		v.MustSetString("Hello, world").At("obj", "obj_in_obj", "msg")
 		b := v.MustMarshal(OptIndent("", ""))
 
 		var m any
-		json.Unmarshal(b, &m)
+		_ = json.Unmarshal(b, &m)
 		bJS, _ := json.MarshalIndent(m, "", "")
 
 		so(string(b), eq, string(bJS))

@@ -280,7 +280,7 @@ func testUTF16(t *testing.T) {
 	)
 
 	v := NewObject()
-	v.SetString(orig).At("string")
+	v.MustSetString(orig).At("string")
 
 	data := struct {
 		String string `json:"string"`

@@ -210,8 +210,7 @@ func emptyOptions() *Opt {
 }
 
 func getDefaultOptions() *Opt {
-	res := Opt{}
-	res = *internal.defaultMarshalOption
+	res := *internal.defaultMarshalOption
 	return &res
 }
 

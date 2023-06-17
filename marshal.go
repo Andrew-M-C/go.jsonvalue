@@ -84,18 +84,18 @@ func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt)
 }
 
 func (v *V) marshalString(buf buffer.Buffer, opt *Opt) {
-	buf.WriteByte('"')
+	_ = buf.WriteByte('"')
 	escapeStringToBuff(v.valueStr, buf, opt)
-	buf.WriteByte('"')
+	_ = buf.WriteByte('"')
 }
 
 func (v *V) marshalBoolean(buf buffer.Buffer) {
-	buf.WriteString(formatBool(v.valueBool))
+	_, _ = buf.WriteString(formatBool(v.valueBool))
 }
 
 func (v *V) marshalNumber(buf buffer.Buffer, opt *Opt) error {
 	if b := v.srcByte; len(b) > 0 {
-		buf.Write(b)
+		_, _ = buf.Write(b)
 		return nil
 	}
 	// else, +Inf or -Inf or NaN
@@ -121,18 +121,18 @@ func marshalNaN(buf buffer.Buffer, opt *Opt) error {
 			return fmt.Errorf("%w: %v", ErrUnsupportedFloatInOpt, opt.FloatNaNToFloat)
 		}
 		b, _ := json.Marshal(opt.FloatNaNToFloat)
-		buf.Write(b)
+		_, _ = buf.Write(b)
 
 	case FloatNaNNull:
-		buf.WriteString("null")
+		_, _ = buf.WriteString("null")
 
 	case FloatNaNConvertToString:
 		if s := opt.FloatNaNToString; s == "" {
-			buf.WriteString(`"NaN"`)
+			_, _ = buf.WriteString(`"NaN"`)
 		} else {
-			buf.WriteByte('"')
+			_ = buf.WriteByte('"')
 			escapeStringToBuff(s, buf, opt)
-			buf.WriteByte('"')
+			_ = buf.WriteByte('"')
 		}
 	}
 
@@ -151,18 +151,18 @@ func marshalInfP(buf buffer.Buffer, opt *Opt) error {
 			return fmt.Errorf("%w: %v", ErrUnsupportedFloatInOpt, opt.FloatInfToFloat)
 		}
 		b, _ := json.Marshal(opt.FloatInfToFloat)
-		buf.Write(b)
+		_, _ = buf.Write(b)
 
 	case FloatInfNull:
-		buf.WriteString("null")
+		_, _ = buf.WriteString("null")
 
 	case FloatInfConvertToString:
 		if s := opt.FloatInfPositiveToString; s == "" {
-			buf.WriteString(`"+Inf"`)
+			_, _ = buf.WriteString(`"+Inf"`)
 		} else {
-			buf.WriteByte('"')
+			_ = buf.WriteByte('"')
 			escapeStringToBuff(s, buf, opt)
-			buf.WriteByte('"')
+			_ = buf.WriteByte('"')
 		}
 	}
 
@@ -181,22 +181,22 @@ func marshalInfN(buf buffer.Buffer, opt *Opt) error {
 			return fmt.Errorf("%w: %v", ErrUnsupportedFloatInOpt, -opt.FloatInfToFloat)
 		}
 		b, _ := json.Marshal(-opt.FloatInfToFloat)
-		buf.Write(b)
+		_, _ = buf.Write(b)
 
 	case FloatInfNull:
-		buf.WriteString("null")
+		_, _ = buf.WriteString("null")
 
 	case FloatInfConvertToString:
-		buf.WriteByte('"')
+		_ = buf.WriteByte('"')
 		if s := opt.FloatInfNegativeToString; s != "" {
 			escapeStringToBuff(s, buf, opt)
 		} else if opt.FloatInfPositiveToString != "" {
 			s = "-" + strings.TrimLeft(opt.FloatInfPositiveToString, "+")
 			escapeStringToBuff(s, buf, opt)
 		} else {
-			buf.WriteString(`-Inf`)
+			_, _ = buf.WriteString(`-Inf`)
 		}
-		buf.WriteByte('"')
+		_ = buf.WriteByte('"')
 	}
 
 	return nil
@@ -213,17 +213,17 @@ func isValidFloat(f float64) bool {
 }
 
 func (v *V) marshalNull(buf buffer.Buffer) {
-	buf.WriteString("null")
+	_, _ = buf.WriteString("null")
 }
 
 func (v *V) marshalObject(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 	if len(v.children.object) == 0 {
-		buf.WriteString("{}")
+		_, _ = buf.WriteString("{}")
 		return
 	}
 
 	opt.indent.cnt++
-	buf.WriteByte('{')
+	_ = buf.WriteByte('{')
 
 	if opt.MarshalLessFunc != nil {
 		sov := v.newSortObjectV(parentInfo, opt)
@@ -243,10 +243,10 @@ func (v *V) marshalObject(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 
 	opt.indent.cnt--
 	if opt.indent.enabled {
-		buf.WriteByte('\n')
+		_ = buf.WriteByte('\n')
 		writeIndent(buf, opt)
 	}
-	buf.WriteByte('}')
+	_ = buf.WriteByte('}')
 }
 
 func writeObjectChildren(
@@ -256,63 +256,63 @@ func writeObjectChildren(
 		return false
 	}
 	if !isFirstOne {
-		buf.WriteByte(',')
+		_ = buf.WriteByte(',')
 	}
 
 	if opt.indent.enabled {
-		buf.WriteByte('\n')
+		_ = buf.WriteByte('\n')
 		writeIndent(buf, opt)
 	}
 
-	buf.WriteByte('"')
+	_ = buf.WriteByte('"')
 	escapeStringToBuff(key, buf, opt)
 
 	if opt.indent.enabled {
-		buf.WriteString("\": ")
+		_, _ = buf.WriteString("\": ")
 	} else {
-		buf.WriteString("\":")
+		_, _ = buf.WriteString("\":")
 	}
 
-	child.marshalToBuffer(parentInfo, buf, opt)
+	_ = child.marshalToBuffer(parentInfo, buf, opt)
 	return true
 }
 
 func writeIndent(buf buffer.Buffer, opt *Opt) {
-	buf.WriteString(opt.indent.prefix)
+	_, _ = buf.WriteString(opt.indent.prefix)
 	for i := 0; i < opt.indent.cnt; i++ {
-		buf.WriteString(opt.indent.indent)
+		_, _ = buf.WriteString(opt.indent.indent)
 	}
 }
 
 func (v *V) marshalArray(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 	if len(v.children.arr) == 0 {
-		buf.WriteString("[]")
+		_, _ = buf.WriteString("[]")
 		return
 	}
 
 	opt.indent.cnt++
-	buf.WriteByte('[')
+	_ = buf.WriteByte('[')
 
 	v.RangeArray(func(i int, child *V) bool {
 		if i > 0 {
-			buf.WriteByte(',')
+			_ = buf.WriteByte(',')
 		}
 		if opt.indent.enabled {
-			buf.WriteByte('\n')
+			_ = buf.WriteByte('\n')
 			writeIndent(buf, opt)
 		}
 		if opt.MarshalLessFunc == nil {
-			child.marshalToBuffer(nil, buf, opt)
+			_ = child.marshalToBuffer(nil, buf, opt)
 		} else {
-			child.marshalToBuffer(v.newParentInfo(parentInfo, intKey(i)), buf, opt)
+			_ = child.marshalToBuffer(v.newParentInfo(parentInfo, intKey(i)), buf, opt)
 		}
 		return true
 	})
 
 	opt.indent.cnt--
 	if opt.indent.enabled {
-		buf.WriteByte('\n')
+		_ = buf.WriteByte('\n')
 		writeIndent(buf, opt)
 	}
-	buf.WriteByte(']')
+	_ = buf.WriteByte(']')
 }

@@ -8,7 +8,7 @@ import (
 
 func ExampleV_String() {
 	v := jsonvalue.NewObject()
-	v.SetString("Hello, string").At("object", "message")
+	v.MustSetString("Hello, string").At("object", "message")
 	fmt.Println(v)
 
 	child, _ := v.Get("object")
@@ -53,66 +53,47 @@ func ExampleOpt() {
 	// {}
 }
 
-func ExampleAppend_InTheBeginning() {
-	s := `{"obj":{"arr":[1,2,3,4,5]}}`
-	v, err := jsonvalue.UnmarshalString(s)
-	if err != nil {
-		panic(err)
-	}
-
-	// append a zero in the bebinning of v.obj.arr
-	v.AppendInt(0).InTheBeginning("obj", "arr")
-	s = v.MustMarshalString()
-
-	fmt.Println(s)
-	// Output:
-	// {"obj":{"arr":[0,1,2,3,4,5]}}
-}
-
-func ExampleAppend_InTheEnd() {
+func ExampleV_Append() {
 	s := `{"obj":{"arr":[1,2,3,4,5]}}`
 	v, _ := jsonvalue.UnmarshalString(s)
 
-	// append a zero in the end of v.obj.arr
-	v.AppendInt(0).InTheEnd("obj", "arr")
-	s = v.MustMarshalString()
+	// append a zero in the bebinning of v.obj.arr
+	v.MustAppendInt(0).InTheBeginning("obj", "arr")
+	fmt.Println(v.MustMarshalString())
 
-	fmt.Println(s)
+	// append a zero in the end of v.obj.arr
+	v.MustAppendInt(0).InTheEnd("obj", "arr")
+	fmt.Println(v.MustMarshalString())
+
 	// Output:
-	// {"obj":{"arr":[1,2,3,4,5,0]}}
+	// {"obj":{"arr":[0,1,2,3,4,5]}}
+	// {"obj":{"arr":[0,1,2,3,4,5,0]}}
 }
 
-func ExampleInsert_After() {
+func ExampleV_Insert() {
 	s := `{"obj":{"arr":["hello","world"]}}`
 	v, _ := jsonvalue.UnmarshalString(s)
 
 	// insert a word in the middle, which is after the first word of the array
-	v.InsertString("my").After("obj", "arr", 0)
-
+	v.MustInsertString("my").After("obj", "arr", 0)
 	fmt.Println(v.MustMarshalString())
-	// Output:
-	// {"obj":{"arr":["hello","my","world"]}}
-}
-
-func ExampleInsert_Before() {
-	s := `{"obj":{"arr":["hello","world"]}}`
-	v, _ := jsonvalue.UnmarshalString(s)
 
 	// insert a word in the middle, which is before the second word of the array
-	v.InsertString("my").Before("obj", "arr", 1)
-
+	v.MustInsertString("beautiful").Before("obj", "arr", 2)
 	fmt.Println(v.MustMarshalString())
+
 	// Output:
 	// {"obj":{"arr":["hello","my","world"]}}
+	// {"obj":{"arr":["hello","my","beautiful","world"]}}
 }
 
 // For a simplest example:
 //
 // 这是最简单的例子：
-func ExampleSet_At() {
-	v := jsonvalue.NewObject()                  // {}
-	v.SetObject().At("obj")                     // {"obj":{}}
-	v.Set("Hello, world!").At("obj", "message") // {"obj":{"message":"Hello, world!"}}
+func ExampleV_Set() {
+	v := jsonvalue.NewObject()                      // {}
+	v.MustSetObject().At("obj")                     // {"obj":{}}
+	v.MustSet("Hello, world!").At("obj", "message") // {"obj":{"message":"Hello, world!"}}
 	fmt.Println(v.MustMarshalString())
 	// Output:
 	// {"obj":{"message":"Hello, world!"}}
@@ -121,9 +102,9 @@ func ExampleSet_At() {
 // Or you can make it even more simpler, as At() function will automatically create objects those do not exist
 //
 // 或者你还可以更加简洁，因为 At() 函数会自动创建在值链中所需要但未创建的对象
-func ExampleSet_At_another() {
-	v := jsonvalue.NewObject()                  // {}
-	v.Set("Hello, world!").At("obj", "message") // {"obj":{"message":"Hello, world!"}}
+func ExampleV_Set_another() {
+	v := jsonvalue.NewObject()                      // {}
+	v.MustSet("Hello, world!").At("obj", "message") // {"obj":{"message":"Hello, world!"}}
 	fmt.Println(v.MustMarshalString())
 	// Output:
 	// {"obj":{"message":"Hello, world!"}}
@@ -132,9 +113,9 @@ func ExampleSet_At_another() {
 // As for array, At() also works
 //
 // 对于数组类型，At() 也是能够自动生成的
-func ExampleSet_At_another2() {
-	v := jsonvalue.NewObject()          // {}
-	v.Set("Hello, world!").At("arr", 0) // {"arr":[Hello, world!]}
+func ExampleV_Set_another2() {
+	v := jsonvalue.NewObject()              // {}
+	v.MustSet("Hello, world!").At("arr", 0) // {"arr":[Hello, world!]}
 	fmt.Println(v.MustMarshalString())
 	// Output:
 	// {"arr":["Hello, world!"]}
@@ -148,7 +129,7 @@ func ExampleSet_At_another2() {
 // 在 At() 自动创建数组的逻辑其实稍微有点复杂，需要解释一下。当调用方在参数中指定在某个尚未存在的数组中设置一个值的时候，那么 At() 指定的位置（position）数字，
 // 应当为0，操作才能成功；而当数组已经存在，那么 At() 指定的位置数，要么在数组中已存在，要么正好等于数组的长度，当后者的情况下，会在数组的最后追加值。
 // 这个特性在使用 for-range 块时会非常有用。
-func ExampleSet_At_another3() {
+func ExampleV_Set_another3() {
 	v := jsonvalue.NewObject()                   // {}
 	_, err := v.Set("Hello, world").At("arr", 1) // failed because there are no children of v.arr
 	if err != nil {
@@ -160,7 +141,7 @@ func ExampleSet_At_another3() {
 	integers := []int{10, 20, 30, 40, 50, 60, 70, 80, 90, 100}
 	for i, n := range integers {
 		// this will succeed because i is equal to len(v.arr) every time
-		v.Set(n).At("arr", i)
+		v.MustSet(n).At("arr", i)
 	}
 
 	fmt.Println(v.MustMarshalString())
@@ -173,15 +154,15 @@ func ExampleSet_At_another3() {
 // As for elements those in positions that the array already has, At() will REPLACE it.
 //
 // 正如上文所述，如果在 At() 中指定了已存在的数组的某个位置，那么那个位置上的值会被替换掉，请注意。
-func ExampleSet_At_another4() {
+func ExampleV_Set_another4() {
 	v := jsonvalue.NewObject()
 	for i := 0; i < 10; i++ {
-		v.SetInt(i).At("arr", i)
+		v.MustSetInt(i).At("arr", i)
 	}
 
 	fmt.Println(v.MustMarshalString())
 
-	v.Set(123.12345).At("arr", 3)
+	v.MustSet(123.12345).At("arr", 3)
 	fmt.Println(v.MustMarshalString())
 	// Output:
 	// {"arr":[0,1,2,3,4,5,6,7,8,9]}
@@ -192,7 +173,7 @@ func ExampleSet_At_another4() {
 // For example, we can set a struct as following:
 //
 // 此外，Set(...).At(...) 支持任意合法的 json 类型变量参数。比如我可以传入一个结构体:
-func ExampleSet_At_another5() {
+func ExampleV_Set_another5() {
 	type st struct {
 		Text string `json:"text"`
 	}
@@ -200,7 +181,7 @@ func ExampleSet_At_another5() {
 		Text: "Hello, jsonvalue!",
 	}
 	v := jsonvalue.NewObject()
-	v.Set(child).At("child")
+	v.MustSet(child).At("child")
 	fmt.Println(v.MustMarshalString())
 	// Output:
 	// {"child":{"text":"Hello, jsonvalue!"}}
@@ -291,7 +272,7 @@ func ExampleV_ForRangeObj() {
 
 func ExampleOptUTF8() {
 	v := jsonvalue.NewObject()
-	v.SetString("🇺🇸🇨🇳🇷🇺🇬🇧🇫🇷").At("UN_leaderships")
+	v.MustSetString("🇺🇸🇨🇳🇷🇺🇬🇧🇫🇷").At("UN_leaderships")
 
 	asciiString := v.MustMarshalString()
 	utf8String := v.MustMarshalString(jsonvalue.OptUTF8())
@@ -304,7 +285,7 @@ func ExampleOptUTF8() {
 
 func ExmapleOptEscapeHTML() {
 	v := jsonvalue.NewObject()
-	v.SetString("https://hahaha.com?para1=<&para2=>").At("url")
+	v.MustSetString("https://hahaha.com?para1=<&para2=>").At("url")
 
 	defaultStr := v.MustMarshalString()
 	htmlOn := v.MustMarshalString(jsonvalue.OptEscapeHTML(true))
@@ -321,7 +302,7 @@ func ExmapleOptEscapeHTML() {
 
 func ExampleOptEscapeSlash() {
 	v := jsonvalue.NewObject()
-	v.SetString("https://google.com").At("google")
+	v.MustSetString("https://google.com").At("google")
 
 	defaultStr := v.MustMarshalString()
 	escapeStr := v.MustMarshalString(jsonvalue.OptEscapeSlash(true))

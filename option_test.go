@@ -53,7 +53,7 @@ func testOption_OptSetSequence(t *testing.T) {
 		const iterate = 1000
 
 		for i := 0; i < total; i++ {
-			v.Set(i).At(strconv.Itoa(i))
+			v.MustSet(i).At(strconv.Itoa(i))
 		}
 
 		so(v.Len(), ne, 0)
@@ -87,9 +87,9 @@ func testOption_OptIgnoreOmitempty(t *testing.T) {
 	type st struct {
 		Object map[string]any `json:"object,omitempty"`
 		Array  []any          `json:"array,omitempty"`
-		String string                 `json:"string,omitempty"`
-		Bool   bool                   `json:"bool,omitempty"`
-		Num    float32                `json:"num,omitempty"`
+		String string         `json:"string,omitempty"`
+		Bool   bool           `json:"bool,omitempty"`
+		Num    float32        `json:"num,omitempty"`
 		Null   any            `json:"null,omitempty"`
 	}
 
