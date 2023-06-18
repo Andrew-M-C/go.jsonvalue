@@ -1,7 +1,10 @@
 package jsonvalue
 
 import (
+	"encoding"
 	"encoding/base64"
+	"encoding/json"
+	"reflect"
 )
 
 var internal = struct {
@@ -13,12 +16,20 @@ var internal = struct {
 		bytesPerValue int
 		calcStorage   uint64 // upper 32 bits - size; lower 32 bits - value count
 	}
+
+	types struct {
+		JSONMarshaler reflect.Type
+		TextMarshaler reflect.Type
+	}
 }{}
 
 func init() {
 	internal.b64 = base64.StdEncoding
 	internal.defaultMarshalOption = emptyOptions()
 	internalAddPredictSizePerValue(16, 1)
+
+	internal.types.JSONMarshaler = reflect.TypeOf((*json.Marshaler)(nil)).Elem()
+	internal.types.TextMarshaler = reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
 }
 
 func internalLoadPredictSizePerValue() int {

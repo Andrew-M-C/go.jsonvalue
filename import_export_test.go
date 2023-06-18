@@ -226,11 +226,11 @@ func testStructConv_Import_RawAndBytes(t *testing.T) {
 		so(err, isNil)
 		so(j.Len(), eq, 1)
 
+		t.Logf("%v", j.MustMarshalString())
+
 		got, err := j.GetString("raw", "message")
 		so(err, isNil)
 		so(got, eq, msg)
-
-		// t.Logf("%v", j)
 	})
 
 	cv("json.RawMessage error", func() {

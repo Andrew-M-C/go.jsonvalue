@@ -1,6 +1,7 @@
 package jsonvalue
 
 import (
+	"encoding"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -64,6 +65,11 @@ func (e ext) shouldOmitEmpty() bool {
 func validateValAndReturnParser(v reflect.Value, ex ext) (out reflect.Value, fu parserFunc, err error) {
 	out = v
 
+	// json.Marshaler and encoding.TextMarshaler
+	if o, f := checkAndParseMarshaler(v); f != nil {
+		return o, f, nil
+	}
+
 	switch v.Kind() {
 	default:
 		// 	fallthrough
@@ -114,8 +120,6 @@ func validateValAndReturnParser(v reflect.Value, ex ext) (out reflect.Value, fu 
 	case reflect.Slice:
 		if v.Type() == reflect.TypeOf([]byte{}) {
 			fu = parseBytesValue
-		} else if v.Type() == reflect.TypeOf(json.RawMessage{}) {
-			fu = parseJSONRawMessageValue
 		} else {
 			fu = parseSliceValue
 		}
@@ -128,6 +132,111 @@ func validateValAndReturnParser(v reflect.Value, ex ext) (out reflect.Value, fu 
 	}
 
 	return
+}
+
+// Hit marshaler if fu is not nil.
+func checkAndParseMarshaler(v reflect.Value) (out reflect.Value, fu parserFunc) {
+	out = v
+	if !v.IsValid() {
+		return
+	}
+
+	// check type itself
+	if v.Type().Implements(internal.types.JSONMarshaler) {
+		return v, parseJSONMarshaler
+	}
+	if v.Type().Implements(internal.types.TextMarshaler) {
+		return v, parseTextMarshaler
+	}
+
+	// check its origin type
+	if v.Kind() == reflect.Ptr {
+		if v.IsNil() {
+			return
+		}
+		elem := v.Elem()
+		if elem.Type().Implements(internal.types.JSONMarshaler) {
+			return elem, parseJSONMarshaler
+		}
+		if elem.Type().Implements(internal.types.TextMarshaler) {
+			return elem, parseTextMarshaler
+		}
+		return
+	}
+
+	// check its pointer type, and check one level only
+	if !v.CanAddr() {
+		return
+	}
+	addr := v.Addr()
+	if addr.Type().Implements(internal.types.JSONMarshaler) {
+		return addr, parseJSONMarshaler
+	}
+	if addr.Type().Implements(internal.types.TextMarshaler) {
+		return addr, parseTextMarshaler
+	}
+
+	return
+}
+
+func parseJSONMarshaler(v reflect.Value, ex ext) (*V, error) {
+	marshaler, _ := v.Interface().(json.Marshaler)
+	if marshaler == nil {
+		fmt.Printf("\n JSONMarshaler nil")
+		return nil, nil // empty
+	}
+	b, err := marshaler.MarshalJSON()
+	if err != nil {
+		return &V{}, fmt.Errorf("JSONMarshaler returns error: %w", err)
+	}
+
+	res, err := Unmarshal(b)
+	if err != nil {
+		return nil, fmt.Errorf("illegal JSON data generated from type '%v', error: %w", v.Type(), err)
+	}
+
+	if ex.omitempty {
+		switch res.ValueType() {
+		default:
+			return nil, nil
+		case String:
+			if res.String() == "" {
+				return nil, nil
+			}
+		case Number:
+			if res.Float64() == 0 {
+				return nil, nil
+			}
+		case Array, Object:
+			if res.Len() == 0 {
+				return nil, nil
+			}
+		case Boolean:
+			if !res.Bool() {
+				return nil, nil
+			}
+		case Null:
+			return nil, nil
+		}
+	}
+
+	return res, nil
+}
+
+func parseTextMarshaler(v reflect.Value, ex ext) (*V, error) {
+	marshaler, _ := v.Interface().(encoding.TextMarshaler)
+	if marshaler == nil {
+		return nil, nil // empty
+	}
+	b, err := marshaler.MarshalText()
+	if err != nil {
+		return &V{}, err
+	}
+
+	if len(b) == 0 && ex.omitempty {
+		return nil, nil
+	}
+	return NewString(string(b)), nil
 }
 
 func parseInvalidValue(_ reflect.Value, ex ext) (*V, error) {
@@ -295,15 +404,6 @@ func parseBytesValue(v reflect.Value, ex ext) (*V, error) {
 	}
 
 	return NewBytes(b), nil
-}
-
-func parseJSONRawMessageValue(v reflect.Value, ex ext) (*V, error) {
-	raw := v.Interface().(json.RawMessage)
-	if len(raw) == 0 && ex.shouldOmitEmpty() {
-		return nil, nil
-	}
-
-	return Unmarshal(raw)
 }
 
 func parseStringValue(v reflect.Value, ex ext) (*V, error) {
