@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"testing"
+	"time"
 	"unsafe"
 )
 
@@ -211,6 +213,8 @@ func testStructConv_Import(t *testing.T) {
 	cv("invalid types", func() { testStructConv_Import_InvalidTypes(t) })
 	cv("general types", func() { testStructConv_Import_NormalTypes(t) })
 	cv("array and slice", func() { testStructConv_Import_ArrayAndSlice(t) })
+	cv("json.Marshaler", func() { testStructConv_Import_JSONMarshaler(t) })
+	cv("encding.TextMarshaler", func() { testStructConv_Import_TextMarshaler(t) })
 }
 
 func testStructConv_Import_RawAndBytes(t *testing.T) {
@@ -695,7 +699,7 @@ func testStructConv_Import_ArrayAndSlice(t *testing.T) {
 		so(j.MustGet("Null").IsNull(), isTrue)
 	})
 
-	cv("stringfied value", func() {
+	cv("stringified value", func() {
 		type st struct {
 			Int  int  `json:"int,string"`
 			Bool bool `json:"bool,string"`
@@ -714,6 +718,282 @@ func testStructConv_Import_ArrayAndSlice(t *testing.T) {
 		so(v.MustGet("bool").ValueType(), eq, String)
 		so(v.MustGet("bool").Bool(), eq, s.Bool)
 	})
+}
+
+func testStructConv_Import_JSONMarshaler(t *testing.T) {
+	cv("time.Time", func() {
+		now := time.Now()
+
+		b, _ := now.MarshalText()
+		str := string(b)
+
+		t.Logf("now: %v, marshaled: %v", now, str)
+
+		v, err := Import(now)
+		so(err, isNil)
+		so(v.ValueType(), eq, String)
+		so(v.String(), eq, str)
+	})
+
+	cv("json.RawMessage", func() {
+		value := "Hello, raw message"
+		data := json.RawMessage(fmt.Sprintf(`{"message":"%s"}`, value))
+		v, err := Import(data)
+		so(err, isNil)
+		so(v, notNil)
+		so(v.ValueType(), eq, Object)
+		so(v.MustGet("message").ValueType(), eq, String)
+		so(v.MustGet("message").String(), eq, value)
+	})
+
+	cv("legal customized json.Marshaler", func() {
+		m := &customizedJSONMarshaler{}
+		m.Bool = true
+		v, err := Import(m)
+		so(err, isNil)
+		so(v, notNil)
+		so(v.ValueType(), eq, Object)
+		so(v.MustGet("b").ValueType(), eq, Number)
+		so(v.MustGet("b").Int(), eq, 1)
+
+		b, _ := json.Marshal(m)
+		so(v.MustMarshalString(), eq, string(b))
+
+		m.Bool = false
+		v, err = Import(m)
+		so(err, isNil)
+		so(v, notNil)
+		so(v.ValueType(), eq, Object)
+		so(v.MustGet("b").ValueType(), eq, Number)
+		so(v.MustGet("b").Int(), eq, 0)
+
+		b, _ = json.Marshal(m)
+		so(v.MustMarshalString(), eq, string(b))
+	})
+
+	cv("error customized json.Marshaler", func() {
+		m := &customizedJSONMarshaler{}
+		m.err = errors.New("some error")
+
+		v, err := Import(m)
+		so(err, notNil)
+		so(v, notNil)
+		so(errors.Is(err, m.err), isTrue)
+
+		_, err = json.Marshal(m)
+		so(err, notNil)
+		so(errors.Is(err, m.err), isTrue)
+	})
+
+	cv("illegal customized json.Marshaler", func() {
+		m := &customizedJSONMarshaler{}
+		m.illegal = true
+
+		_, err := json.Marshal(m)
+		so(err, notNil)
+		t.Logf("should got error: '%v'", err)
+
+		v, err := Import(m)
+		so(err, notNil)
+		so(v, notNil)
+		t.Logf("should got error: '%v'", err)
+	})
+
+	cv("empty customized json.Marshaler", func() {
+		type data struct {
+			Data *customizedZeroJSONMarshaler `json:"data,omitempty"`
+		}
+		test := func(m customizedZeroJSONMarshaler, expected string) {
+			d := data{
+				Data: &m,
+			}
+			v, err := Import(d)
+			so(err, isNil)
+			so(v, notNil)
+			so(v.ValueType(), eq, Object)
+			so(v.MustMarshalString(), eq, expected)
+		}
+
+		f := float64(0)
+		test(customizedZeroJSONMarshaler{
+			Number: &f,
+		}, `{}`)
+
+		f = 1
+		test(customizedZeroJSONMarshaler{
+			Number: &f,
+		}, `{"data":1}`)
+
+		b := false
+		test(customizedZeroJSONMarshaler{
+			Boolean: &b,
+		}, `{}`)
+
+		b = true
+		test(customizedZeroJSONMarshaler{
+			Boolean: &b,
+		}, `{"data":true}`)
+
+		s := ""
+		test(customizedZeroJSONMarshaler{
+			String: &s,
+		}, `{}`)
+
+		s = "This is a string."
+		test(customizedZeroJSONMarshaler{
+			String: &s,
+		}, `{"data":"This is a string."}`)
+
+		test(customizedZeroJSONMarshaler{
+			Null: true,
+		}, `{}`)
+
+		test(customizedZeroJSONMarshaler{
+			Array: &([]int{}),
+		}, `{}`)
+
+		test(customizedZeroJSONMarshaler{
+			Array: &([]int{4, 3, 2, 1}),
+		}, `{"data":[4,3,2,1]}`)
+
+		test(customizedZeroJSONMarshaler{
+			Object: &(map[string]string{}),
+		}, `{}`)
+
+		test(customizedZeroJSONMarshaler{
+			Object: &(map[string]string{"some_key": "some_value"}),
+		}, `{"data":{"some_key":"some_value"}}`)
+	})
+}
+
+type customizedJSONMarshaler struct {
+	Bool    bool
+	err     error
+	illegal bool
+}
+
+func (m *customizedJSONMarshaler) MarshalJSON() ([]byte, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	if m.illegal {
+		return []byte(`{"b":1+1}`), nil // This is an illegal JSON string.
+	}
+	const yes = `{"b":1}`
+	const no = `{"b":0}`
+	if m.Bool {
+		return []byte(yes), nil
+	}
+	return []byte(no), nil
+}
+
+type customizedZeroJSONMarshaler struct {
+	Number  *float64
+	Boolean *bool
+	String  *string
+	Null    bool
+	Array   *[]int
+	Object  *map[string]string
+}
+
+func (m *customizedZeroJSONMarshaler) MarshalJSON() (b []byte, _ error) {
+	res := `""`
+	defer func() {
+		b = []byte(res)
+	}()
+	if m.Number != nil {
+		res = strconv.FormatFloat(*m.Number, 'f', -1, 64)
+		return
+	}
+	if m.Boolean != nil {
+		res = fmt.Sprintf("%v", *m.Boolean)
+		return
+	}
+	if m.String != nil {
+		res = NewString(*m.String).MustMarshalString()
+		return
+	}
+	if m.Null {
+		res = "null"
+		return
+	}
+	if m.Array != nil {
+		res = New(*m.Array).MustMarshalString()
+		return
+	}
+	if m.Object != nil {
+		res = New(*m.Object).MustMarshalString()
+		return
+	}
+	return
+}
+
+func testStructConv_Import_TextMarshaler(t *testing.T) {
+	cv("legal customized encoding.TextMarshaler", func() {
+		m := &customizedTextMarshaler{}
+		m.str = "Hello, text!"
+		v, err := Import(m)
+		so(err, isNil)
+		so(v, notNil)
+		so(v.ValueType(), eq, String)
+		so(v.String(), eq, m.str)
+		so(v.MustMarshalString(), eq, fmt.Sprintf(`"%s"`, m.str))
+
+		b, _ := json.Marshal(m)
+		so(v.MustMarshalString(), eq, string(b))
+	})
+
+	cv("error customized encoding.TextMarshaler", func() {
+		m := &customizedTextMarshaler{}
+		m.err = errors.New("some error")
+
+		v, err := Import(m)
+		so(err, notNil)
+		so(v, notNil)
+		so(errors.Is(err, m.err), isTrue)
+
+		_, err = json.Marshal(m)
+		so(err, notNil)
+		so(errors.Is(err, m.err), isTrue)
+	})
+
+	cv("empty customized encoding.TextMarshaler", func() {
+		type data struct {
+			Data customizedTextMarshaler `json:"data,omitempty"`
+		}
+		d := data{}
+		d.Data.str = "Hello, world!"
+
+		v, err := Import(d)
+		so(err, isNil)
+		so(v, notNil)
+		so(v.ValueType(), eq, Object)
+		so(v.Len(), eq, 1)
+		so(v.MustGet("data").ValueType(), eq, String)
+
+		so(v.MustMarshalString(), eq, fmt.Sprintf(`{"data":"%s"}`, d.Data.str))
+
+		d.Data.str = ""
+		v, err = Import(d)
+		so(err, isNil)
+		so(v, notNil)
+		so(v.ValueType(), eq, Object)
+		so(v.Len(), eq, 0)
+		so(v.MustMarshalString(), eq, "{}")
+	})
+	// TODO:
+}
+
+type customizedTextMarshaler struct {
+	str string
+	err error
+}
+
+func (m *customizedTextMarshaler) MarshalText() ([]byte, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	return []byte(m.str), nil
 }
 
 func testImportBugIssue19(t *testing.T) {

@@ -164,19 +164,25 @@ func checkAndParseMarshaler(v reflect.Value) (out reflect.Value, fu parserFunc) 
 		return
 	}
 
-	// check its pointer type, and check one level only
-	if !v.CanAddr() {
-		return
+	// check its pointer type
+	referenceType := reflect.PointerTo(v.Type())
+	if referenceType.Implements(internal.types.JSONMarshaler) {
+		return getPointerOfValue(v), parseJSONMarshaler
 	}
-	addr := v.Addr()
-	if addr.Type().Implements(internal.types.JSONMarshaler) {
-		return addr, parseJSONMarshaler
-	}
-	if addr.Type().Implements(internal.types.TextMarshaler) {
-		return addr, parseTextMarshaler
+	if referenceType.Implements(internal.types.TextMarshaler) {
+		return getPointerOfValue(v), parseTextMarshaler
 	}
 
 	return
+}
+
+// reference:
+//   - [Using reflect to get a pointer to a struct passed as an interface{}](https://groups.google.com/g/golang-nuts/c/KB3_Yj3Ny4c)
+//   - [reflect.Set slice-of-structs value to a struct, without type assertion (because it's unknown)](https://stackoverflow.com/questions/40474682)
+func getPointerOfValue(v reflect.Value) reflect.Value {
+	vp := reflect.New(reflect.TypeOf(v.Interface()))
+	vp.Elem().Set(v)
+	return vp
 }
 
 func parseJSONMarshaler(v reflect.Value, ex ext) (*V, error) {
@@ -195,7 +201,7 @@ func parseJSONMarshaler(v reflect.Value, ex ext) (*V, error) {
 		return nil, fmt.Errorf("illegal JSON data generated from type '%v', error: %w", v.Type(), err)
 	}
 
-	if ex.omitempty {
+	if ex.shouldOmitEmpty() {
 		switch res.ValueType() {
 		default:
 			return nil, nil
@@ -226,14 +232,17 @@ func parseJSONMarshaler(v reflect.Value, ex ext) (*V, error) {
 func parseTextMarshaler(v reflect.Value, ex ext) (*V, error) {
 	marshaler, _ := v.Interface().(encoding.TextMarshaler)
 	if marshaler == nil {
-		return nil, nil // empty
+		if ex.shouldOmitEmpty() {
+			return nil, nil
+		}
+		return NewNull(), nil // empty
 	}
 	b, err := marshaler.MarshalText()
 	if err != nil {
 		return &V{}, err
 	}
 
-	if len(b) == 0 && ex.omitempty {
+	if len(b) == 0 && ex.shouldOmitEmpty() {
 		return nil, nil
 	}
 	return NewString(string(b)), nil
