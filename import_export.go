@@ -165,7 +165,8 @@ func checkAndParseMarshaler(v reflect.Value) (out reflect.Value, fu parserFunc) 
 	}
 
 	// check its pointer type
-	referenceType := reflect.PointerTo(v.Type())
+	// referenceType := reflect.PointerTo(v.Type()) // go 1.17 +
+	referenceType := reflect.PtrTo(v.Type())
 	if referenceType.Implements(internal.types.JSONMarshaler) {
 		return getPointerOfValue(v), parseJSONMarshaler
 	}
