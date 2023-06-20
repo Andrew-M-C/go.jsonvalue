@@ -733,12 +733,7 @@ func (it iter) parseNumber(
 			floated = true
 
 		case '+':
-			if idx == offset {
-				// OK
-			} else if !exponentGot {
-				err = it.numErrorf(idx, "unexpected +")
-				return
-			} else if intAfterDotGot {
+			if !exponentGot {
 				err = it.numErrorf(idx, "unexpected +")
 				return
 			}

@@ -414,8 +414,11 @@ func (apd *appender) InTheBeginning(params ...any) (*V, error) {
 		if v.valueType != Array {
 			return &V{}, ErrNotArrayValue
 		}
-
-		v.appendToArr(c)
+		if v.Len() == 0 {
+			v.appendToArr(c)
+		} else {
+			v.insertToArr(0, c)
+		}
 		return c, nil
 	}
 

@@ -72,8 +72,9 @@ func TestJsonvalue(t *testing.T) {
 	test(t, "test marshaling", testMarshal)
 	test(t, "test sort", testSort)
 	test(t, "test insert, append, delete", testInsertAppendDelete)
-	test(t, "test structconv", testStructConv)
+	test(t, "test import/export", testImportExport)
 	test(t, "test Equal functions", testEqual)
+	test(t, "test marshaler and unmarshaler", testMarshalerUnmarshaler)
 	test(t, "test internal variables", testInternal)
 }
 
@@ -238,6 +239,29 @@ func testMiscCharacters(t *testing.T) {
 		v, err = UnmarshalString(`"\uD83D\uFFFF"`) // should be "\uD83D\uDE0A" ==> 😊
 		so(err, isErr)
 		so(v.ValueType(), eq, NotExist)
+	})
+
+	cv("unmarshal illegal plus symbols", func() {
+		okCases := []string{
+			`{"number":1}`,
+			`{"number":1E+1}`,
+		}
+		failCases := []string{
+			`{"number":+1}`,
+			`{"number":1+1}`,
+			`{"number":1E1+1}`,
+			`{"number":1E1+}`,
+		}
+
+		for _, c := range okCases {
+			v, err := UnmarshalString(c)
+			so(err, isNil)
+			so(v.MustGet("number").ValueType(), eq, Number)
+		}
+		for _, c := range failCases {
+			_, err := UnmarshalString(c)
+			so(err, isErr)
+		}
 	})
 }
 

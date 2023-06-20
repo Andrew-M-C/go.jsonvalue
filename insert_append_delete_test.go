@@ -101,64 +101,236 @@ func testInsertAppend(t *testing.T) {
 }
 
 func testMustInsertAppend(t *testing.T) {
-	expected := `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ==",99999999]`
-	a := NewArray()
+	cv("general", func() {
+		expected := `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ==",99999999]`
+		a := NewArray()
 
-	a.MustAppendString("world").InTheBeginning()
-	so(a.MustMarshalString(), eq, `["world"]`)
-	t.Log(a.MustMarshalString())
+		a.MustAppendString("world").InTheBeginning()
+		so(a.MustMarshalString(), eq, `["world"]`)
+		t.Log(a.MustMarshalString())
 
-	a.MustAppendFloat64(1234.123456789).InTheEnd()
-	so(a.MustMarshalString(), eq, `["world",1234.123456789]`)
-	t.Log(a.MustMarshalString())
+		a.MustAppendFloat64(1234.123456789).InTheEnd()
+		so(a.MustMarshalString(), eq, `["world",1234.123456789]`)
+		t.Log(a.MustMarshalString())
 
-	a.MustInsertBool(true).After(-1)
-	so(a.MustMarshalString(), eq, `["world",1234.123456789,true]`)
-	t.Log(a.MustMarshalString())
+		a.MustInsertBool(true).After(-1)
+		so(a.MustMarshalString(), eq, `["world",1234.123456789,true]`)
+		t.Log(a.MustMarshalString())
 
-	a.MustAppendNull().InTheEnd()
-	so(a.MustMarshalString(), eq, `["world",1234.123456789,true,null]`)
-	t.Log(a.MustMarshalString())
+		a.MustAppendNull().InTheEnd()
+		so(a.MustMarshalString(), eq, `["world",1234.123456789,true,null]`)
+		t.Log(a.MustMarshalString())
 
-	a.MustInsertInt(123456).Before(0)
-	so(a.MustMarshalString(), eq, `[123456,"world",1234.123456789,true,null]`)
-	t.Log(a.MustMarshalString())
+		a.MustInsertInt(123456).Before(0)
+		so(a.MustMarshalString(), eq, `[123456,"world",1234.123456789,true,null]`)
+		t.Log(a.MustMarshalString())
 
-	a.MustInsertString("hello").After(0)
-	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,null]`)
-	t.Log(a.MustMarshalString())
+		a.MustInsertString("hello").After(0)
+		so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,null]`)
+		t.Log(a.MustMarshalString())
 
-	a.MustInsertArray().After(-2)
-	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,[],null]`)
-	t.Log(a.MustMarshalString())
+		a.MustInsertArray().After(-2)
+		so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,[],null]`)
+		t.Log(a.MustMarshalString())
 
-	a.MustAppendString("12345").InTheEnd(-2)
-	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null]`)
-	t.Log(a.MustMarshalString())
+		a.MustAppendString("12345").InTheEnd(-2)
+		so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null]`)
+		t.Log(a.MustMarshalString())
 
-	a.MustAppend(nil).InTheEnd()
-	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null,null]`)
-	t.Log(a.MustMarshalString())
+		a.MustAppend(nil).InTheEnd()
+		so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null,null]`)
+		t.Log(a.MustMarshalString())
 
-	a.MustAppendBytes([]byte("1")).InTheEnd()
-	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ=="]`)
-	t.Log(a.MustMarshalString())
+		a.MustAppendBytes([]byte("1")).InTheEnd()
+		so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ=="]`)
+		t.Log(a.MustMarshalString())
 
-	a.MustAppend(99999999).InTheEnd()
-	so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ==",99999999]`)
-	t.Log(a.MustMarshalString())
+		a.MustAppend(99999999).InTheEnd()
+		so(a.MustMarshalString(), eq, `[123456,"hello","world",1234.123456789,true,["12345"],null,null,"MQ==",99999999]`)
+		t.Log(a.MustMarshalString())
 
-	s, _ := a.MarshalString()
-	t.Logf("after SetXxx(): %v", s)
+		s, _ := a.MarshalString()
+		t.Logf("after SetXxx(): %v", s)
 
-	so(s, eq, expected)
+		so(s, eq, expected)
 
-	// unmarshal and then marchal back
-	a, err := UnmarshalString(expected)
-	so(err, isNil)
-	s, err = a.MarshalString()
-	so(err, isNil)
-	so(s, eq, expected)
+		// unmarshal and then marchal back
+		a, err := UnmarshalString(expected)
+		so(err, isNil)
+		s, err = a.MarshalString()
+		so(err, isNil)
+		so(s, eq, expected)
+	})
+
+	cv("MustInsertInt64", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.InsertInt64(10).Before(1)
+		b.MustInsertInt64(10).Before(1)
+		so(a.MustMarshalString(), eq, `[1,10,2]`)
+		so(b.MustMarshalString(), eq, `[1,10,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustInsertInt32", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.InsertInt32(-1).Before(1)
+		b.MustInsertInt32(-1).Before(1)
+		so(a.MustMarshalString(), eq, `[1,-1,2]`)
+		so(b.MustMarshalString(), eq, `[1,-1,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustInsertUint", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.InsertUint(10).Before(1)
+		b.MustInsertUint(10).Before(1)
+		so(a.MustMarshalString(), eq, `[1,10,2]`)
+		so(b.MustMarshalString(), eq, `[1,10,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustInsertUint64", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.InsertUint64(10).Before(1)
+		b.MustInsertUint64(10).Before(1)
+		so(a.MustMarshalString(), eq, `[1,10,2]`)
+		so(b.MustMarshalString(), eq, `[1,10,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustInsertUint32", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.InsertUint32(10).Before(1)
+		b.MustInsertUint32(10).Before(1)
+		so(a.MustMarshalString(), eq, `[1,10,2]`)
+		so(b.MustMarshalString(), eq, `[1,10,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustInsertFloat64", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.InsertFloat64(-1.5).Before(1)
+		b.MustInsertFloat64(-1.5).Before(1)
+		so(a.MustMarshalString(), eq, `[1,-1.5,2]`)
+		so(b.MustMarshalString(), eq, `[1,-1.5,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustInsertFloat32", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.InsertFloat32(-1.5).Before(1)
+		b.MustInsertFloat32(-1.5).Before(1)
+		so(a.MustMarshalString(), eq, `[1,-1.5,2]`)
+		so(b.MustMarshalString(), eq, `[1,-1.5,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustInsertNull", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.InsertNull().Before(1)
+		b.MustInsertNull().Before(1)
+		so(a.MustMarshalString(), eq, `[1,null,2]`)
+		so(b.MustMarshalString(), eq, `[1,null,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustInsertObject", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.InsertObject().After(1)
+		b.MustInsertObject().After(1)
+		so(a.MustMarshalString(), eq, `[1,2,{}]`)
+		so(b.MustMarshalString(), eq, `[1,2,{}]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustAppendBool", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.AppendBool(true).InTheBeginning()
+		b.MustAppendBool(true).InTheBeginning()
+		so(a.MustMarshalString(), eq, `[true,1,2]`)
+		so(b.MustMarshalString(), eq, `[true,1,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustAppendInt64", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.AppendInt64(-100).InTheEnd()
+		b.MustAppendInt64(-100).InTheEnd()
+		so(a.MustMarshalString(), eq, `[1,2,-100]`)
+		so(b.MustMarshalString(), eq, `[1,2,-100]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustAppendInt32", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.AppendInt32(-100).InTheBeginning()
+		b.MustAppendInt32(-100).InTheBeginning()
+		so(a.MustMarshalString(), eq, `[-100,1,2]`)
+		so(b.MustMarshalString(), eq, `[-100,1,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustAppendUint", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.AppendUint(100).InTheBeginning()
+		b.MustAppendUint(100).InTheBeginning()
+		so(a.MustMarshalString(), eq, `[100,1,2]`)
+		so(b.MustMarshalString(), eq, `[100,1,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustAppendUint64", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.AppendUint64(100).InTheBeginning()
+		b.MustAppendUint64(100).InTheBeginning()
+		so(a.MustMarshalString(), eq, `[100,1,2]`)
+		so(b.MustMarshalString(), eq, `[100,1,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustAppendUint32", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.AppendUint32(100).InTheBeginning()
+		b.MustAppendUint32(100).InTheBeginning()
+		so(a.MustMarshalString(), eq, `[100,1,2]`)
+		so(b.MustMarshalString(), eq, `[100,1,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustAppendFloat64", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.AppendFloat64(1.25).InTheBeginning()
+		b.MustAppendFloat64(1.25).InTheBeginning()
+		so(a.MustMarshalString(), eq, `[1.25,1,2]`)
+		so(b.MustMarshalString(), eq, `[1.25,1,2]`)
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("MustAppendFloat32", func() {
+		a := New([]int{1, 2})
+		b := New([]int{1, 2})
+		_, _ = a.AppendFloat32(-1.25).InTheBeginning()
+		b.MustAppendFloat32(-1.25).InTheBeginning()
+		so(a.MustMarshalString(), eq, `[-1.25,1,2]`)
+		so(b.MustMarshalString(), eq, `[-1.25,1,2]`)
+		so(a.Equal(b), isTrue)
+	})
 }
 
 func testDelete(t *testing.T) {

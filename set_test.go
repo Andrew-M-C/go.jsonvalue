@@ -11,6 +11,7 @@ func testSet(t *testing.T) {
 	cv("set integer", func() { testSetInteger(t) })
 	cv("misc set", func() { testSetMisc(t) })
 	cv("set errors", func() { testSetError(t) })
+	cv("must set", func() { testSet_Must(t) })
 }
 
 func testJsonvalue_Set(t *testing.T) {
@@ -285,4 +286,86 @@ func testSetError(t *testing.T) {
 		_, err = v.SetNull().At("array", true)
 		so(err, isErr)
 	}
+}
+
+func testSet_Must(t *testing.T) {
+	cv("SetBytes", func() {
+		a := NewObject()
+		b := NewObject()
+		_, _ = a.SetBytes([]byte{1, 2}).At("bytes")
+		b.MustSetBytes([]byte{1, 2}).At("bytes")
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("SetString", func() {
+		a := NewObject()
+		b := NewObject()
+		_, _ = a.SetString("1").At("one")
+		b.MustSetString("1").At("one")
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("SetInt", func() {
+		a := NewObject()
+		b := NewObject()
+		_, _ = a.SetInt(-1).At("one")
+		b.MustSetInt(-1).At("one")
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("SetUint", func() {
+		a := NewObject()
+		b := NewObject()
+		_, _ = a.SetUint(1).At("one")
+		b.MustSetUint(1).At("one")
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("SetInt32", func() {
+		a := NewObject()
+		b := NewObject()
+		_, _ = a.SetInt32(-1).At("one")
+		b.MustSetInt32(-1).At("one")
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("SetUint32", func() {
+		a := NewObject()
+		b := NewObject()
+		_, _ = a.SetUint32(1).At("one")
+		b.MustSetUint32(1).At("one")
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("SetFloat64", func() {
+		a := NewObject()
+		b := NewObject()
+		_, _ = a.SetFloat64(1).At("one")
+		b.MustSetFloat64(1).At("one")
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("SetFloat32", func() {
+		a := NewObject()
+		b := NewObject()
+		_, _ = a.SetFloat32(1).At("one")
+		b.MustSetFloat32(1).At("one")
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("SetObject", func() {
+		a := NewObject()
+		b := NewObject()
+		_, _ = a.SetObject().At("obj")
+		b.MustSetObject().At("obj")
+		so(a.Equal(b), isTrue)
+	})
+
+	cv("SetArray", func() {
+		a := NewObject()
+		b := NewObject()
+		_, _ = a.SetArray().At("arr")
+		b.MustSetArray().At("arr")
+		so(a.Equal(b), isTrue)
+	})
 }

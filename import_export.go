@@ -186,9 +186,11 @@ func getPointerOfValue(v reflect.Value) reflect.Value {
 }
 
 func parseJSONMarshaler(v reflect.Value, ex ext) (*V, error) {
+	if v.Kind() == reflect.Ptr && v.IsNil() {
+		return nil, nil // empty
+	}
 	marshaler, _ := v.Interface().(json.Marshaler)
 	if marshaler == nil {
-		fmt.Printf("\n JSONMarshaler nil")
 		return nil, nil // empty
 	}
 	b, err := marshaler.MarshalJSON()
@@ -230,11 +232,11 @@ func parseJSONMarshaler(v reflect.Value, ex ext) (*V, error) {
 }
 
 func parseTextMarshaler(v reflect.Value, ex ext) (*V, error) {
+	if v.Kind() == reflect.Ptr && v.IsNil() {
+		return nil, nil // empty
+	}
 	marshaler, _ := v.Interface().(encoding.TextMarshaler)
 	if marshaler == nil {
-		if ex.shouldOmitEmpty() {
-			return nil, nil
-		}
 		return NewNull(), nil // empty
 	}
 	b, err := marshaler.MarshalText()

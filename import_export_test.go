@@ -3,6 +3,7 @@ package jsonvalue
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 	"unsafe"
 )
 
-func testStructConv(t *testing.T) {
+func testImportExport(t *testing.T) {
 	cv("export to string", func() { testExportString(t) })
 	cv("export to int", func() { testExportInt(t) })
 	cv("export to float", func() { testExportFloat(t) })
@@ -1044,6 +1045,7 @@ func testImportMiscAnonymous(t *testing.T) {
 	cv("array", func() { testImportMiscAnonymousArrayInStruct(t) })
 	cv("slice pointer", func() { testImportMiscAnonymousSlicePtrInStruct(t) })
 	cv("invalid types", func() { testImportMiscAnonymousInvalidTypes(t) })
+	cv("misc marshaler types", func() { testImportExportMiscMarshalerTypes(t) })
 }
 
 func testImportMiscAnonymousStructPtrInStruct(t *testing.T) {
@@ -1264,4 +1266,122 @@ func testImportMiscAnonymousInvalidTypes(t *testing.T) {
 
 	_, err = Import(data)
 	so(err, isErr)
+}
+
+func testImportExportMiscMarshalerTypes(t *testing.T) {
+	cv("json.Marshaler, ptr", func() {
+		r := &refJSONMarshaler{}
+		r.s = "json.Marshaler"
+		v, err := Import(r)
+		so(err, isNil)
+		so(v.ValueType(), eq, String)
+		so(v.MustMarshalString(), eq, `"json.Marshaler"`)
+	})
+
+	cv("encoding.TextMarshaler, ptr", func() {
+		r := &refTextMarshaler{}
+		r.s = "encoding.TextMarshaler"
+		v, err := Import(r)
+		so(err, isNil)
+		so(v.ValueType(), eq, String)
+		so(v.MustMarshalString(), eq, `"encoding.TextMarshaler"`)
+	})
+
+	cv("json.Marshaler, ptr to ptr", func() {
+		r := &refJSONMarshaler{}
+		r.s = "json.Marshaler"
+		v, err := Import(&r)
+		so(err, isNil)
+		so(v.ValueType(), eq, String)
+		so(v.MustMarshalString(), eq, `"json.Marshaler"`)
+	})
+
+	cv("encoding.TextMarshaler, ptr to ptr", func() {
+		r := &refTextMarshaler{}
+		r.s = "encoding.TextMarshaler"
+		v, err := Import(&r)
+		so(err, isNil)
+		so(v.ValueType(), eq, String)
+		so(v.MustMarshalString(), eq, `"encoding.TextMarshaler"`)
+	})
+
+	cv("json.Marshaler, value", func() {
+		st := struct {
+			V *valueJSONMarshaler `json:"v"`
+		}{}
+		value := valueJSONMarshaler{1, 2, 3, 4, 0xa, 0xb, 0xc, 0xd}
+		st.V = &value
+		v, err := Import(st)
+		so(err, isNil)
+		so(v.ValueType(), eq, Object)
+		so(v.MustGet("v").ValueType(), eq, String)
+		so(v.MustMarshalString(), eq, `{"v":"010203040a0b0c0d"}`)
+	})
+
+	cv("encoding.TextMarshaler, value", func() {
+		st := struct {
+			V *valueTextMarshaler `json:"v"`
+		}{}
+		value := valueTextMarshaler{1, 2, 3, 4, 0xa, 0xb, 0xc, 0xd}
+		st.V = &value
+		v, err := Import(st)
+		so(err, isNil)
+		so(v.ValueType(), eq, Object)
+		so(v.MustGet("v").ValueType(), eq, String)
+		so(v.MustMarshalString(), eq, `{"v":"010203040a0b0c0d"}`)
+	})
+
+	cv("json.Marshaler, nil", func() {
+		st := struct {
+			V *valueJSONMarshaler `json:"v,omitempty"`
+		}{}
+		v, err := Import(st)
+		so(err, isNil)
+		so(v.ValueType(), eq, Object)
+		so(v.MustGet("v").ValueType(), eq, NotExist)
+		so(v.MustMarshalString(), eq, `{}`)
+	})
+
+	cv("encoding.TextMarshaler, nil", func() {
+		st := struct {
+			V *valueTextMarshaler `json:"v,omitempty"`
+		}{}
+		v, err := Import(st)
+		so(err, isNil)
+		so(v.ValueType(), eq, Object)
+		so(v.MustGet("v").ValueType(), eq, NotExist)
+		so(v.MustMarshalString(), eq, `{}`)
+	})
+}
+
+type valueJSONMarshaler [8]byte
+
+func (v valueJSONMarshaler) MarshalJSON() ([]byte, error) {
+	s := hex.EncodeToString(v[:])
+	s = fmt.Sprintf(`"%s"`, s)
+	return []byte(s), nil
+}
+
+type valueTextMarshaler [8]byte
+
+func (v valueTextMarshaler) MarshalText() ([]byte, error) {
+	s := hex.EncodeToString(v[:])
+	return []byte(s), nil
+}
+
+type refJSONMarshaler struct {
+	s string
+}
+
+func (r *refJSONMarshaler) MarshalJSON() ([]byte, error) {
+	v := NewString(r.s)
+	return v.Marshal()
+}
+
+type refTextMarshaler struct {
+	s string
+}
+
+func (r *refTextMarshaler) MarshalText() ([]byte, error) {
+	return []byte(r.s), nil
 }
