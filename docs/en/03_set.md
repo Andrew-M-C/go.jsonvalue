@@ -47,14 +47,16 @@ n := jsonvalue.New(nil)             // construct a JSON null
 
 ## Set Sub Value into JSON
 
-After generating the outer object or array, the next step is to create there inside structures. Like `Get` method shown in previous section, we can use `Set` to achieve this.
+After generating the outer object or array, the next step is to create there inside structures. Like `Get` method shown in previous section, we can use `Set` or `MustSet` to achieve this.
+
+The `Set(xxx).At(yyy)` methods will return sub-value and error. While `MustSet(xxx).At(yyy)` not. If you does not case the return values please use `MustSet` methods, which will avoid golangci-lint's "return value unused" warning.
 
 ### Basic Usage
 
 Generally, we can Use `Set` to construct child value:
 
 ```go
-v.Set(child).At(path...)
+v.MustSet(child).At(path...)
 ```
 
 The semantics is "SET something AT some position". Please be advised that value the ahead of key.
@@ -65,8 +67,8 @@ Complete example:
 
 ```go
 v := jsonvalue.NewObject()
-v.Set("Hello, JSON!").At("data", "message")
-v.Set(221101).At("data", "date")
+v.MustSet("Hello, JSON!").At("data", "message")
+v.MustSet(221101).At("data", "date")
 fmt.Println(v.MustMarshalString())
 ```
 
@@ -77,7 +79,9 @@ Output: `{"data":{"message":"Hello, JSON!","date":221101}}`
 After calling `Set`, `At` should be followed afterward to set child value into JSON. The prototype of `At` is:
 
 ```go
-func (s *Set) At(param1 any, params ...any) (*V, error)
+type Setter interface {
+	At(firstParam interface{}, otherParams ...interface{}) (*V, error)
+}
 ```
 
 Basic semantics of this method is consistent with `Get`. To prevent programming error, at least one parameter should be given, this the meaning of `param1`.
@@ -90,9 +94,9 @@ The more important feature of `At` is that it can generate target JSON structure
 Here is an example with automatic path generating:
 
 ```go
-v := jsonvalue.NewObject()                   // {}
-v.Set("Hello, object!").At("obj", "message") // {"obj":{"message":"Hello, object!"}}
-v.Set("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, object!"},"arr":["Hello, array!"]}
+v := jsonvalue.NewObject()                       // {}
+v.MustSet("Hello, object!").At("obj", "message") // {"obj":{"message":"Hello, object!"}}
+v.MustSet("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, object!"},"arr":["Hello, array!"]}
 ```
 
 As for array auto-creating, the procedure is a bit complicated:
@@ -109,8 +113,8 @@ This feature is so complicated that we will not use in most cases. But there is 
     const lessons = []int{1, 2, 3, 4}
     v := jsonvalue.NewObject()
     for i := range words {
-        v.Set(words[i]).At("array", i, "word")
-        v.Set(lessons[i]).At("array", i, "lesson")
+        v.MustSet(words[i]).At("array", i, "word")
+        v.MustSet(lessons[i]).At("array", i, "lesson")
     }
     fmt.Println(c.MustMarshalString())
 ```
@@ -136,16 +140,34 @@ They work with semantics below:
 
 Please be advised of the parameter sequence.
 
+Like `Set` methods, there are also `MustAppend` and `MustInsert` methods by same reason.
+
 Prototypes of these methods as below:
 
 ```go
-func (v *V) Append(child any) *Append
-func (apd *Append) InTheBeginning(params ...any) (*V, error)
-func (apd *Append) InTheEnd(params ...any) (*V, error)
+func (v *V) Append(child any) Appender
+type Appender interface {
+	InTheBeginning(params ...interface{}) (*V, error)
+	InTheEnd(params ...interface{}) (*V, error)
+}
 
-func (v *V) Insert(child any) *Insert
-func (ins *Insert) After(firstParam any, otherParams ...any) (*V, error)
-func (ins *Insert) Before(firstParam any, otherParams ...any) (*V, error)
+func (v *V) Insert(child any) Inserter
+type Inserter interface {
+	After(firstParam interface{}, otherParams ...interface{}) (*V, error)
+	Before(firstParam interface{}, otherParams ...interface{}) (*V, error)
+}
+
+func (v *V) MustAppend(child any) MustAppender
+type MustAppender interface {
+	InTheBeginning(params ...interface{})
+	InTheEnd(params ...interface{})
+}
+
+func (v *V) MustInsert(child any) MustInserter
+type MustInserter interface {
+	After(firstParam interface{}, otherParams ...interface{})
+	Before(firstParam interface{}, otherParams ...interface{})
+}
 ```
 
 Basic semantics are like `Set` methods. But there are a bit differences:

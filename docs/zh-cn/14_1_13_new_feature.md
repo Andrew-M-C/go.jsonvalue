@@ -13,6 +13,8 @@
 - [支持获取 object 类型的键（key）的顺序](#支持获取-object-类型的键key的顺序)
 - [按照 key 被设置的顺序进行 object 的序列化](#按照-key-被设置的顺序进行-object-的序列化)
 - [转义非可视化 ASCII 字符](#转义非可视化-ascii-字符)
+- [支持 MustXxx 方法](#支持-mustxxx-方法)
+- [支持原生库的几个 marshaler 和 unmarshaler 接口](#支持原生库的几个-marshaler-和-unmarshaler-接口)
 
 ---
 
@@ -69,3 +71,16 @@ v.Set(time.Now().Unix()).At("time")
 ## 转义非可视化 ASCII 字符
 
 从 1.3.1 开始，ASCII 的非可视化字符如果出现在 string 字段（包括 key 和 string 类型的 value）的话，均会进行 `\u00XX` 转义，防止不合适的展示效果。
+
+## 支持 MustXxx 方法
+
+从 1.3.4 开始, jsonvalue 开始支持 `MustAdd`, `MustAppend`, `MustInsert`, `MustSet`, `MustDelete` 等方法, 这些方法不返回子值和 error 信息
+
+## 支持原生库的几个 marshaler 和 unmarshaler 接口
+
+从 v1.3.4 开始, `*jsonvalue.V` 类型支持以下原生接口:
+
+- `json.Marshaler`、`json.Unmarshaler`
+- `encoding.BinaryMarshaler`、`encoding.BinaryUnmarshaler`
+
+请参见 [序列化和反序列化](./05_marshal_unmarshal.md) 小节

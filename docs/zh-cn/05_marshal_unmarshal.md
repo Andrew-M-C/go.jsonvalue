@@ -9,6 +9,7 @@
   - [基础的 Unmarshal](#基础的-unmarshal)
   - [其他 Unmarshal 函数](#其他-unmarshal-函数)
 - [Marshal 系列函数](#marshal-系列函数)
+- [原生 `encoding/json` 支持](#原生-encodingjson-支持)
 
 ---
 
@@ -65,3 +66,20 @@ func (v *V) MustMarshalString(opts ...Option) string
 - 选项参数 opts 中包含非法配置
 
 因此如果开发者能够确定规避掉上述错误的话，完全可以使用 `MustMarshal` 系列函数。
+
+## 原生 `encoding/json` 支持
+
+`*jsonvalue.V` 类型支持 `json.Marshaler` 和 `json.Unmarshaler`。这就意味着我们可以在原生的 `encoding/json` 的序列化和反序列化操作中使用本 package, 如:
+
+```go
+var v &jsonvalue.V{}
+err := json.Unmarshal(data, v)
+```
+
+或者是
+
+```go
+v := jsonvalue.NewObject()
+v.MustSet("Hello, JSON!").At("greeting")
+b, err := json.Marshal(v)
+```

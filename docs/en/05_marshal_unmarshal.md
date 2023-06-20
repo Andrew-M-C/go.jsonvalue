@@ -9,6 +9,7 @@
   - [Basic Unmarshal](#basic-unmarshal)
   - [其他 Unmarshal 函数](#其他-unmarshal-函数)
 - [Marshal Functions](#marshal-functions)
+- [Official `encoding/json` Support](#official-encodingjson-support)
 
 ---
 
@@ -62,3 +63,23 @@ In current version of jsonvalue, error will occurred in situations below:
 2. Illegal floating numbers included like `+Inf`, `-Inf` or `NaN`, while no special operation to these floating values a specified.
    - Special options with these floating value will mentioned later in other sections.
 3. Illegal configurations included in additional options.
+
+---
+
+## Official `encoding/json` Support
+
+Type `*jsonvalue.V` also implements `json.Marshaler` and `json.Unmarshaler` interfaces. This enables marshaling and unmarshaling via `encoding/json`. For example:
+
+```go
+var v &jsonvalue.V{}
+err := json.Unmarshal(data, v)
+```
+
+Or
+
+```go
+v := jsonvalue.NewObject()
+v.MustSet("Hello, JSON!").At("greeting")
+b, err := json.Marshal(v)
+```
+

@@ -47,14 +47,16 @@ n := jsonvalue.New(nil)             // 返回一个 JSON null
 
 ## 往 jsonvalue 中设置值
 
-在创建了最外层的 object 或者是 array 之后，下一步就是构建 JSON 的内部结构。相对于上一小节的 `Get` 系列函数，jsonvalue 则提供了 `Set` 系列函数来处理 JSON 子结构的创建。
+在创建了最外层的 object 或者是 array 之后，下一步就是构建 JSON 的内部结构。相对于上一小节的 `Get` 系列函数，jsonvalue 则提供了 `Set` 和 `MustSet` 系列函数来处理 JSON 子结构的创建。
+
+`Set` 和 `MustSet` 方法的差别是: 前者会返回设置后的子 `*jsonvalue.V` 对象和 `error` 类型值, 而后者则不。如果调用方不关心是否设置成功 (或者有把握设置成功), 那么可以使用 `MustSet` 系列函数, 这也可以避免 golangci-lint 的告警提示。
 
 ### 基础用法
 
 Set 系列函数，一般使用以下的模式进行调用：
 
 ```go
-v.Set(child).At(path...)
+v.MustSet(child).At(path...)
 ```
 
 对应英语中的语法：`SET value AT some position.`，请注意，value 在前，path 在后
@@ -63,7 +65,7 @@ v.Set(child).At(path...)
 
 ```go
 v := jsonvalue.NewObject()
-v.Set("Hello, JSON!").At("data", "message")
+v.MustSet("Hello, JSON!").At("data", "message")
 fmt.Println(v.MustMarshalString())
 ```
 
@@ -74,7 +76,9 @@ fmt.Println(v.MustMarshalString())
 可以看到，通过 `Set` 系列函数后，还需要紧跟 `At` 函数来将欲设置的值落地到真正的 JSON 结构中。因此 `At` 函数的参数自然是重点。`At` 函数的原型如下：
 
 ```go
-func (s *Set) At(param1 any, params ...any) (*V, error)
+type Setter interface {
+	At(firstParam interface{}, otherParams ...interface{}) (*V, error)
+}
 ```
 
 At 函数的参数语义，与前文提及的 `Get` 函数语义基本一致。同样地，为了防止编程错误，这个函数至少需要传一个参数。
@@ -87,9 +91,9 @@ At 函数的参数语义，与前文提及的 `Get` 函数语义基本一致。�
 以下例子中，自动创建了数据结构：
 
 ```go
-v := jsonvalue.NewObject()                   // {}
-v.Set("Hello, object!").At("obj", "message") // {"obj":{"message":"Hello, object!"}}
-v.Set("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, object!"},"arr":["Hello, array!"]}
+v := jsonvalue.NewObject()                       // {}
+v.MustSet("Hello, object!").At("obj", "message") // {"obj":{"message":"Hello, object!"}}
+v.MustSet("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, object!"},"arr":["Hello, array!"]}
 ```
 
 在 At() 自动创建数组的逻辑其实稍微有点复杂，需要解释一下：
@@ -105,8 +109,8 @@ v.Set("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, object
     const lessons = []int{1, 2, 3, 4}
     v := jsonvalue.NewObject()
     for i := range words {
-        v.Set(words[i]).At("array", i, "word")
-        v.Set(lessons[i]).At("array", i, "lesson")
+        v.MustSet(words[i]).At("array", i, "word")
+        v.MustSet(lessons[i]).At("array", i, "lesson")
     }
     fmt.Println(c.MustMarshalString())
 ```
@@ -130,18 +134,34 @@ v.Set("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, object
 - Insert some value after ...
 - Insert some value before ...
 
-与 `Set` 函数一样，请注意路径参数是后置的。
+与 `Set` 函数一样，请注意路径参数是后置的。此外, `Append` 和 `Insert` 也有其对应的 `MustAppend` 和 `MustInsert` 方法, 原因相同。
 
 这几个函数的原型如下：
 
 ```go
-func (v *V) Append(child any) *Append
-func (apd *Append) InTheBeginning(params ...any) (*V, error)
-func (apd *Append) InTheEnd      (params ...any) (*V, error)
+func (v *V) Append(child any) Appender
+type Appender interface {
+	InTheBeginning(params ...interface{}) (*V, error)
+	InTheEnd(params ...interface{}) (*V, error)
+}
 
-func (v *V) Insert(child any) *Insert
-func (ins *Insert) After (firstParam any, otherParams ...any) (*V, error)
-func (ins *Insert) Before(firstParam any, otherParams ...any) (*V, error)
+func (v *V) Insert(child any) Inserter
+type Inserter interface {
+	After(firstParam interface{}, otherParams ...interface{}) (*V, error)
+	Before(firstParam interface{}, otherParams ...interface{}) (*V, error)
+}
+
+func (v *V) MustAppend(child any) MustAppender
+type MustAppender interface {
+	InTheBeginning(params ...interface{})
+	InTheEnd(params ...interface{})
+}
+
+func (v *V) MustInsert(child any) MustInserter
+type MustInserter interface {
+	After(firstParam interface{}, otherParams ...interface{})
+	Before(firstParam interface{}, otherParams ...interface{})
+}
 ```
 
 基本语义与前文的 `Set` 和配套函数基本一致，但有以下几点小差异：

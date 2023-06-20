@@ -13,6 +13,8 @@
 - [Getting Original Sequence of Keys](#getting-original-sequence-of-keys)
 - [Marshal by Sequence of When Keys Are Set](#marshal-by-sequence-of-when-keys-are-set)
 - [Escaping Non Visible ASCII Characters](#escaping-non-visible-ascii-characters)
+- [MustXxx methods](#mustxxx-methods)
+- [Support some official marshaler and unmarshaler interfaces](#support-some-official-marshaler-and-unmarshaler-interfaces)
 
 ---
 
@@ -67,3 +69,16 @@ Please refer to "Serialize a JSON Object with Sequence of When Keys Are Set" in 
 ## Escaping Non Visible ASCII Characters
 
 From v1.3.1, if non-visible ASCII characters appears in keys of string typed values, they will be escaped by format `\u00XX`, to prevent inappropriate display effect.
+
+## MustXxx methods
+
+From v1.3.4, `MustAdd`, `MustAppend`, `MustInsert`, `MustSet`, `MustDelete` methods are introduced. These methods will not return sub-values or errors.
+
+## Support some official marshaler and unmarshaler interfaces
+
+From v1.3.4, `*jsonvalue.V` implements following official interfaces:
+
+- `json.Marshaler`、`json.Unmarshaler`
+- `encoding.BinaryMarshaler`、`encoding.BinaryUnmarshaler`
+
+Please refer to [Marshal and Unmarshal](./05_marshal_unmarshal.md)
