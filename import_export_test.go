@@ -530,15 +530,13 @@ func testStructConv_Import_ArrayAndSlice(t *testing.T) {
 		st := []struct {
 			S string `json:"string"`
 			I int    `json:"int"`
-		}{
-			{
-				S: "Hello, 01",
-				I: 1,
-			}, {
-				S: "Hello, 02",
-				I: 2,
-			},
-		}
+		}{{
+			S: "Hello, 01",
+			I: 1,
+		}, {
+			S: "Hello, 02",
+			I: 2,
+		}}
 
 		j, err := Import(&st)
 		so(err, isNil)

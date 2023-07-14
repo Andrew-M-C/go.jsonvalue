@@ -5,19 +5,23 @@ import (
 	"reflect"
 )
 
-// Set type is for At() only.
+// Setter type is for At() only.
 //
-// Set 类型仅用于 At() 函数。
+// Setter 类型仅用于 At() 函数。
 type Setter interface {
-	// At completes the following operation of Set(). It defines position of value in Set() and return the new value set.
+	// At completes the following operation of Set(). It defines position of value
+	// in Set() and return the new value set.
 	//
-	// The usage of At() is perhaps the most important. This function will recursively search for child value, and set the
-	// new value specified by Set() or SetXxx() series functions. Please unfold and read the following examples, they are important.
+	// The usage of At() is perhaps the most important. This function will recursively
+	// search for child value, and set the new value specified by Set() or SetXxx()
+	// series functions. Please unfold and read the following examples, they are important.
 	//
-	// At 完成 Set() 函数的后续操作并设置相应的子成员。其参数指定了应该在哪个位置设置子成员，并且返回被设置的子成员对象。
+	// At 完成 Set() 函数的后续操作并设置相应的子成员。其参数指定了应该在哪个位置设置子成员,
+	// 并且返回被设置的子成员对象。
 	//
-	// 该函数的用法恐怕是 jsonvalue 中最重要的内容了：该函数会按照给定的可变参数递归地一层一层查找 JSON 值的子成员，并且设置到指定的位置上。
-	// 设置的逻辑说明起来比较抽象，请打开以下的例子以了解，这非常重要。
+	// 该函数的用法恐怕是 jsonvalue 中最重要的内容了：该函数会按照给定的可变参数递归地一层一层查找
+	// JSON 值的子成员，并且设置到指定的位置上。设置的逻辑说明起来比较抽象，请打开以下的例子以了解,
+	// 这非常重要。
 	At(firstParam interface{}, otherParams ...interface{}) (*V, error)
 }
 
@@ -184,103 +188,121 @@ func (s *setter) At(firstParam any, otherParams ...any) (*V, error) {
 
 	// this is the last iteration
 	if len(otherParams) == 0 {
-		switch v.valueType {
-		default:
-			return &V{}, fmt.Errorf("%v type does not supports Set()", v.valueType)
-
-		case Object:
-			var k string
-			k, err := intfToString(firstParam)
-			if err != nil {
-				return &V{}, err
-			}
-			v.setToObjectChildren(k, c)
-			return c, nil
-
-		case Array:
-			pos, err := intfToInt(firstParam)
-			if err != nil {
-				return &V{}, err
-			}
-			err = v.setAtIndex(c, pos)
-			if err != nil {
-				return &V{}, err
-			}
-			return c, nil
-		}
+		return s.atLastParam(firstParam)
 	}
 
 	// this is not the last iterarion
 	if v.valueType == Object {
-		k, err := intfToString(firstParam)
-		if err != nil {
-			return &V{}, err
-		}
-		child, exist := v.getFromObjectChildren(false, k)
-		if !exist {
-			if _, err := intfToString(otherParams[0]); err == nil {
-				child = NewObject()
-			} else if i, err := intfToInt(otherParams[0]); err == nil {
-				if i != 0 {
-					return &V{}, ErrOutOfRange
-				}
-				child = NewArray()
-			} else {
-				return &V{}, fmt.Errorf("unexpected type %v for Set()", reflect.TypeOf(otherParams[0]))
-			}
-		}
-		next := &setter{
-			v: child,
-			c: c,
-		}
-		_, err = next.At(otherParams[0], otherParams[1:]...)
-		if err != nil {
-			return &V{}, err
-		}
-		if !exist {
-			v.setToObjectChildren(k, child)
-		}
-		return c, nil
+		return s.atObject(firstParam, otherParams)
 	}
 
 	// array type
 	if v.valueType == Array {
-		pos, err := intfToInt(firstParam)
-		if err != nil {
-			return &V{}, err
-		}
-		child, ok := v.childAtIndex(pos)
-		isNewChild := false
-		if !ok {
-			isNewChild = true
-			if _, err := intfToString(otherParams[0]); err == nil {
-				child = NewObject()
-			} else if i, err := intfToInt(otherParams[0]); err == nil {
-				if i != 0 {
-					return &V{}, ErrOutOfRange
-				}
-				child = NewArray()
-			} else {
-				return &V{}, fmt.Errorf("unexpected type %v for Set()", reflect.TypeOf(otherParams[0]))
-			}
-		}
-		next := &setter{
-			v: child,
-			c: c,
-		}
-		_, err = next.At(otherParams[0], otherParams[1:]...)
-		if err != nil {
-			return &V{}, err
-		}
-		// OK to add this object
-		if isNewChild {
-			v.appendToArr(child)
-		}
-		return c, nil
+		return s.atArray(firstParam, otherParams)
 	}
 
 	// illegal type
 	return &V{}, fmt.Errorf("%v type does not supports Set()", v.valueType)
+}
+
+func (s *setter) atLastParam(p any) (*V, error) {
+	v := s.v
+	c := s.c
+	switch v.valueType {
+	default:
+		return &V{}, fmt.Errorf("%v type does not supports Set()", v.valueType)
+
+	case Object:
+		var k string
+		k, err := intfToString(p)
+		if err != nil {
+			return &V{}, err
+		}
+		v.setToObjectChildren(k, c)
+		return c, nil
+
+	case Array:
+		pos, err := intfToInt(p)
+		if err != nil {
+			return &V{}, err
+		}
+		err = v.setAtIndex(c, pos)
+		if err != nil {
+			return &V{}, err
+		}
+		return c, nil
+	}
+}
+
+func (s *setter) atObject(firstParam any, otherParams []any) (*V, error) {
+	v := s.v
+	c := s.c
+	k, err := intfToString(firstParam)
+	if err != nil {
+		return &V{}, err
+	}
+	child, exist := v.getFromObjectChildren(false, k)
+	if !exist {
+		if _, err := intfToString(otherParams[0]); err == nil {
+			child = NewObject()
+		} else if i, err := intfToInt(otherParams[0]); err == nil {
+			if i != 0 {
+				return &V{}, ErrOutOfRange
+			}
+			child = NewArray()
+		} else {
+			return &V{}, fmt.Errorf("unexpected type %v for Set()", reflect.TypeOf(otherParams[0]))
+		}
+	}
+	next := &setter{
+		v: child,
+		c: c,
+	}
+	_, err = next.At(otherParams[0], otherParams[1:]...)
+	if err != nil {
+		return &V{}, err
+	}
+	if !exist {
+		v.setToObjectChildren(k, child)
+	}
+	return c, nil
+}
+
+func (s *setter) atArray(firstParam any, otherParams []any) (*V, error) {
+	v := s.v
+	c := s.c
+	pos, err := intfToInt(firstParam)
+	if err != nil {
+		return &V{}, err
+	}
+	child, ok := v.childAtIndex(pos)
+	isNewChild := false
+	if !ok {
+		isNewChild = true
+		if _, err := intfToString(otherParams[0]); err == nil {
+			child = NewObject()
+		} else if i, err := intfToInt(otherParams[0]); err == nil {
+			if i != 0 {
+				return &V{}, ErrOutOfRange
+			}
+			child = NewArray()
+		} else {
+			return &V{}, fmt.Errorf("unexpected type %v for Set()", reflect.TypeOf(otherParams[0]))
+		}
+	}
+	next := &setter{
+		v: child,
+		c: c,
+	}
+	_, err = next.At(otherParams[0], otherParams[1:]...)
+	if err != nil {
+		return &V{}, err
+	}
+	// OK to add this object
+	if isNewChild {
+		v.appendToArr(child)
+	}
+	return c, nil
 }
 
 func (v *V) posAtIndexForSet(pos int) (newPos int, appendToEnd bool) {

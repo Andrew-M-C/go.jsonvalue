@@ -361,8 +361,8 @@ func (v *V) getArray(caseless bool, firstParam any, otherParams ...any) (*V, err
 
 // Caseless is returned by Caseless(). operations of Caseless type are same as (*V).Get(), but are via caseless key.
 //
-// Caseless 类型通过 Caseless() 函数返回。通过 Caseless 接口操作的所有操作均与 (*v).Get() 相同，但是对 key 进行读取的时候，
-// 不区分大小写。
+// Caseless 类型通过 Caseless() 函数返回。通过 Caseless 接口操作的所有操作均与 (*v).Get()
+// 相同，但是对 key 进行读取的时候，不区分大小写。
 type Caseless interface {
 	Get(firstParam any, otherParams ...any) (*V, error)
 	MustGet(firstParam any, otherParams ...any) *V
@@ -389,7 +389,8 @@ var _ Caseless = (*V)(nil)
 
 // Caseless returns Caseless interface to support caseless getting.
 //
-// IMPORTANT: This function is not gouroutine-safe. Write-mutex (instead of read-mutex) should be attached in cross-goroutine scenarios.
+// IMPORTANT: This function is not gouroutine-safe. Write-mutex (instead of read-mutex)
+// should be attached in cross-goroutine scenarios.
 //
 // Caseless 返回 Caseless 接口，从而实现不区分大小写的 Get 操作。
 //

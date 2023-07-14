@@ -14,32 +14,42 @@ import (
 //
 // Insert 类型适用于 After() 和 Before() 方法。请注意：该类型仅应由 V.Insert 函数生成！
 type Inserter interface {
-	// After completes the following operation of Insert(). It inserts value AFTER specified position.
+	// After completes the following operation of Insert(). It inserts value AFTER
+	//  specified position.
 	//
-	// The last parameter identifies the postion where a new JSON is inserted after, it should ba an interger, no matter signed or unsigned.
-	// If the position is zero or positive interger, it tells the index of an array. If the position is negative, it tells the backward index of an array.
+	// The last parameter identifies the postion where a new JSON is inserted after,
+	//  it should ba an interger, no matter signed or unsigned. If the position is
+	// zero or positive interger, it tells the index of an array. If the position
+	// is negative, it tells the backward index of an array.
 	//
 	// For example, 0 represents the first, and -2 represents the second last.
 	//
 	// After 结束并完成 Insert() 函数的后续插入操作，表示插入到指定位置的前面。
 	//
-	// 在 Before 函数的最后一个参数指定了被插入的 JSON 数组的位置，这个参数应当是一个整型（有无符号类型均可）。
-	// 如果这个值等于0或者正整数，那么它指定的是在 JSON 数组中的位置（从0开始）。如果这个值是负数，那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
+	// 在 Before 函数的最后一个参数指定了被插入的 JSON 数组的位置，这个参数应当是一个整型
+	// （有无符号类型均可）。
+	// 如果这个值等于0或者正整数，那么它指定的是在 JSON 数组中的位置（从0开始）。如果这个值是负数,
+	// 那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
 	//
 	// 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
 	After(firstParam interface{}, otherParams ...interface{}) (*V, error)
 
-	// Before completes the following operation of Insert(). It inserts value BEFORE specified position.
+	// Before completes the following operation of Insert(). It inserts value BEFORE
+	// specified position.
 	//
-	// The last parameter identifies the postion where a new JSON is inserted after, it should ba an interger, no matter signed or unsigned.
-	// If the position is zero or positive interger, it tells the index of an array. If the position is negative, it tells the backward index of an array.
+	// The last parameter identifies the postion where a new JSON is inserted after,
+	// it should ba an interger, no matter signed or unsigned.
+	// If the position is zero or positive interger, it tells the index of an array.
+	// If the position is negative, it tells the backward index of an array.
 	//
 	// For example, 0 represents the first, and -2 represents the second last.
 	//
 	// Before 结束并完成 Insert() 函数的后续插入操作，表示插入到指定位置的后面。
 	//
-	// 在 Before 函数的最后一个参数指定了被插入的 JSON 数组的位置，这个参数应当是一个整型（有无符号类型均可）。
-	// 如果这个值等于0或者正整数，那么它指定的是在 JSON 数组中的位置（从0开始）。如果这个值是负数，那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
+	// 在 Before 函数的最后一个参数指定了被插入的 JSON 数组的位置，这个参数应当是一个整型
+	//（有无符号类型均可）。
+	// 如果这个值等于0或者正整数，那么它指定的是在 JSON 数组中的位置（从0开始）。如果这个值是负数,
+	// 那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
 	//
 	// 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
 	Before(firstParam interface{}, otherParams ...interface{}) (*V, error)

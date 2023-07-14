@@ -1,4 +1,5 @@
-// Package jsonvalue is for JSON parsing and setting. It is used in situations those Go structures cannot achieve, or "map[string]any" could not do properbally.
+// Package jsonvalue is for JSON parsing and setting. It is used in situations those
+// Go structures cannot achieve, or "map[string]any" could not do properly.
 //
 // As a quick start:
 //
@@ -17,8 +18,9 @@
 //	// Output:
 //	// hello, world
 //
-// jsonvalue 包用于 JSON 的解析（反序列化）和编码（序列化）。通常情况下我们用 struct 来处理结构化的 JSON，但是有时候使用 struct 不方便或者是功能不足的时候，
-// go 一般而言使用的是 "map[string]any"，但是后者也有很多不方便的地方。本包即是用于替代这些不方便的情况的。
+// jsonvalue 包用于 JSON 的解析（反序列化）和编码（序列化）。通常情况下我们用 struct 来处理
+// 结构化的 JSON，但是有时候使用 struct 不方便或者是功能不足的时候，go 一般而言使用的是
+// "map[string]any"，但是后者也有很多不方便的地方。本包即是用于替代这些不方便的情况的。
 //
 // 快速上手：
 //
@@ -160,11 +162,13 @@ func (v *V) delCaselessKey(k string) {
 	}
 }
 
-// MustUnmarshalString just like UnmarshalString(). If error occurs, a JSON value with "NotExist" type would be returned, which
-// could do nothing and return nothing in later use. It is useful to shorten codes.
+// MustUnmarshalString just like UnmarshalString(). If error occurs, a JSON value
+// with "NotExist" type would be returned, which could do nothing and return nothing
+// in later use. It is useful to shorten codes.
 //
-// MustUnmarshalString 的逻辑与 UnmarshalString() 相同，不过如果错误的话，会返回一个类型未 "NotExist" 的 JSON 值，这个值在后续的操作中将无法返回
-// 有效的数据，或者是执行任何有效的操作。但起码不会导致程序 panic，便于使用短代码实现一些默认逻辑。
+// MustUnmarshalString 的逻辑与 UnmarshalString() 相同，不过如果错误的话，会返回一个类型未
+// "NotExist" 的 JSON 值，这个值在后续的操作中将无法返回有效的数据，或者是执行任何有效的操作。
+// 但起码不会导致程序 panic，便于使用短代码实现一些默认逻辑。
 func MustUnmarshalString(s string) *V {
 	v, _ := UnmarshalString(s)
 	return v
@@ -186,11 +190,13 @@ func UnmarshalString(s string) (*V, error) {
 	return UnmarshalNoCopy(b)
 }
 
-// MustUnmarshal just like Unmarshal(). If error occurres, a JSON value with "NotExist" type would be returned, which
-// could do nothing and return nothing in later use. It is useful to shorten codes.
+// MustUnmarshal just like Unmarshal(). If error occurres, a JSON value with "NotExist"
+// type would be returned, which could do nothing and return nothing in later use. It
+// is useful to shorten codes.
 //
-// MustUnmarshal 的逻辑与 Unmarshal() 相同，不过如果错误的话，会返回一个类型未 "NotExist" 的 JSON 值，这个值在后续的操作中将无法返回
-// 有效的数据，或者是执行任何有效的操作。但起码不会导致程序 panic，便于使用短代码实现一些默认逻辑。
+// MustUnmarshal 的逻辑与 Unmarshal() 相同，不过如果错误的话，会返回一个类型未 "NotExist" 的
+// JSON 值，这个值在后续的操作中将无法返回有效的数据，或者是执行任何有效的操作。但起码不会导致程序
+// panic，便于使用短代码实现一些默认逻辑。
 func MustUnmarshal(b []byte) *V {
 	v, _ := Unmarshal(b)
 	return v
@@ -214,21 +220,24 @@ func Unmarshal(b []byte) (ret *V, err error) {
 	return
 }
 
-// MustUnmarshalNoCopy just like UnmarshalNoCopy(). If error occurres, a JSON value with "NotExist" type would be returned, which
-// could do nothing and return nothing in later use. It is useful to shorten codes.
+// MustUnmarshalNoCopy just like UnmarshalNoCopy(). If error occurres, a JSON value
+// with "NotExist" type would be returned, which could do nothing and return nothing
+// in later use. It is useful to shorten codes.
 //
-// MustUnmarshalNoCopy 的逻辑与 UnmarshalNoCopy() 相同，不过如果错误的话，会返回一个类型未 "NotExist" 的 JSON 值，这个值在后续的操作中将无法返回
-// 有效的数据，或者是执行任何有效的操作。但起码不会导致程序 panic，便于使用短代码实现一些默认逻辑。
+// MustUnmarshalNoCopy 的逻辑与 UnmarshalNoCopy() 相同，不过如果错误的话，会返回一个类型未
+// "NotExist" 的 JSON 值，这个值在后续的操作中将无法返回有效的数据，或者是执行任何有效的操作。
+// 但起码不会导致程序 panic，便于使用短代码实现一些默认逻辑。
 func MustUnmarshalNoCopy(b []byte) *V {
 	v, _ := UnmarshalNoCopy(b)
 	return v
 }
 
-// UnmarshalNoCopy is same as Unmarshal, but it does not copy another []byte instance for saving CPU time.
-// But pay attention that the input []byte may be used as buffer by jsonvalue and mey be modified.
+// UnmarshalNoCopy is same as Unmarshal, but it does not copy another []byte instance
+// for saving CPU time. But pay attention that the input []byte may be used as buffer
+// by jsonvalue and mey be modified.
 //
-// UnmarshalNoCopy 与 Unmarshal 相同，但是这个函数在解析过程中不会重新复制一个 []byte，对于大 json 的解析而言能够大大节省时间。
-// 但请注意传入的 []byte 变量可能会被 jsonvalue 用作缓冲区，并进行修改
+// UnmarshalNoCopy 与 Unmarshal 相同，但是这个函数在解析过程中不会重新复制一个 []byte，对于大
+// json 的解析而言能够大大节省时间。但请注意传入的 []byte 变量可能会被 jsonvalue 用作缓冲区，并进行修改
 func UnmarshalNoCopy(b []byte) (ret *V, err error) {
 	le := len(b)
 	if le == 0 {
@@ -270,8 +279,8 @@ func (v *V) IsNumber() bool {
 	return v.valueType == Number
 }
 
-// IsFloat tells whether value is a float point number. If there is no decimal point in original text, it returns false
-// while IsNumber returns true.
+// IsFloat tells whether value is a float point number. If there is no decimal point
+// in original text, it returns false while IsNumber returns true.
 //
 // IsFloat 判断当前值是不是一个浮点数类型。如果给定的数不包含小数点，那么即便是数字类型，该函数也会返回 false.
 func (v *V) IsFloat() bool {
@@ -316,7 +325,8 @@ func (v *V) IsPositive() bool {
 //  2. It is a positive integer.
 //  3. Its value is greater than 0x7fffffffffffffff.
 //
-// GreaterThanInt64Max 判断当前值是否超出 int64 可表示的范围。当以下条件均成立时，返回 true，否则返回 false：
+// GreaterThanInt64Max 判断当前值是否超出 int64 可表示的范围。当以下条件均成立时，返回 true,
+// 否则返回 false：
 //  1. 是一个数字类型值.
 //  2. 是一个正整型数字.
 //  3. 该正整数的值大于 0x7fffffffffffffff.
@@ -436,10 +446,12 @@ func (v *V) Float32() float32 {
 	return float32(v.num.f64)
 }
 
-// Bytes returns represented binary data which is encoede as Base64 string. []byte{} would be returned if value is
+// Bytes returns represented binary data which is encoede as Base64 string. []byte{}
+// would be returned if value is
 // not a string type or base64 decode failed.
 //
-// Bytes 返回以 Base64 编码在 string 类型中的二进制数据。如果当前值不是字符串类型，或者是 base64 编码失败，则返回 []byte{}。
+// Bytes 返回以 Base64 编码在 string 类型中的二进制数据。如果当前值不是字符串类型，或者是 base64
+// 编码失败，则返回 []byte{}。
 func (v *V) Bytes() []byte {
 	if v.valueType != String {
 		return []byte{}
@@ -451,7 +463,8 @@ func (v *V) Bytes() []byte {
 	return b
 }
 
-// String returns represented string value or the description for the jsonvalue.V instance if it is not a string.
+// String returns represented string value or the description for the jsonvalue.V
+// instance if it is not a string.
 //
 // String 返回 string 类型值。如果当前值不是字符串类型，则返回当前 *V 类型的描述说明。
 func (v *V) String() string {
