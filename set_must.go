@@ -41,7 +41,7 @@ func (v *V) MustSetString(s string) MustSetter {
 //
 // MustSetBytes 等效于 Set(NewString(base64.StdEncoding.EncodeToString(b)))
 func (v *V) MustSetBytes(b []byte) MustSetter {
-	s := internal.b64.EncodeToString(b)
+	s := internal.base64.EncodeToString(b)
 	return v.MustSetString(s)
 }
 

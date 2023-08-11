@@ -368,7 +368,7 @@ func (v *V) parseNumber(p pool) (err error) {
 
 // ==== simple object parsing ====
 func newFromNumber(p pool, b []byte) (ret *V, err error) {
-	v := new(p, Number)
+	v := newV(p, Number)
 	v.srcByte = b
 	return v, nil
 }
@@ -838,7 +838,7 @@ func (it iter) parseFloatResult(p pool, start, end int) (*V, error) {
 		return nil, it.numErrorf(start, "%w", err)
 	}
 
-	v := new(p, Number)
+	v := newV(p, Number)
 	v.srcByte = it[start:end]
 
 	v.num.negative = f < 0
@@ -861,7 +861,7 @@ func (it iter) parsePositiveIntResult(p pool, start, end int, integer uint64) (*
 		}
 	}
 
-	v := new(p, Number)
+	v := newV(p, Number)
 	v.srcByte = it[start:end]
 
 	v.num.negative = false
@@ -884,7 +884,7 @@ func (it iter) parseNegativeIntResult(p pool, start, end int, integer uint64) (*
 		}
 	}
 
-	v := new(p, Number)
+	v := newV(p, Number)
 	v.srcByte = it[start:end]
 
 	v.num.negative = true

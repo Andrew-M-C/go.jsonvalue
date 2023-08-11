@@ -24,7 +24,7 @@ func New(value any) *V {
 //
 // NewString 用给定的 string 返回一个初始化好的字符串类型的 jsonvalue 值
 func NewString(s string) *V {
-	v := new(globalPool{}, String)
+	v := newV(globalPool{}, String)
 	v.valueStr = s
 	return v
 }
@@ -41,7 +41,7 @@ func NewBytes(b []byte) *V {
 //
 // NewInt64 用给定的 int64 返回一个初始化好的数字类型的 jsonvalue 值
 func NewInt64(i int64) *V {
-	v := new(globalPool{}, Number)
+	v := newV(globalPool{}, Number)
 	// v.num = &num{}
 	v.num.floated = false
 	v.num.negative = i < 0
@@ -57,7 +57,7 @@ func NewInt64(i int64) *V {
 //
 // NewUint64 用给定的 uint64 返回一个初始化好的数字类型的 jsonvalue 值
 func NewUint64(u uint64) *V {
-	v := new(globalPool{}, Number)
+	v := newV(globalPool{}, Number)
 	// v.num = &num{}
 	v.num.floated = false
 	v.num.negative = false
@@ -101,7 +101,7 @@ func NewUint32(u uint32) *V {
 //
 // NewBool 用给定的 bool 返回一个初始化好的布尔类型的 jsonvalue 值
 func NewBool(b bool) *V {
-	v := new(globalPool{}, Boolean)
+	v := newV(globalPool{}, Boolean)
 	v.valueBool = b
 	return v
 }
@@ -110,7 +110,7 @@ func NewBool(b bool) *V {
 //
 // NewNull 返回一个初始化好的 null 类型的 jsonvalue 值
 func NewNull() *V {
-	v := new(globalPool{}, Null)
+	v := newV(globalPool{}, Null)
 	return v
 }
 
@@ -229,26 +229,26 @@ func NewFloat32f(f float32, format byte, prec int) *V {
 
 // -------- internal functions --------
 
-func new(p pool, t ValueType) *V {
-	v := pool.get(p)
+func newV(p pool, t ValueType) *V {
+	v := p.Get()
 	v.valueType = t
 	return v
 }
 
 func newObject(p pool) *V {
-	v := new(p, Object)
+	v := newV(p, Object)
 	v.children.object = make(map[string]childWithProperty)
 	v.children.lowerCaseKeys = nil
 	return v
 }
 
 func newArray(p pool) *V {
-	v := new(p, Array)
+	v := newV(p, Array)
 	return v
 }
 
 func newFloat64f(p pool, f float64, format byte, prec, bitsize int) *V {
-	v := new(p, Number)
+	v := newV(p, Number)
 	// v.num = &num{}
 	v.num.negative = f < 0
 	v.num.f64 = f

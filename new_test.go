@@ -351,7 +351,7 @@ func testMiscValue(t *testing.T) {
 
 		c, err := v.Get("float")
 		so(err, isNil)
-		so(c.Float32(), eq, 123.456)
+		so(c.Float32(), eq, float32(123.456))
 	})
 
 	cv("parse float64 in object", func() {

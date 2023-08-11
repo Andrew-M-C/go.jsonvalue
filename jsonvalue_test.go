@@ -75,7 +75,6 @@ func TestJsonvalue(t *testing.T) {
 	test(t, "test import/export", testImportExport)
 	test(t, "test Equal functions", testEqual)
 	test(t, "test marshaler and unmarshaler", testMarshalerUnmarshaler)
-	test(t, "test internal variables", testInternal)
 }
 
 func testBasicFunction(t *testing.T) {

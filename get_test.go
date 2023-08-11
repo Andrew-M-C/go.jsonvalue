@@ -84,7 +84,7 @@ func testJsonvalue_Get(t *testing.T) {
 	cv("GetFloat32", func() {
 		f, err := o.GetFloat32("data", "YYYY.MM")
 		so(err, isNil)
-		so(f, eq, 2019.12)
+		so(f, eq, float32(2019.12))
 	})
 
 	cv("GetNull", func() {
@@ -482,10 +482,6 @@ func testGetNumFromString(t *testing.T) {
 		so(err, isErr)
 		so(errors.Is(err, ErrTypeNotMatch), isTrue)
 		so(f, eq, -123.25)
-
-		i, err = v.GetInt(`negative`)
-		so(err, isNil)
-		so(i, eq, -9223372036854775808)
 	})
 
 	cv("uint", func() {
@@ -531,7 +527,7 @@ func testGetNumFromString(t *testing.T) {
 	})
 
 	cv("int64", func() {
-		v := MustUnmarshalString(`{"num":"-123.25"}`)
+		v := MustUnmarshalString(`{"num":"-123.25","negative":-9223372036854775808}`)
 
 		i, err := v.GetInt64("num")
 		so(err, isErr)
@@ -542,6 +538,10 @@ func testGetNumFromString(t *testing.T) {
 		so(err, isErr)
 		so(errors.Is(err, ErrTypeNotMatch), isTrue)
 		so(f, eq, -123.25)
+
+		i, err = v.GetInt64(`negative`)
+		so(err, isNil)
+		so(i, eq, int64(-9223372036854775808))
 	})
 
 	cv("uint64", func() {

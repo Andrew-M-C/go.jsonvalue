@@ -214,9 +214,8 @@ func Unmarshal(b []byte) (ret *V, err error) {
 	trueB := make([]byte, len(b))
 	copy(trueB, b)
 	it := iter(trueB)
-	p := newPool(len(b))
+	p := globalPool{}
 	ret, err = unmarshalWithIter(p, it, 0)
-	p.release()
 	return
 }
 
@@ -243,9 +242,8 @@ func UnmarshalNoCopy(b []byte) (ret *V, err error) {
 	if le == 0 {
 		return &V{}, ErrNilParameter
 	}
-	p := newPool(len(b))
+	p := globalPool{}
 	ret, err = unmarshalWithIter(p, iter(b), 0)
-	p.release()
 	return
 }
 
@@ -456,7 +454,7 @@ func (v *V) Bytes() []byte {
 	if v.valueType != String {
 		return []byte{}
 	}
-	b, err := internal.b64.DecodeString(v.valueStr)
+	b, err := internal.base64.DecodeString(v.valueStr)
 	if err != nil {
 		return []byte{}
 	}
