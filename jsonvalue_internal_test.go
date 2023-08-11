@@ -11,7 +11,7 @@ func testInternalPredict(t *testing.T) {
 	v := internal.predict.calcStorage
 	p := internal.predict.bytesPerValue
 
-	defer func(v uint64, p int) {
+	defer func(v uint64, p uint64) {
 		// cancel mocking
 		internal.predict.calcStorage = v
 		internal.predict.bytesPerValue = p
@@ -45,6 +45,4 @@ func testInternalPredict(t *testing.T) {
 	t.Logf("total: %d, count %d, calculated per size: %d", v>>32, v&maxUint32, size)
 	so(size, eq, (v>>32)/(v&maxUint32))
 	so(size, eq, p)
-
-	// TODO:
 }

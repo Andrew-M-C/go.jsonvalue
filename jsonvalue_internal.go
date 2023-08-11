@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"reflect"
+	"sync/atomic"
 )
 
 var internal = struct {
@@ -13,7 +14,7 @@ var internal = struct {
 	defaultMarshalOption *Opt
 
 	predict struct {
-		bytesPerValue int
+		bytesPerValue uint64
 		calcStorage   uint64 // upper 32 bits - size; lower 32 bits - value count
 	}
 
@@ -33,18 +34,18 @@ func init() {
 }
 
 func internalLoadPredictSizePerValue() int {
-	if n := internal.predict.bytesPerValue; n > 0 {
+	if n := atomic.LoadUint64(&internal.predict.bytesPerValue); n > 0 {
 		return int(n)
 	}
 
-	v := internal.predict.calcStorage
+	v := atomic.LoadUint64(&internal.predict.calcStorage)
 	total := v >> 32
 	num := v & 0xFFFFFFFF
 	return int(total / num)
 }
 
 func internalAddPredictSizePerValue(total, num int) {
-	v := internal.predict.calcStorage
+	v := atomic.LoadUint64(&internal.predict.calcStorage)
 	preTotal := v >> 32
 	preNum := v & 0xFFFFFFFF
 
@@ -53,13 +54,13 @@ func internalAddPredictSizePerValue(total, num int) {
 
 	if nextTotal < 0x7FFFFFFF {
 		v := (nextTotal << 32) + nextNum
-		internal.predict.calcStorage = v
+		atomic.StoreUint64(&internal.predict.calcStorage, v)
 		return
 	}
 
 	per := nextTotal / nextNum
-	internal.predict.bytesPerValue = int(per)
-	internal.predict.calcStorage = (per << 32) + 1
+	atomic.StoreUint64(&internal.predict.bytesPerValue, per)
+	atomic.StoreUint64(&internal.predict.calcStorage, (per<<32)+1)
 }
 
 type pool interface {
