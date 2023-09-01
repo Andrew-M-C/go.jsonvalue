@@ -78,13 +78,13 @@ func testJsonvalue_Get(t *testing.T) {
 	cv("GetFloat64", func() {
 		f, err := o.GetFloat64("data", "YYYY.MM")
 		so(err, isNil)
-		so(f, eq, 2019.12)
+		so(f, eq, float64(2019.12))
 	})
 
 	cv("GetFloat32", func() {
 		f, err := o.GetFloat32("data", "YYYY.MM")
 		so(err, isNil)
-		so(f, eq, 2019.12)
+		so(f, eq, float32(2019.12))
 	})
 
 	cv("GetNull", func() {

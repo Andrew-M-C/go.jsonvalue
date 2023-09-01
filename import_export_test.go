@@ -105,7 +105,7 @@ func testExportFloat(t *testing.T) {
 
 	err := n.Export(&f32)
 	so(err, isNil)
-	so(f32, eq, F)
+	so(f32, eq, float32(F))
 
 	err = n.Export(&f64)
 	so(err, isNil)

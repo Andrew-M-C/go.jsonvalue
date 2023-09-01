@@ -5,8 +5,8 @@
 [![Go report](https://goreportcard.com/badge/github.com/Andrew-M-C/go.jsonvalue?date=221104)](https://goreportcard.com/report/github.com/Andrew-M-C/go.jsonvalue)
 [![CodeBeat](https://codebeat.co/badges/ecf87760-2987-48a7-a6dd-4d9fcad57256)](https://codebeat.co/projects/github-com-andrew-m-c-go-jsonvalue-master)
 
-[![GoDoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue?status.svg&date=221104)](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue@v1.3.4)
-[![Latest](https://img.shields.io/badge/latest-v1.3.4-blue.svg?date=221104)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.3.4)
+[![GoDoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue?status.svg&date=221104)](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue@v1.3.5)
+[![Latest](https://img.shields.io/badge/latest-v1.3.5-blue.svg?date=221104)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.3.5)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-blue.svg?date=221104)](https://opensource.org/licenses/BSD-3-Clause)
 
 - [Wiki](./docs/en/README.md)

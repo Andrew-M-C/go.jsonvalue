@@ -3,6 +3,7 @@
 [中文](./CHANGELOG_zh-cn.md)
 
 - [Change Log](#change-log)
+  - [v1.3.5](#v135)
   - [v1.3.4](#v134)
   - [v1.3.3](#v133)
   - [v1.3.2](#v132)
@@ -12,6 +13,10 @@
   - [v1.2.0](#v120)
   - [v1.1.1](#v111)
 
+
+## v1.3.5
+
+- Fix Issue [#26](https://github.com/Andrew-M-C/go.jsonvalue/issues/26)
 
 ## v1.3.4
 
