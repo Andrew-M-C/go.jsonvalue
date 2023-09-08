@@ -2,7 +2,7 @@ name: Build
 
 on:
   push:
-    branchs:
+    branches:
     - 'master'
     - 'feature/**'
     - 'dev/**'
@@ -43,8 +43,6 @@ jobs:
     - name: Show Environments
       run: |
         echo repo status ======== && git status
-        echo GITHUB_REF = ${{ env.GITHUB_REF }}
-        echo GITHUB_REF_NAME = ${{ env.GITHUB_REF_NAME }}
         echo GO_VER = ${{ matrix.GO_VER }}
         echo HOST_OS = ${{ matrix.HOST_OS }}
         which goveralls

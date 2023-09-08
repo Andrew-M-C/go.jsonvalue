@@ -897,7 +897,7 @@ func (it iter) parseNegativeIntResult(p pool, start, end int, integer uint64) (*
 	}
 
 	v.num.u64 = uint64(v.num.i64)
-	v.num.f64 = float64(integer)
+	v.num.f64 = -float64(integer)
 
 	return v, nil
 }

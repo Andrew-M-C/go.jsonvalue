@@ -23,6 +23,7 @@ var (
 	isTrue  = convey.ShouldBeTrue
 	isFalse = convey.ShouldBeFalse
 	isZero  = convey.ShouldBeZeroValue
+	notZero = convey.ShouldNotBeZeroValue
 
 	hasSubStr   = convey.ShouldContainSubstring
 	shouldPanic = convey.ShouldPanic

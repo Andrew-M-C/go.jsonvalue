@@ -10,6 +10,7 @@ import (
 func testMarshalerUnmarshaler(t *testing.T) {
 	cv("json.Marshaler & json.Unmarshaler", func() { testMarshalerUnmarshaler_JSON(t) })
 	cv("encoding.BinaryMarshaler & encoding.BinaryUnmarshaler", func() { testMarshalerUnmarshaler_Binary(t) })
+	cv("https://github.com/akbarfa49/go.jsonvalue/commit/278817", func() { testNegativeFloatingNumbers(t) })
 }
 
 func testMarshalerUnmarshaler_JSON(t *testing.T) {
@@ -97,5 +98,20 @@ func testMarshalerUnmarshaler_Binary(t *testing.T) {
 		so(ok, isTrue)
 		err := u.UnmarshalBinary([]byte(raw))
 		so(err, isErr)
+	})
+}
+
+func testNegativeFloatingNumbers(t *testing.T) {
+	cv("negative floating numbers", func() {
+		raw := `{"float":-1.125,"int":-16}`
+		v, err := UnmarshalString(raw)
+		so(err, isNil)
+		so(v.MustGet("float").Float64(), eq, float64(-1.125))
+		so(v.MustGet("float").Float32(), eq, float32(-1.125))
+		so(v.MustGet("float").Int(), eq, -1)
+
+		so(v.MustGet("int").Float64(), eq, float64(-16))
+		so(v.MustGet("int").Float32(), eq, float32(-16))
+		so(v.MustGet("int").Int(), eq, -16)
 	})
 }

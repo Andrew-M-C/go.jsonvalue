@@ -3,8 +3,6 @@ package jsonvalue
 import (
 	"encoding/hex"
 	"testing"
-
-	. "github.com/smartystreets/goconvey/convey"
 )
 
 func testIter(t *testing.T) {
@@ -25,7 +23,7 @@ func testIterMemcpy(t *testing.T) {
 	it.memcpy(0, 4, 6)
 	t.Logf("result: %s", hex.EncodeToString(b))
 
-	So(b[0], ShouldEqual, origByte)
+	so(b[0], eq, origByte)
 }
 
 func testIterAssignWideRune(t *testing.T) {
@@ -50,7 +48,7 @@ func testIterAssignWideRune(t *testing.T) {
 	len++
 
 	b = b[:len]
-	So(string(b), ShouldEqual, "您好世界!")
+	so(string(b), eq, "您好世界!")
 }
 
 func testIterChrSearching(t *testing.T) {
@@ -63,51 +61,51 @@ func testIterChrSearching(t *testing.T) {
 
 	offset, reachEnd := it.skipBlanks(0)
 	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
-	So(offset, ShouldNotBeZeroValue)
-	So(reachEnd, ShouldBeFalse)
-	So(raw[offset], ShouldEqual, '{')
+	so(offset, notZero)
+	so(reachEnd, isFalse)
+	so(raw[offset], eq, '{')
 
 	offset, reachEnd = it.skipBlanks(offset + 1)
 	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
-	So(offset, ShouldNotBeZeroValue)
-	So(reachEnd, ShouldBeFalse)
-	So(raw[offset], ShouldEqual, '[')
+	so(offset, notZero)
+	so(reachEnd, isFalse)
+	so(raw[offset], eq, '[')
 
 	offset, reachEnd = it.skipBlanks(offset + 1)
 	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
-	So(offset, ShouldNotBeZeroValue)
-	So(reachEnd, ShouldBeFalse)
-	So(raw[offset], ShouldEqual, '{')
+	so(offset, notZero)
+	so(reachEnd, isFalse)
+	so(raw[offset], eq, '{')
 
 	offset, reachEnd = it.skipBlanks(offset + 1)
 	t.Logf("offset %d, reachEnd %v", offset, reachEnd)
-	So(offset, ShouldNotBeZeroValue)
-	So(reachEnd, ShouldBeFalse)
-	So(raw[offset], ShouldEqual, '}')
+	so(offset, notZero)
+	so(reachEnd, isFalse)
+	so(raw[offset], eq, '}')
 }
 
 func testIterParseNumber(t *testing.T) {
 	b := []byte("-12345.6789  ")
 
-	Convey("reachEnd == true", func() {
+	cv("reachEnd == true", func() {
 		it := iter(b[:11])
 
 		v, end, reachEnd, err := it.parseNumber(globalPool{}, 0)
 		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
 		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
 		t.Logf(string(b[:end]))
-		So(err, ShouldBeNil)
-		So(v.num.f64, ShouldEqual, -12345.6789)
-		So(reachEnd, ShouldBeTrue)
+		so(err, isNil)
+		so(v.num.f64, eq, -12345.6789)
+		so(reachEnd, isTrue)
 	})
 
-	Convey("reachEnd == false", func() {
+	cv("reachEnd == false", func() {
 		it := iter(b)
 
 		v, end, reachEnd, err := it.parseNumber(globalPool{}, 0)
-		So(err, ShouldBeNil)
-		So(v.num.f64, ShouldEqual, -12345.6789)
-		So(reachEnd, ShouldBeFalse)
+		so(err, isNil)
+		so(v.num.f64, eq, -12345.6789)
+		so(reachEnd, isFalse)
 		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
 		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
 		t.Logf(string(b[:end]))
