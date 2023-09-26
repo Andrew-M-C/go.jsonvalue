@@ -11,6 +11,7 @@ func testMarshalerUnmarshaler(t *testing.T) {
 	cv("json.Marshaler & json.Unmarshaler", func() { testMarshalerUnmarshaler_JSON(t) })
 	cv("encoding.BinaryMarshaler & encoding.BinaryUnmarshaler", func() { testMarshalerUnmarshaler_Binary(t) })
 	cv("https://github.com/akbarfa49/go.jsonvalue/commit/278817", func() { testNegativeFloatingNumbers(t) })
+	cv("misc string conversion", func() { testMiscStringConversion(t) })
 }
 
 func testMarshalerUnmarshaler_JSON(t *testing.T) {
@@ -113,5 +114,39 @@ func testNegativeFloatingNumbers(t *testing.T) {
 		so(v.MustGet("int").Float64(), eq, float64(-16))
 		so(v.MustGet("int").Float32(), eq, float32(-16))
 		so(v.MustGet("int").Int(), eq, -16)
+	})
+}
+
+func testMiscStringConversion(t *testing.T) {
+	cv("Issue #27", func() {
+		raw := `{"number":""}`
+		j := MustUnmarshalString(raw)
+		i := j.MustGet("number").Int()
+		so(i, eq, 0)
+	})
+
+	cv("empty string to misc results", func() {
+		raw := `{"number":""}`
+		j := MustUnmarshalString(raw)
+		f64 := j.MustGet("number").Float64()
+		f32 := j.MustGet("number").Float32()
+		boolean := j.MustGet("number").Bool()
+		so(f64, eq, 0)
+		so(f32, eq, 0)
+		so(boolean, isFalse)
+	})
+
+	cv("other strange strings to misc results", func() {
+		raw := `{"number":"1234ABCD", "T":"true"}`
+		j := MustUnmarshalString(raw)
+		f64 := j.MustGet("number").Float64()
+		f32 := j.MustGet("number").Float32()
+		boolean := j.MustGet("number").Bool()
+		so(f64, eq, 0)
+		so(f32, eq, 0)
+		so(boolean, isFalse)
+
+		boolean = j.MustGet("T").Bool()
+		so(boolean, isTrue)
 	})
 }

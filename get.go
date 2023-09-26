@@ -490,6 +490,9 @@ func getNumberFromNotNumberValue(v *V) *V {
 	if !v.IsString() {
 		return NewInt(0)
 	}
+	if v.valueStr == "" {
+		return NewInt64(0)
+	}
 	ret, _ := newFromNumber(globalPool{}, bytes.TrimSpace([]byte(v.valueStr)))
 	err := ret.parseNumber(globalPool{})
 	if err != nil {
