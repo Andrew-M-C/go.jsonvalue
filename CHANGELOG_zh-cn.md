@@ -3,6 +3,7 @@
 [English](./CHANGELOG.md)
 
 - [变更日志](#变更日志)
+  - [v1.3.6](#v136)
   - [v1.3.5](#v135)
   - [v1.3.4](#v134)
   - [v1.3.3](#v133)
@@ -12,6 +13,11 @@
   - [v1.2.1](#v121)
   - [v1.2.0](#v120)
   - [v1.1.1](#v111)
+
+## v1.3.6
+
+- 修复一个浮点数符号的 [bug](https://github.com/akbarfa49/go.jsonvalue/commit/278817)
+- 修复 Issue [#27](https://github.com/Andrew-M-C/go.jsonvalue/issues/27)
 
 ## v1.3.5
 

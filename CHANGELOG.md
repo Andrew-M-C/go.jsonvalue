@@ -3,6 +3,7 @@
 [中文](./CHANGELOG_zh-cn.md)
 
 - [Change Log](#change-log)
+  - [v1.3.6](#v136)
   - [v1.3.5](#v135)
   - [v1.3.4](#v134)
   - [v1.3.3](#v133)
@@ -13,6 +14,10 @@
   - [v1.2.0](#v120)
   - [v1.1.1](#v111)
 
+## v1.3.6
+
+- Fix a floating sign [bug](https://github.com/akbarfa49/go.jsonvalue/commit/278817)
+- Fix Issue [#27](https://github.com/Andrew-M-C/go.jsonvalue/issues/27)
 
 ## v1.3.5
 
