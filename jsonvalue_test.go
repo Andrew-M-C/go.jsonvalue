@@ -148,7 +148,7 @@ func testMiscCharacters(t *testing.T) {
 		so(v.String(), eq, "/")
 	})
 
-	cv("unmashal UTF-8 string", func() {
+	cv("unmarshal UTF-8 string", func() {
 		s := "你好, Café😊"
 		raw := `"` + s + `"`
 
