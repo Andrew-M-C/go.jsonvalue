@@ -175,7 +175,7 @@ func testJsonvalue_Get(t *testing.T) {
 	})
 }
 
-func testMiscError(t *testing.T) {
+func testMiscError(*testing.T) {
 	var err error
 	raw := `{"array":[0,1,2,3],"string":"hello, world","number":1234.12345}`
 	v, err := UnmarshalString(raw)
@@ -422,7 +422,7 @@ func testCaselessGet(t *testing.T) {
 	so(sub.ValueType(), eq, NotExist)
 }
 
-func testNotExistGet(t *testing.T) {
+func testNotExistGet(*testing.T) {
 	cv("unmarshal a not exist V", func() {
 		v := MustUnmarshalString("blahblah")
 		so(v, notNil)
@@ -449,7 +449,7 @@ func testNotExistGet(t *testing.T) {
 	})
 }
 
-func testGetNumFromString(t *testing.T) {
+func testGetNumFromString(*testing.T) {
 	cv("invalid number", func() {
 		v := MustUnmarshalString(`{"num":"abcde","bool":true}`)
 

@@ -67,6 +67,10 @@ func validateValAndReturnParser(v reflect.Value, ex ext) (out reflect.Value, fu 
 
 	// json.Marshaler and encoding.TextMarshaler
 	if o, f := checkAndParseMarshaler(v); f != nil {
+		// jsonvalue itself
+		if _, ok := v.Interface().(deepCopier); ok {
+			return out, parseJSONValueDeepCopier, nil
+		}
 		return o, f, nil
 	}
 
@@ -184,6 +188,14 @@ func getPointerOfValue(v reflect.Value) reflect.Value {
 	vp := reflect.New(reflect.TypeOf(v.Interface()))
 	vp.Elem().Set(v)
 	return vp
+}
+
+func parseJSONValueDeepCopier(v reflect.Value, ex ext) (*V, error) {
+	if v.IsNil() {
+		return nil, nil // empty
+	}
+	j, _ := v.Interface().(deepCopier)
+	return j.deepCopy(), nil
 }
 
 func parseJSONMarshaler(v reflect.Value, ex ext) (*V, error) {

@@ -12,7 +12,7 @@ func testEqual(t *testing.T) {
 	cv("test array type", func() { testEqualArray(t) })
 }
 
-func testEqualSimpleTypes(t *testing.T) {
+func testEqualSimpleTypes(*testing.T) {
 	cv("invalid type", func() {
 		var v1, v2 *V
 		so(v1.Equal(v2), isFalse)
@@ -89,7 +89,7 @@ func testEqualNumbers(t *testing.T) {
 	})
 }
 
-func testEqualObject(t *testing.T) {
+func testEqualObject(*testing.T) {
 	cv("general", func() {
 		v1 := MustUnmarshalString(`{"obj":{},"arr":[]}`)
 		v2 := MustUnmarshalString(`{"arr":[],"obj":{}}`)
@@ -113,7 +113,7 @@ func testEqualObject(t *testing.T) {
 	})
 }
 
-func testEqualArray(t *testing.T) {
+func testEqualArray(*testing.T) {
 	cv("general", func() {
 		v1 := MustUnmarshalString(`[1,2,3,4]`)
 		v2 := MustUnmarshalString(`[1,2,3,4.0]`)

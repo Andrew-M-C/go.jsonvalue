@@ -288,7 +288,7 @@ func testSetError(t *testing.T) {
 	}
 }
 
-func testSet_Must(t *testing.T) {
+func testSet_Must(*testing.T) {
 	cv("SetBytes", func() {
 		a := NewObject()
 		b := NewObject()

@@ -27,7 +27,7 @@ func testImportExport(t *testing.T) {
 	cv("test miscellaneous anonymous situations", func() { testImportMiscAnonymous(t) })
 }
 
-func testExportString(t *testing.T) {
+func testExportString(*testing.T) {
 	const S = "Hello, jsonvalue!"
 	v := NewString(S)
 
@@ -49,7 +49,7 @@ func testExportString(t *testing.T) {
 	so(err, isErr)
 }
 
-func testExportInt(t *testing.T) {
+func testExportInt(*testing.T) {
 	const positive = 123454321
 	const negative = -987656789
 
@@ -95,7 +95,7 @@ func testExportInt(t *testing.T) {
 	so(err, isErr)
 }
 
-func testExportFloat(t *testing.T) {
+func testExportFloat(*testing.T) {
 	const F = 12345.4321
 
 	n := NewFloat64(F)
@@ -118,7 +118,7 @@ func testExportFloat(t *testing.T) {
 	so(err, isErr)
 }
 
-func testExportBool(t *testing.T) {
+func testExportBool(*testing.T) {
 	v := NewBool(true)
 	b := false
 
@@ -135,9 +135,8 @@ func testExportBool(t *testing.T) {
 	so(err, isErr)
 }
 
-func testImport(t *testing.T) {
+func testImport(*testing.T) {
 	cv("integers", func() {
-
 		params := []any{
 			int(1),
 			uint(2),
@@ -927,7 +926,7 @@ func (m *customizedZeroJSONMarshaler) MarshalJSON() (b []byte, _ error) {
 	return
 }
 
-func testStructConv_Import_TextMarshaler(t *testing.T) {
+func testStructConv_Import_TextMarshaler(*testing.T) {
 	cv("legal customized encoding.TextMarshaler", func() {
 		m := &customizedTextMarshaler{}
 		m.str = "Hello, text!"
@@ -995,7 +994,7 @@ func (m *customizedTextMarshaler) MarshalText() ([]byte, error) {
 	return []byte(m.str), nil
 }
 
-func testImportBugIssue19(t *testing.T) {
+func testImportBugIssue19(*testing.T) {
 	type req struct {
 		IDs []uint64 `json:"ids,omitempty"`
 	}
@@ -1046,7 +1045,7 @@ func testImportMiscAnonymous(t *testing.T) {
 	cv("misc marshaler types", func() { testImportExportMiscMarshalerTypes(t) })
 }
 
-func testImportMiscAnonymousStructPtrInStruct(t *testing.T) {
+func testImportMiscAnonymousStructPtrInStruct(*testing.T) {
 	type inner struct {
 		Name string
 	}
@@ -1069,7 +1068,7 @@ func testImportMiscAnonymousStructPtrInStruct(t *testing.T) {
 	so(s, eq, `{"Name":"Andrew","Age":20}`)
 }
 
-func testImportMiscEmptyAnonymousStructPtrInStruct(t *testing.T) {
+func testImportMiscEmptyAnonymousStructPtrInStruct(*testing.T) {
 	type inner struct {
 		Name string
 	}
@@ -1090,7 +1089,7 @@ func testImportMiscEmptyAnonymousStructPtrInStruct(t *testing.T) {
 	so(s, eq, `{"Age":20}`)
 }
 
-func testImportMiscAnonymousExportableBasicTypeInStruct(t *testing.T) {
+func testImportMiscAnonymousExportableBasicTypeInStruct(*testing.T) {
 	type Name string
 	type Age int
 	type Gender string
@@ -1117,7 +1116,7 @@ func testImportMiscAnonymousExportableBasicTypeInStruct(t *testing.T) {
 	so(s, eq, `{"Name":"Andrew","Age":20}`)
 }
 
-func testImportMiscAnonymousExportableBasicTypeInStructWithTags(t *testing.T) {
+func testImportMiscAnonymousExportableBasicTypeInStructWithTags(*testing.T) {
 	type Name string
 	type Age int
 
@@ -1141,7 +1140,7 @@ func testImportMiscAnonymousExportableBasicTypeInStructWithTags(t *testing.T) {
 	so(s, eq, `{"n":"Andrew","a":20}`)
 }
 
-func testImportMiscAnonymousPrivateBasicTypeInStruct(t *testing.T) {
+func testImportMiscAnonymousPrivateBasicTypeInStruct(*testing.T) {
 	type name string
 
 	type outer struct {
@@ -1162,7 +1161,7 @@ func testImportMiscAnonymousPrivateBasicTypeInStruct(t *testing.T) {
 	so(s, eq, `{"a":20}`)
 }
 
-func testImportMiscAnonymousSliceInStruct(t *testing.T) {
+func testImportMiscAnonymousSliceInStruct(*testing.T) {
 	type Name []string
 	type nickname []string
 
@@ -1195,7 +1194,7 @@ func testImportMiscAnonymousSliceInStruct(t *testing.T) {
 	so(s, eq, `{"Name":["Andrew","M","C"],"Age":20}`)
 }
 
-func testImportMiscAnonymousArrayInStruct(t *testing.T) {
+func testImportMiscAnonymousArrayInStruct(*testing.T) {
 	type Name [3]string
 
 	type outer struct {
@@ -1217,7 +1216,7 @@ func testImportMiscAnonymousArrayInStruct(t *testing.T) {
 	so(s, eq, `{"Name":["Andrew","C",""],"Age":20}`)
 }
 
-func testImportMiscAnonymousSlicePtrInStruct(t *testing.T) {
+func testImportMiscAnonymousSlicePtrInStruct(*testing.T) {
 	type Name []string
 
 	type outer struct {
@@ -1249,7 +1248,7 @@ func testImportMiscAnonymousSlicePtrInStruct(t *testing.T) {
 	so(s, eq, `{"Name":["Andrew","M","C"],"Age":20}`)
 }
 
-func testImportMiscAnonymousInvalidTypes(t *testing.T) {
+func testImportMiscAnonymousInvalidTypes(*testing.T) {
 	type Inner chan int
 	type outer struct {
 		Inner
@@ -1266,7 +1265,7 @@ func testImportMiscAnonymousInvalidTypes(t *testing.T) {
 	so(err, isErr)
 }
 
-func testImportExportMiscMarshalerTypes(t *testing.T) {
+func testImportExportMiscMarshalerTypes(*testing.T) {
 	cv("json.Marshaler, ptr", func() {
 		r := &refJSONMarshaler{}
 		r.s = "json.Marshaler"

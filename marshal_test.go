@@ -20,7 +20,7 @@ func testMarshal(t *testing.T) {
 	cv("test JSONP and control ASCII for UTF-8", func() { testMarshalJSONPAndControlAsciiForUTF8(t) })
 }
 
-func testMarshalFloat64NaN(t *testing.T) {
+func testMarshalFloat64NaN(*testing.T) {
 	cv("with error", func() {
 		v := New(math.NaN())
 		_, err := v.Marshal()
@@ -110,7 +110,7 @@ func testMarshalFloat64NaN(t *testing.T) {
 	})
 }
 
-func testMarshalFloat64Inf(t *testing.T) {
+func testMarshalFloat64Inf(*testing.T) {
 	cv("with error", func() {
 		v := NewFloat64(math.Inf(1))
 		_, err := v.Marshal()
@@ -267,7 +267,7 @@ func testMarshalFloat64Inf(t *testing.T) {
 	})
 }
 
-func testMarshalEscapeHTML(t *testing.T) {
+func testMarshalEscapeHTML(*testing.T) {
 	esc := func(s string) string {
 		seq := []rune{'&', '<', '>'}
 		for _, r := range seq {
@@ -311,7 +311,7 @@ func testMarshalEscapeHTML(t *testing.T) {
 	})
 }
 
-func testMarshalEscapeUTF8(t *testing.T) {
+func testMarshalEscapeUTF8(*testing.T) {
 	htmlRunes := map[rune]struct{}{
 		'<': {},
 		'>': {},
@@ -428,7 +428,7 @@ func testMarshalEscapeUTF8(t *testing.T) {
 	})
 }
 
-func testMarshalEscapeSlash(t *testing.T) {
+func testMarshalEscapeSlash(*testing.T) {
 	v := NewString("https://google.com")
 	dflt := `"https:\/\/google.com"`
 	nonesc := `"https://google.com"`

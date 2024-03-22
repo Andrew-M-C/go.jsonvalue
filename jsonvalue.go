@@ -132,6 +132,36 @@ type children struct {
 	lowerCaseKeys map[string]map[string]struct{}
 }
 
+func (c *children) deepCopy() children {
+	res := children{
+		incrID: c.incrID,
+	}
+
+	// if length or arr > 0, this must be an array type
+	if len(c.arr) > 0 {
+		for _, v := range c.arr {
+			res.arr = append(res.arr, v.deepCopy())
+		}
+		return res
+	}
+
+	// if this is an object?
+	if c.object != nil {
+		res.object = make(map[string]childWithProperty, len(c.object))
+		for key, item := range c.object {
+			res.object[key] = childWithProperty{
+				id: item.id,
+				v:  item.v.deepCopy(),
+			}
+		}
+	}
+
+	// no need to copy lowerCaseKeys because it could be rebuild after calling
+	// Caseless() next time
+
+	return res
+}
+
 func (v *V) addCaselessKey(k string) {
 	if v.children.lowerCaseKeys == nil {
 		return
@@ -461,6 +491,40 @@ func (v *V) Bytes() []byte {
 		return []byte{}
 	}
 	return b
+}
+
+func (v *V) deepCopy() *V {
+	if v == nil {
+		return &V{}
+	}
+
+	switch v.valueType {
+	default:
+		// 	fallthrough
+		// case NotExist, Unknown:
+		return &V{}
+	case String:
+		return NewString(v.String())
+	case Number:
+		res := new(globalPool{}, Number)
+		res.num = v.num
+		res.srcByte = v.srcByte
+		return res
+	case Object:
+		res := new(globalPool{}, Object)
+		res.children = v.children.deepCopy()
+		return res
+	case Array:
+		res := new(globalPool{}, Array)
+		res.children = v.children.deepCopy()
+		return res
+	case Null:
+		return NewNull()
+	}
+}
+
+type deepCopier interface {
+	deepCopy() *V
 }
 
 // String returns represented string value or the description for the jsonvalue.V

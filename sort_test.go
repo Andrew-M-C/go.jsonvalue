@@ -40,7 +40,7 @@ func testSortArray(t *testing.T) {
 	so(res, eq, `[9,8,7,6,5,4,3,2,1,0]`)
 }
 
-func testSortArrayError(t *testing.T) {
+func testSortArrayError(*testing.T) {
 	// simple test, should not panic
 	v := NewInt(1)
 	v.SortArray(func(v1, v2 *V) bool { return false })
