@@ -432,7 +432,7 @@ func testMustDelete(t *testing.T) {
 	so(s, eq, `{"array":[1,3,4,5,6]}`)
 }
 
-func testMiscAppend(t *testing.T) {
+func testMiscAppend(*testing.T) {
 	expected := `[true,-1,2,-3,4,-5,6,-7.7,8.8000,{},[[false],null]]`
 	a := NewArray()
 	_, _ = a.AppendBool(true).InTheBeginning()
@@ -454,7 +454,7 @@ func testMiscAppend(t *testing.T) {
 	so(s, eq, expected)
 }
 
-func testAppendAndAutoGeneratePath(t *testing.T) {
+func testAppendAndAutoGeneratePath(*testing.T) {
 	expected := `{"arr":[1]}`
 
 	o := NewObject()
@@ -581,7 +581,7 @@ func testMiscInsert(t *testing.T) {
 	so(s, eq, expected)
 }
 
-func testMiscInsertError(t *testing.T) {
+func testMiscInsertError(*testing.T) {
 	cv("not initialized", func() {
 		v := V{}
 		_, err := v.Insert(nil).After(0)
@@ -708,7 +708,7 @@ func testMiscAppendError(t *testing.T) {
 	})
 }
 
-func testMiscDeleteError(t *testing.T) {
+func testMiscDeleteError(*testing.T) {
 	var err error
 	raw := `{"Hello":"world","object":{"hello":"world","object":{"int":123456}},"array":[123456]}`
 	v, _ := UnmarshalString(raw)

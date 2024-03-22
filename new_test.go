@@ -16,14 +16,14 @@ func testNewXxx(t *testing.T) {
 	cv("ValueError error", func() { testValueError(t) })
 }
 
-func testNewString(t *testing.T) {
+func testNewString(*testing.T) {
 	s := "你好，世界"
 	v := NewString(s)
 	so(v.String(), eq, s)
 	so(v.ValueType(), eq, String)
 }
 
-func testNewBool(t *testing.T) {
+func testNewBool(*testing.T) {
 	v := NewBool(true)
 	so(v.Bool(), isTrue)
 	so(v.IsBoolean(), isTrue)
@@ -35,13 +35,13 @@ func testNewBool(t *testing.T) {
 	so(v.ValueType(), eq, Boolean)
 }
 
-func testNewNull(t *testing.T) {
+func testNewNull(*testing.T) {
 	v := NewNull()
 	so(v.IsNull(), isTrue)
 	so(v.ValueType(), eq, Null)
 }
 
-func testNewInteger(t *testing.T) {
+func testNewInteger(*testing.T) {
 	i := int64(-1234567)
 
 	v := NewInt(int(i))
@@ -69,7 +69,7 @@ func testNewInteger(t *testing.T) {
 	so(v.ValueType(), eq, Number)
 }
 
-func testNewFloat(t *testing.T) {
+func testNewFloat(*testing.T) {
 	s := "3.1415926535"
 	f := 3.1415926535
 
@@ -103,7 +103,7 @@ func testNewFloat(t *testing.T) {
 	so(v.ValueType(), eq, Number)
 }
 
-func testEmptyObjectArray(t *testing.T) {
+func testEmptyObjectArray(*testing.T) {
 	v := NewObject()
 	b, _ := v.Marshal()
 	so(string(b), eq, "{}")
@@ -115,7 +115,7 @@ func testEmptyObjectArray(t *testing.T) {
 	so(v.ValueType(), eq, Array)
 }
 
-func testMiscValue(t *testing.T) {
+func testMiscValue(*testing.T) {
 	cv("parse array", func() {
 		raw := "\r\n[1, 2, 3 ]\t\b"
 		v, err := UnmarshalString(raw)
@@ -453,7 +453,7 @@ func testMiscValue(t *testing.T) {
 	})
 }
 
-func testMustMarshalError(t *testing.T) {
+func testMustMarshalError(*testing.T) {
 	shouldPanic(func() {
 		v := &V{}
 		v.MustMarshal()
@@ -465,7 +465,7 @@ func testMustMarshalError(t *testing.T) {
 	})
 }
 
-func testValueError(t *testing.T) {
+func testValueError(*testing.T) {
 	var err error
 	var raw string
 	var v *V

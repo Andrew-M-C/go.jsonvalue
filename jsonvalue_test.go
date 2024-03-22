@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"os"
 	"testing"
 
 	"github.com/smartystreets/goconvey/convey"
@@ -50,8 +51,9 @@ func printBytes(t *testing.T, b []byte, prefix ...string) {
 	t.Log(s)
 }
 
-func init() {
+func TestMain(m *testing.M) {
 	log.SetFlags(log.Lshortfile | log.LstdFlags)
+	os.Exit(m.Run())
 }
 
 func TestJsonvalue(t *testing.T) {
@@ -67,6 +69,8 @@ func TestJsonvalue(t *testing.T) {
 	test(t, "percentage symbol", testPercentage)
 	test(t, "misc number typed parameter", testMiscInt)
 	test(t, "test an internal struct", testUnmarshalWithIter)
+	test(t, "deepCopy()", testDeepCopy)
+
 	test(t, "test iteration", testIteration)
 	test(t, "test iteration internally", testIter)
 	test(t, "test iterate float internally", testIterFloat)
@@ -148,7 +152,7 @@ func testMiscCharacters(t *testing.T) {
 		so(v.String(), eq, "/")
 	})
 
-	cv("unmashal UTF-8 string", func() {
+	cv("unmarshal UTF-8 string", func() {
 		s := "你好, Café😊"
 		raw := `"` + s + `"`
 
@@ -460,5 +464,87 @@ func testUnmarshalWithIter(t *testing.T) {
 		var invalid *V
 		s := invalid.String()
 		so(s, eq, "nil")
+	})
+}
+
+func testDeepCopy(*testing.T) {
+	address := func(v any) string {
+		return fmt.Sprintf("%p", v)
+	}
+
+	cv("invalid or nil", func() {
+		var v *V
+		res := v.deepCopy()
+		so(v, isNil)
+		so(res, notNil)
+		so(res.ValueType(), eq, NotExist)
+
+		v = &V{}
+		res = v.deepCopy()
+		so(res, notNil)
+		so(res.ValueType(), eq, NotExist)
+	})
+
+	cv("string", func() {
+		v := NewString("Hello")
+		res := v.deepCopy()
+		so(res.String(), eq, v.String())
+		so(address(res), ne, address(v))
+	})
+
+	cv("number", func() {
+		v := NewInt(1234)
+		res := v.deepCopy()
+		so(res.String(), eq, v.String())
+		so(address(res), ne, address(v))
+
+		const raw = "12.50"
+		v, err := UnmarshalString(raw)
+		so(err, isNil)
+		so(v.String(), eq, raw)
+		so(v.Float64(), eq, 12.5)
+
+		res = v.deepCopy()
+		so(res.String(), eq, raw)
+		so(address(res), ne, address(v))
+	})
+
+	cv("object", func() {
+		v := NewObject()
+		v.MustSet(1234).At("num")
+		v.MustSet("hello").At("string")
+
+		const raw = `{"num":1234,"string":"hello"}`
+		s := v.MustMarshalString(OptSetSequence())
+		so(s, eq, raw)
+
+		for i := 0; i < 200; i++ {
+			res := v.deepCopy()
+			resS := res.MustMarshalString(OptSetSequence())
+			so(s, eq, resS)
+			so(address(res), ne, address(v))
+		}
+	})
+
+	cv("array", func() {
+		v := NewArray()
+		v.MustAppend(1234).InTheEnd()
+		v.MustAppend("hello").InTheEnd()
+
+		const raw = `[1234,"hello"]`
+		so(v.MustMarshalString(), eq, raw)
+
+		res := v.deepCopy()
+		so(res.MustMarshalString(), eq, raw)
+		so(address(res), ne, address(v))
+	})
+
+	cv("null", func() {
+		v := NewNull()
+		res := v.deepCopy()
+
+		so(address(res), ne, address(v))
+		so(v.MustMarshalString(), eq, "null")
+		so(res.MustMarshalString(), eq, "null")
 	})
 }

@@ -14,7 +14,7 @@ func testMarshalerUnmarshaler(t *testing.T) {
 	cv("misc string conversion", func() { testMiscStringConversion(t) })
 }
 
-func testMarshalerUnmarshaler_JSON(t *testing.T) {
+func testMarshalerUnmarshaler_JSON(*testing.T) {
 	cv("json.Marshaler", func() {
 		v := NewObject()
 		v.MustSet(1).At("one", "one")
@@ -56,7 +56,7 @@ func testMarshalerUnmarshaler_JSON(t *testing.T) {
 	})
 }
 
-func testMarshalerUnmarshaler_Binary(t *testing.T) {
+func testMarshalerUnmarshaler_Binary(*testing.T) {
 	cv("encoding.BinaryMarshaler", func() {
 		v := NewObject()
 		v.MustSet("sub-sub").At("obj", "obj")
@@ -102,7 +102,7 @@ func testMarshalerUnmarshaler_Binary(t *testing.T) {
 	})
 }
 
-func testNegativeFloatingNumbers(t *testing.T) {
+func testNegativeFloatingNumbers(*testing.T) {
 	cv("negative floating numbers", func() {
 		raw := `{"float":-1.125,"int":-16}`
 		v, err := UnmarshalString(raw)
@@ -117,7 +117,7 @@ func testNegativeFloatingNumbers(t *testing.T) {
 	})
 }
 
-func testMiscStringConversion(t *testing.T) {
+func testMiscStringConversion(*testing.T) {
 	cv("Issue #27", func() {
 		raw := `{"number":""}`
 		j := MustUnmarshalString(raw)

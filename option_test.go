@@ -1,6 +1,7 @@
 package jsonvalue
 
 import (
+	"encoding/json"
 	"strconv"
 	"testing"
 )
@@ -15,9 +16,10 @@ func testOption(t *testing.T) {
 	cv("test reset marshal options", func() { testOptionReset(t) })
 	cv("test OptSetSequence", func() { testOption_OptSetSequence(t) })
 	cv("test OptIgnoreOmitempty", func() { testOption_OptIgnoreOmitempty(t) })
+	cv("test Issue #29", func() { testOption_Issue29(t) })
 }
 
-func testOptionOverwriting(t *testing.T) {
+func testOptionOverwriting(*testing.T) {
 	v := NewObject(M{
 		"slash": "/",
 	})
@@ -27,7 +29,7 @@ func testOptionOverwriting(t *testing.T) {
 	so(s, eq, expect)
 }
 
-func testOptionReset(t *testing.T) {
+func testOptionReset(*testing.T) {
 	raw := `{"slash":"/"}`
 	esc := `{"slash":"\/"}`
 
@@ -46,7 +48,7 @@ func testOptionReset(t *testing.T) {
 	so(s, eq, esc)
 }
 
-func testOption_OptSetSequence(t *testing.T) {
+func testOption_OptSetSequence(*testing.T) {
 	cv("by set", func() {
 		v := NewObject()
 		const total = 10
@@ -136,3 +138,31 @@ func testOption_OptIgnoreOmitempty(t *testing.T) {
 		so(v.MustGet("b").Len(), eq, 6)
 	})
 }
+
+// https://github.com/Andrew-M-C/go.jsonvalue/issues/29
+func testOption_Issue29(*testing.T) {
+	cv("OptSetSequence in V in struct", func() {
+		st := issue29Struct{}
+		st.Ext = NewObject()
+
+		st.Ext.MustSetString("1111").At("A")
+		st.Ext.MustSetString("2222").At("B")
+
+		const expected = `{"ext":{"A":"1111","B":"2222"}}`
+		for i := 0; i < 2000; i++ {
+			b, _ := json.Marshal(st)
+			so(string(b), eq, expected)
+		}
+	})
+}
+
+type issue29Struct struct {
+	Ext *V `json:"ext"`
+}
+
+func (s issue29Struct) MarshalJSON() ([]byte, error) {
+	w := issue29StructWrapper(s)
+	return New(w).Marshal(OptSetSequence())
+}
+
+type issue29StructWrapper issue29Struct

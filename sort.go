@@ -276,7 +276,7 @@ func (v *V) newSortStringSliceV(opt *Opt) *sortStringSliceV {
 	return &sssv
 }
 
-func (v *V) newSortStringSliceVBySetSeq(opt *Opt) *sortStringSliceV {
+func (v *V) newSortStringSliceVBySetSeq(_ *Opt) *sortStringSliceV {
 	keySequence := make(map[string]int, len(v.children.object))
 	for k, child := range v.children.object {
 		keySequence[k] = int(child.id)
