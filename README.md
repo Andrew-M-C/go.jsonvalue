@@ -1,20 +1,22 @@
 # Jsonvalue - A Fast and Convenient Alternation of Go map[string]interface{}
 
-[![Workflow](https://github.com/Andrew-M-C/go.jsonvalue/actions/workflows/go_test_general.yml/badge.svg?date=221104)](https://github.com/Andrew-M-C/go.jsonvalue/actions/workflows/go_test_general.yml)
+[![Workflow](https://github.com/Andrew-M-C/go.jsonvalue/actions/workflows/go_test_general.yml/badge.svg)](https://github.com/Andrew-M-C/go.jsonvalue/actions/workflows/go_test_general.yml)
 [![codecov](https://codecov.io/gh/Andrew-M-C/go.jsonvalue/branch/dev/github_workflow/graph/badge.svg?token=REDI4YDLPR&date=221104)](https://codecov.io/gh/Andrew-M-C/go.jsonvalue)
 [![Go report](https://goreportcard.com/badge/github.com/Andrew-M-C/go.jsonvalue?date=221104)](https://goreportcard.com/report/github.com/Andrew-M-C/go.jsonvalue)
 [![CodeBeat](https://codebeat.co/badges/ecf87760-2987-48a7-a6dd-4d9fcad57256)](https://codebeat.co/projects/github-com-andrew-m-c-go-jsonvalue-master)
 
-[![GoDoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue?status.svg&date=221104)](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue@v1.3.6)
-[![Latest](https://img.shields.io/badge/latest-v1.3.6-blue.svg?date=221104)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.3.6)
+[![GoDoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue?status.svg&date=221104)](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue@v1.3.7)
+[![Latest](https://img.shields.io/badge/latest-v1.3.7-blue.svg?date=221104)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.3.7)
 [![License](https://img.shields.io/badge/license-BSD%203--Clause-blue.svg?date=221104)](https://opensource.org/licenses/BSD-3-Clause)
 
 - [Wiki](./docs/en/README.md)
 - [中文版](./docs/zh-cn/README.md)
 
-Package **jsonvalue** is for handling (mostly) unstructured JSON data. It is far more faster and convenient than using `interface{}` with `encoding/json`.
+Package **jsonvalue** is for handling unstructured JSON data or customizing JSON marshaling. It is far more faster and convenient than using `interface{}` with `encoding/json`.
 
 Please refer to [pkg site](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue) or [wiki](./docs/en/README.md) for detailed usage and examples.
+
+Especially, please check for jsonvalue's [programming scenarios](./docs/en/10_scenarios.md).
 
 ## Import
 
@@ -82,4 +84,4 @@ In opposite, to parse and read the first JSON above, you can use jsonvalue like 
 	// Hello, JSON!
 ```
 
-However, it is quite complex and annoying in automatically creating array. I strongly suggest using `SetArray()` to create the array first, then use `Append()` or `Insert()` to set array elements. Please refer go [godoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue).
+However, it is quite complex and annoying in automatically creating array. I strongly suggest using `SetArray()` to create the array first, then use `Append()` or `Insert()` to set array elements. Please refer go [godoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue) or [Wiki](./docs/en/README.md).
