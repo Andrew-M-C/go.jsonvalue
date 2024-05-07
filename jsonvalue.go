@@ -518,6 +518,8 @@ func (v *V) deepCopy() *V {
 		res := new(globalPool{}, Array)
 		res.children = v.children.deepCopy()
 		return res
+	case Boolean:
+		return NewBool(v.Bool())
 	case Null:
 		return NewNull()
 	}

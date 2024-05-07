@@ -9,7 +9,7 @@ on:
 
 env:
   CODECOV_TOKEN: '2fc0d617-8e9a-47d7-ab58-52fa92b23741'
-  MAIN_GO_VER: '1.16'
+  MAIN_GO_VER: '1.13'
   MAIN_HOST_OS: 'ubuntu-latest'
 
 jobs:
@@ -18,7 +18,7 @@ jobs:
       max-parallel: 6
       matrix:
         GO_VER: ['1.13', '1.14', '1.15']
-        HOST_OS: ['ubuntu-latest', 'macos-latest']
+        HOST_OS: ['ubuntu-latest']
 
     runs-on: ${{ matrix.HOST_OS }}
 

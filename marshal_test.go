@@ -18,6 +18,7 @@ func testMarshal(t *testing.T) {
 	cv("indent", func() { testMarshalIndent(t) })
 	cv("ASCII control characters", func() { testMarshalControlCharacters(t) })
 	cv("test JSONP and control ASCII for UTF-8", func() { testMarshalJSONPAndControlAsciiForUTF8(t) })
+	cv("Issue #30", func() { testIssue30(t) })
 }
 
 func testMarshalFloat64NaN(*testing.T) {
@@ -605,3 +606,57 @@ func testMarshalJSONPAndControlAsciiForUTF8(t *testing.T) {
 	so(err, isNil)
 	so(v.String(), eq, string(unshownableControlCharsAndJSONPSpecial))
 }
+
+func testIssue30(t *testing.T) {
+	cv("Issue #30", func() {
+		responseData, err := MustUnmarshalString(issue30Raw).Get("data")
+		so(err, isNil)
+
+		var candidateInfoArr []*V
+		candidateInfoArr = append(candidateInfoArr, responseData.ForRangeArr()...)
+		data := candidateInfoArr
+
+		v := NewObject()
+		v.MustSet(data).At("data")
+
+		b := v.MustMarshal(OptSetSequence())
+		t.Log(v)
+		t.Log(string(b))
+
+		var m json.RawMessage
+		err = json.Unmarshal(b, &m)
+		so(err, isNil)
+	})
+
+	cv("stripped Issue #30", func() {
+		list := []*V{
+			NewObject(map[string]any{"archived": false}),
+			NewObject(map[string]any{"archived": false}),
+		}
+
+		v, err := Import(list)
+		so(err, isNil)
+		so(v.IsArray(), isTrue)
+
+		t.Log(v)
+	})
+}
+
+const issue30Raw = `{
+	"data": [
+		{
+			"basicInfo": {
+				"num": 0,
+				"str": "",
+				"archived": true
+			}
+		},
+		{
+			"basicInfo": {
+				"num": 1,
+				"str": "",
+				"archived": false
+			}
+		}
+	]
+}`
