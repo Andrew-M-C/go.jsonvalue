@@ -2,6 +2,7 @@
 
 [English](./CHANGELOG.md)
 
+- [v1.3.8](#v138)
 - [v1.3.7](#v137)
 - [v1.3.6](#v136)
 - [v1.3.5](#v135)
@@ -13,6 +14,10 @@
 - [v1.2.1](#v121)
 - [v1.2.0](#v120)
 - [v1.1.1](#v111)
+
+## v1.3.8
+
+- 修复 Issue [#30](https://github.com/Andrew-M-C/go.jsonvalue/issues/30)
 
 ## v1.3.7
 

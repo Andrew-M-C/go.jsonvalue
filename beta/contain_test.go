@@ -6,7 +6,7 @@ import (
 	jsonvalue "github.com/Andrew-M-C/go.jsonvalue"
 )
 
-func testContains(t *testing.T) {
+func testContains(_ *testing.T) {
 	cv("general array", func() {
 		v := jsonvalue.MustUnmarshalString(`[1,2,3,4]`)
 		sub := jsonvalue.MustUnmarshalString(`[2,3]`)
@@ -25,7 +25,7 @@ func testContains(t *testing.T) {
 		so(Contains(v, notSub), isFalse)
 	})
 
-	cv("testcase by internal colleague", func() {
+	cv("test case by author's colleague", func() {
 		type P = []interface{}
 
 		f := func(res bool, vStr string, path P, subStr string) {
