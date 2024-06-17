@@ -12,6 +12,7 @@ func testSet(t *testing.T) {
 	cv("misc set", func() { testSetMisc(t) })
 	cv("set errors", func() { testSetError(t) })
 	cv("must set", func() { testSet_Must(t) })
+	cv("set with slice", func() { testSetWithSlice(t) })
 }
 
 func testJsonvalue_Set(t *testing.T) {
@@ -368,4 +369,27 @@ func testSet_Must(*testing.T) {
 		b.MustSetArray().At("arr")
 		so(a.Equal(b), isTrue)
 	})
+}
+
+func testSetWithSlice(_ *testing.T) {
+	o := NewObject()
+
+	pStr := []string{"outer", "inner"}
+	_, err := o.Set("string").At(pStr)
+	so(err, isNil)
+	so(o.MustMarshalString(), eq, `{"outer":{"inner":"string"}}`)
+
+	pAny := []any{"outer", "inter", "array", 0}
+	_, err = o.Set(123456).At(pAny)
+	so(err, isNil)
+
+	s := o.MustMarshalString(OptSetSequence())
+	so(s, eq, `{"outer":{"inner":"string","inter":{"array":[123456]}}}`)
+
+	_, err = o.Set("abcdef").At(pAny, pStr)
+	so(err, isErr)
+
+	s = o.MustMarshalString(OptSetSequence())
+	so(s, eq, `{"outer":{"inner":"string","inter":{"array":[123456]}}}`)
+
 }

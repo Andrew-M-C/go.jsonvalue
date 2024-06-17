@@ -121,6 +121,26 @@ v.MustSet("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, ob
 {"array":[{"word":"apple","lesson":1},{"word":"banana","lesson":2},{"word":"cat","lesson":3},{"word":"dog","lesson":4}]}
 ```
 
+你也可以传一个切片或数组，用来表示参数链。比如，下面的代码：
+
+```go
+v.MustSet("Hello, object!").At("obj", "message")
+```
+
+等价于：
+
+```go
+v.MustSet("Hello, object!").At([]any{"obj", "message"})
+```
+
+或：
+
+```go
+v.MustSet("Hello, object!").At([]string{"obj", "message"})
+```
+
+这个特性非常便于从外部源或者配置等获取参数链，然后直接调用 jsonvalue。
+
 ---
 
 ## 往 JSON 数组中添加值 —— Append 和 Insert 系列函数

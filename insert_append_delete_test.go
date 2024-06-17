@@ -15,6 +15,9 @@ func testInsertAppendDelete(t *testing.T) {
 	cv("test misc insert errors", func() { testMiscInsertError(t) })
 	cv("test misc append errors", func() { testMiscAppendError(t) })
 	cv("test misc delete errors", func() { testMiscDeleteError(t) })
+	cv("test insert with slice", func() { testInsertWithSlice(t) })
+	cv("test append with slice", func() { testAppendWithSlice(t) })
+	cv("test delete with slice", func() { testDeleteWithSlice(t) })
 }
 
 func testInsertAppend(t *testing.T) {
@@ -725,6 +728,10 @@ func testMiscDeleteError(*testing.T) {
 	err = v.Delete("array", "2")
 	so(err, isErr)
 
+	// param error
+	err = v.Delete(nil)
+	so(err, isErr)
+
 	// not found error
 	err = v.Delete("earth")
 	so(err, isErr)
@@ -740,4 +747,114 @@ func testMiscDeleteError(*testing.T) {
 	// not found error
 	err = v.Delete("object", "bool", "string")
 	so(err, isErr)
+}
+
+func testInsertWithSlice(_ *testing.T) {
+	j := New([]any{1})
+	so(j.IsArray(), isTrue)
+	so(j.Len(), eq, 1)
+
+	pAny := []any{0}
+	_, err := j.Insert(1234).Before(pAny, pAny)
+	so(err, isErr)
+	_, err = j.Insert(1234).After(pAny, pAny)
+	so(err, isErr)
+	s := j.MustMarshalString(OptSetSequence())
+	so(s, eq, "[1]")
+
+	_, err = j.Insert(1234).Before(pAny)
+	so(err, isNil)
+	s = j.MustMarshalString(OptSetSequence())
+	so(s, eq, `[1234,1]`)
+
+	_, err = j.Insert(5678).After(pAny)
+	so(err, isNil)
+	s = j.MustMarshalString(OptSetSequence())
+	so(s, eq, `[1234,5678,1]`)
+}
+
+func testAppendWithSlice(_ *testing.T) {
+	j := NewObject()
+	j.MustSet([]any{}).At("outer", "inter", "inner")
+
+	s := j.MustMarshalString(OptSetSequence())
+	so(s, eq, `{"outer":{"inter":{"inner":[]}}}`)
+
+	pAny := []any{"outer", "inter", "inner"}
+	_, err := j.Append(1234).InTheEnd(pAny, 1234)
+	so(err, isErr)
+
+	_, err = j.Append(1234).InTheBeginning(pAny, 1234)
+	so(err, isErr)
+
+	s = j.MustMarshalString(OptSetSequence())
+	so(s, eq, `{"outer":{"inter":{"inner":[]}}}`)
+
+	_, err = j.Append(1234).InTheEnd(pAny)
+	so(err, isNil)
+	s = j.MustMarshalString(OptSetSequence())
+	so(s, eq, `{"outer":{"inter":{"inner":[1234]}}}`)
+
+	_, err = j.Append("5678").InTheBeginning(pAny)
+	so(err, isNil)
+	s = j.MustMarshalString(OptSetSequence())
+	so(s, eq, `{"outer":{"inter":{"inner":["5678",1234]}}}`)
+}
+
+func testDeleteWithSlice(_ *testing.T) {
+	cv("[]any or []string", func() {
+		j := NewObject()
+		j.MustSet([]any{1, 2, 3, 4, 5, 6}).At("outer", "inner")
+
+		err := j.Delete("outer", "inner", 5)
+		so(err, isNil)
+
+		s := j.MustMarshalString(OptSetSequence())
+		so(s, eq, `{"outer":{"inner":[1,2,3,4,5]}}`)
+
+		pAny := []any{"outer", "inner", 3}
+		err = j.Delete(pAny, 0)
+		so(err, isErr)
+
+		s = j.MustMarshalString(OptSetSequence())
+		so(s, eq, `{"outer":{"inner":[1,2,3,4,5]}}`)
+
+		err = j.Delete(pAny)
+		so(err, isNil)
+
+		s = j.MustMarshalString(OptSetSequence())
+		so(s, eq, `{"outer":{"inner":[1,2,3,5]}}`)
+
+		pStr := []string{"OUTER", "inner"}
+		err = j.Caseless().Delete(pStr)
+		so(err, isNil)
+
+		s = j.MustMarshalString(OptSetSequence())
+		so(s, eq, `{"outer":{}}`)
+
+		err = j.Delete([]any{})
+		so(err, isErr)
+	})
+
+	cv("[]any or []int", func() {
+		const raw = `[[1,2,3],[11,22,33],[111,222,333]]`
+		j, err := UnmarshalString(raw)
+		so(err, isNil)
+		so(j.Len(), eq, 3)
+
+		pAny := []any{0, 2}
+		err = j.Delete(pAny)
+		so(err, isNil)
+		so(j.MustMarshalString(), eq, `[[1,2],[11,22,33],[111,222,333]]`)
+
+		pInt := []int{1, 1}
+		err = j.Delete(pInt)
+		so(err, isNil)
+		so(j.MustMarshalString(), eq, `[[1,2],[11,33],[111,222,333]]`)
+
+		pInt8 := []int8{2}
+		err = j.Delete(pInt8)
+		so(err, isNil)
+		so(j.MustMarshalString(), eq, `[[1,2],[11,33]]`)
+	})
 }

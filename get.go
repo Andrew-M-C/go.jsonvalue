@@ -40,6 +40,12 @@ func (v *V) MustGet(firstParam any, otherParams ...any) *V {
 }
 
 func (v *V) get(caseless bool, firstParam any, otherParams ...any) (*V, error) {
+	if ok, p1, p2 := isSliceAndExtractDividedParams(firstParam); ok {
+		if len(otherParams) > 0 {
+			return &V{}, ErrMultipleParamNotSupportedWithIfSliceOrArrayGiven
+		}
+		return v.get(caseless, p1, p2...)
+	}
 	child, err := v.getInCurrValue(caseless, firstParam)
 	if err != nil {
 		return &V{}, err

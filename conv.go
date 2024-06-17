@@ -192,21 +192,53 @@ func intfToInt(v any) (u int, err error) {
 // }
 
 func intfToString(v any) (s string, err error) {
-	switch str := v.(type) {
-	case string:
-		return str, nil
-	default:
-		return "", fmt.Errorf("%s is not a string", reflect.TypeOf(v).String())
+	if v == nil {
+		return "", fmt.Errorf("%w: parameter is nil", ErrParameterError)
 	}
+	rv := reflect.ValueOf(v)
+	if rv.Type().Kind() == reflect.String {
+		return rv.String(), nil
+	}
+
+	return "", fmt.Errorf("%w: %s is not a string", ErrParameterError, reflect.TypeOf(v).String())
 }
 
-// func intfToJsonvalue(v any) (j *V, err error) {
-// 	switch v.(type) {
-// 	case *V:
-// 		j = v.(*V)
-// 	default:
-// 		err = fmt.Errorf("%s is not a *jsonvalue.V type", reflect.TypeOf(v).String())
-// 	}
+func isSliceAndExtractDividedParams(p any) (ok bool, firstParam any, otherParams []any) {
+	v := reflect.ValueOf(p)
+	switch v.Kind() {
+	default:
+		return false, nil, nil
+	case reflect.Slice, reflect.Array:
+		// yes, go on
+	}
 
-// 	return
-// }
+	paramCount := v.Len()
+	if paramCount == 0 {
+		return true, nil, nil
+	}
+
+	firstParam = v.Index(0).Interface()
+
+	for i := 1; i < v.Len(); i++ {
+		element := v.Index(i)
+		otherParams = append(otherParams, element.Interface())
+	}
+	return true, firstParam, otherParams
+}
+
+func isSliceAndExtractJointParams(p any) (bool, []any) {
+	v := reflect.ValueOf(p)
+	switch v.Kind() {
+	default:
+		return false, nil
+	case reflect.Slice, reflect.Array:
+		// yes, go on
+	}
+
+	res := make([]any, 0, v.Len())
+	for i := 0; i < v.Len(); i++ {
+		element := v.Index(i)
+		res = append(res, element.Interface())
+	}
+	return true, res
+}
