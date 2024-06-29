@@ -26,6 +26,7 @@ func New(value any) *V {
 func NewString(s string) *V {
 	v := new(globalPool{}, String)
 	v.valueStr = s
+	v.marshalToBuffer = v.marshalString
 	return v
 }
 
@@ -50,6 +51,7 @@ func NewInt64(i int64) *V {
 	v.num.u64 = uint64(i)
 	s := strconv.FormatInt(v.num.i64, 10)
 	v.srcByte = []byte(s)
+	v.marshalToBuffer = v.marshalNumber
 	return v
 }
 
@@ -66,6 +68,7 @@ func NewUint64(u uint64) *V {
 	v.num.u64 = u
 	s := strconv.FormatUint(v.num.u64, 10)
 	v.srcByte = []byte(s)
+	v.marshalToBuffer = v.marshalNumber
 	return v
 }
 
@@ -103,6 +106,7 @@ func NewUint32(u uint32) *V {
 func NewBool(b bool) *V {
 	v := new(globalPool{}, Boolean)
 	v.valueBool = b
+	v.marshalToBuffer = v.marshalBoolean
 	return v
 }
 
@@ -111,6 +115,7 @@ func NewBool(b bool) *V {
 // NewNull 返回一个初始化好的 null 类型的 jsonvalue 值
 func NewNull() *V {
 	v := new(globalPool{}, Null)
+	v.marshalToBuffer = v.marshalNull
 	return v
 }
 
@@ -130,6 +135,7 @@ func NewObject(keyValues ...M) *V {
 		}
 	}
 
+	v.marshalToBuffer = v.marshalObject
 	return v
 }
 
@@ -244,6 +250,7 @@ func newObject(p pool) *V {
 
 func newArray(p pool) *V {
 	v := new(p, Array)
+	v.marshalToBuffer = v.marshalArray
 	return v
 }
 
@@ -260,6 +267,7 @@ func newFloat64f(p pool, f float64, format byte, prec, bitsize int) *V {
 		v.srcByte = []byte(s)
 	}
 
+	v.marshalToBuffer = v.marshalNumber
 	return v
 }
 

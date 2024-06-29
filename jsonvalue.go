@@ -45,6 +45,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Andrew-M-C/go.jsonvalue/internal/buffer"
 	"github.com/Andrew-M-C/go.jsonvalue/internal/unsafe"
 )
 
@@ -108,6 +109,8 @@ type V struct {
 	valueStr  string
 	valueBool bool
 	children  children
+
+	marshalToBuffer func(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) error
 }
 
 type num struct {
