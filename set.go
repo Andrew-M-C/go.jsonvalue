@@ -177,6 +177,12 @@ func (s *setter) At(firstParam any, otherParams ...any) (*V, error) {
 	if s.err != nil {
 		return &V{}, s.err
 	}
+	if ok, p1, p2 := isSliceAndExtractDividedParams(firstParam); ok {
+		if len(otherParams) > 0 {
+			return &V{}, ErrMultipleParamNotSupportedWithIfSliceOrArrayGiven
+		}
+		return s.At(p1, p2...)
+	}
 	v := s.v
 	c := s.c
 	if nil == v || v.valueType == NotExist {

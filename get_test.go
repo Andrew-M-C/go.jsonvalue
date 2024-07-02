@@ -11,6 +11,7 @@ func testGet(t *testing.T) {
 	cv("caseless get", func() { testCaselessGet(t) })
 	cv("NotExist get", func() { testNotExistGet(t) })
 	cv("get number from a string", func() { testGetNumFromString(t) })
+	cv("get with slice", func() { testGetWithSlice(t) })
 }
 
 func testJsonvalue_Get(t *testing.T) {
@@ -595,4 +596,35 @@ func testGetNumFromString(*testing.T) {
 		so(errors.Is(err, ErrTypeNotMatch), isTrue)
 		so(b, isFalse)
 	})
+}
+
+func testGetWithSlice(_ *testing.T) {
+	raw := `{"outer":{"inter":{"inner":["value"],"int":1234}}}`
+
+	j, err := UnmarshalString(raw)
+	so(err, isNil)
+
+	paramAny := []any{"outer", "inter", "inner", 0}
+	s, err := j.GetString(paramAny)
+	so(err, isNil)
+	so(s, eq, "value")
+
+	paramAny = []any{"outer", "inter", "int"}
+	i, err := j.GetInt(paramAny)
+	so(err, isNil)
+	so(i, eq, 1234)
+
+	paramStr := []string{"outer", "inter", "int"}
+	i, err = j.GetInt(paramStr)
+	so(err, isNil)
+	so(i, eq, 1234)
+
+	paramArr := [3]string{"outer", "inter", "int"}
+	i, err = j.GetInt(paramArr)
+	so(err, isNil)
+	so(i, eq, 1234)
+
+	_, err = j.GetInt(paramAny, 123456)
+	so(err, isErr)
+
 }

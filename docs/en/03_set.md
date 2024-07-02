@@ -125,6 +125,26 @@ Final output:
 {"array":[{"word":"apple","lesson":1},{"word":"banana","lesson":2},{"word":"cat","lesson":3},{"word":"dog","lesson":4}]}
 ```
 
+You can also passing a slice or array to identify the parameter chain, for example, following codes:
+
+```go
+v.MustSet("Hello, object!").At("obj", "message")
+```
+
+are equivalent to these:
+
+```go
+v.MustSet("Hello, object!").At([]any{"obj", "message"})
+```
+
+or:
+
+```go
+v.MustSet("Hello, object!").At([]string{"obj", "message"})
+```
+
+This feature make it easy to pass parameter from outer sources or configurations.
+
 ---
 
 ## Append Values to JSON Array

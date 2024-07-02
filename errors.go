@@ -83,4 +83,17 @@ const (
 	//
 	// ErrUnsupportedFloat 表示配置中的 float64 是一个不支持的数值，如 +Inf, -Inf 和 NaN
 	ErrUnsupportedFloatInOpt = Error("unsupported float value in option")
+
+	// ErrMultipleParamNotSupportedWithIfSliceOrArrayGiven indicates that if you
+	// use a slice pr array as first param in Get(...), Set(...).At(...), etc, no
+	// further params are allowed
+	//
+	// ErrMultipleParamNotSupportedWithIfSliceOrArrayGiven 表示如果你在使用 Get(...)、
+	// Set(...).At(...) 等类似方法时, 首参数传入一个切片或数组, 那么不允许再传入更多的参数了
+	ErrMultipleParamNotSupportedWithIfSliceOrArrayGiven = Error("if first param is a slice or array, no further param are allowed")
+
+	// ErrParameterError indicates misc parameter error.
+	//
+	// ErrParameterError 表示各种参数错误
+	ErrParameterError = Error("parameter error")
 )

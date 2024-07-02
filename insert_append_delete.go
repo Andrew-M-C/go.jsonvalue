@@ -8,6 +8,8 @@ import (
 
 // ================ INSERT ================
 
+// MARK: INSERT
+
 // Inserter type is for After() and Before() methods.
 //
 // # Should be generated ONLY BY V.Insert() !
@@ -17,9 +19,9 @@ type Inserter interface {
 	// After completes the following operation of Insert(). It inserts value AFTER
 	//  specified position.
 	//
-	// The last parameter identifies the postion where a new JSON is inserted after,
-	//  it should ba an interger, no matter signed or unsigned. If the position is
-	// zero or positive interger, it tells the index of an array. If the position
+	// The last parameter identifies the position where a new JSON is inserted after,
+	//  it should ba an integer, no matter signed or unsigned. If the position is
+	// zero or positive integer, it tells the index of an array. If the position
 	// is negative, it tells the backward index of an array.
 	//
 	// For example, 0 represents the first, and -2 represents the second last.
@@ -37,9 +39,9 @@ type Inserter interface {
 	// Before completes the following operation of Insert(). It inserts value BEFORE
 	// specified position.
 	//
-	// The last parameter identifies the postion where a new JSON is inserted after,
-	// it should ba an interger, no matter signed or unsigned.
-	// If the position is zero or positive interger, it tells the index of an array.
+	// The last parameter identifies the position where a new JSON is inserted after,
+	// it should ba an integer, no matter signed or unsigned.
+	// If the position is zero or positive integer, it tells the index of an array.
 	// If the position is negative, it tells the backward index of an array.
 	//
 	// For example, 0 represents the first, and -2 represents the second last.
@@ -179,6 +181,12 @@ func (ins *insert) Before(firstParam any, otherParams ...any) (*V, error) {
 	if ins.err != nil {
 		return &V{}, ins.err
 	}
+	if ok, p1, p2 := isSliceAndExtractDividedParams(firstParam); ok {
+		if len(otherParams) > 0 {
+			return &V{}, ErrMultipleParamNotSupportedWithIfSliceOrArrayGiven
+		}
+		return ins.Before(p1, p2...)
+	}
 	v := ins.v
 	c := ins.c
 	if v.valueType == NotExist {
@@ -205,7 +213,7 @@ func (ins *insert) Before(firstParam any, otherParams ...any) (*V, error) {
 		return c, nil
 	}
 
-	// this is not the last iterarion
+	// this is not the last iteration
 	child, err := v.GetArray(firstParam, otherParams[:paramCount-1]...)
 	if err != nil {
 		return &V{}, err
@@ -221,6 +229,12 @@ func (ins *insert) Before(firstParam any, otherParams ...any) (*V, error) {
 func (ins *insert) After(firstParam any, otherParams ...any) (*V, error) {
 	if ins.err != nil {
 		return &V{}, ins.err
+	}
+	if ok, p1, p2 := isSliceAndExtractDividedParams(firstParam); ok {
+		if len(otherParams) > 0 {
+			return &V{}, ErrMultipleParamNotSupportedWithIfSliceOrArrayGiven
+		}
+		return ins.After(p1, p2...)
 	}
 	v := ins.v
 	c := ins.c
@@ -252,7 +266,7 @@ func (ins *insert) After(firstParam any, otherParams ...any) (*V, error) {
 		return c, nil
 	}
 
-	// this is not the last iterarion
+	// this is not the last iteration
 	child, err := v.GetArray(firstParam, otherParams[:paramCount-1]...)
 	if err != nil {
 		return &V{}, err
@@ -272,6 +286,8 @@ func (v *V) insertToArr(pos int, child *V) {
 }
 
 // ================ APPEND ================
+
+// MARK: APPEND
 
 // Appender type is for InTheEnd() or InTheBeginning() function.
 //
@@ -431,8 +447,14 @@ func (apd *appender) InTheBeginning(params ...any) (*V, error) {
 		}
 		return c, nil
 	}
+	if ok, p := isSliceAndExtractJointParams(params[0]); ok {
+		if len(params) > 1 {
+			return &V{}, ErrMultipleParamNotSupportedWithIfSliceOrArrayGiven
+		}
+		return apd.InTheBeginning(p...)
+	}
 
-	// this is not the last iterarion
+	// this is not the last iteration
 	child, err := v.GetArray(params[0], params[1:paramCount]...)
 	if err != nil {
 		if !errors.Is(err, ErrNotFound) {
@@ -472,8 +494,14 @@ func (apd *appender) InTheEnd(params ...any) (*V, error) {
 		v.appendToArr(c)
 		return c, nil
 	}
+	if ok, p := isSliceAndExtractJointParams(params[0]); ok {
+		if len(params) > 1 {
+			return &V{}, ErrMultipleParamNotSupportedWithIfSliceOrArrayGiven
+		}
+		return apd.InTheEnd(p...)
+	}
 
-	// this is not the last iterarion
+	// this is not the last iteration
 	child, err := v.GetArray(params[0], params[1:paramCount]...)
 	if err != nil {
 		if !errors.Is(err, ErrNotFound) {
@@ -490,6 +518,8 @@ func (apd *appender) InTheEnd(params ...any) (*V, error) {
 }
 
 // ================ DELETE ================
+
+// MARK: DELETE
 
 func (v *V) delFromObjectChildren(caseless bool, key string) (exist bool) {
 	_, exist = v.children.object[key]
@@ -523,8 +553,8 @@ func (v *V) delFromObjectChildren(caseless bool, key string) (exist bool) {
 	return false
 }
 
-// Delete deletes specified JSON value. Forexample, parameters ("data", "list") identifies deleting value in data.list.
-// While ("list", 1) means deleting 2nd (count from one) element from the "list" array.
+// Delete deletes specified JSON value. For example, parameters ("data", "list") identifies deleting value in data.list.
+// While ("list", 1) means deleting the second element from the "list" array.
 //
 // Delete 从 JSON 中删除参数指定的对象。比如参数 ("data", "list") 表示删除 data.list 值；参数 ("list", 1) 则表示删除 list
 // 数组的第2（从1算起）个值。
@@ -533,6 +563,13 @@ func (v *V) Delete(firstParam any, otherParams ...any) error {
 }
 
 func (v *V) delete(caseless bool, firstParam any, otherParams ...any) error {
+	if ok, p1, p2 := isSliceAndExtractDividedParams(firstParam); ok {
+		if len(otherParams) > 0 {
+			return ErrMultipleParamNotSupportedWithIfSliceOrArrayGiven
+		}
+		return v.delete(caseless, p1, p2...)
+	}
+
 	paramCount := len(otherParams)
 	if paramCount == 0 {
 		return v.deleteInCurrValue(caseless, firstParam)
@@ -564,7 +601,7 @@ func (v *V) deleteInCurrValue(caseless bool, param any) error {
 	}
 
 	if v.valueType == Array {
-		// interger expected
+		// integer expected
 		pos, err := intfToInt(param)
 		if err != nil {
 			return err
