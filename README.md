@@ -7,7 +7,7 @@
 
 [![GoDoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue?status.svg&date=221104)](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue@v1.4.0)
 [![Latest](https://img.shields.io/badge/latest-v1.4.0-blue.svg?date=221104)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.4.0)
-[![License](https://img.shields.io/badge/license-BSD%203--Clause-blue.svg?date=221104)](https://opensource.org/licenses/BSD-3-Clause)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?date=221104)](https://opensource.org/license/MIT)
 
 - [Wiki](./docs/en/README.md)
 - [中文版](./docs/zh-cn/README.md)
