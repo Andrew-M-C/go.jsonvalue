@@ -79,6 +79,10 @@ func TestJsonvalue(t *testing.T) {
 	test(t, "test insert, append, delete", testInsertAppendDelete)
 	test(t, "test import/export", testImportExport)
 	test(t, "test Equal functions", testEqual)
+	test(t, "test greater than", testGreaterThan)
+	test(t, "test greater than or equal", testGreaterThanOrEqual)
+	test(t, "test less than", testLessThan)
+	test(t, "test less than or equal", testLessThanOrEqual)
 	test(t, "test marshaler and unmarshaler", testMarshalerUnmarshaler)
 	test(t, "test internal variables", testInternal)
 }

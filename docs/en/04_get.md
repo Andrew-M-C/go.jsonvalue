@@ -148,7 +148,7 @@ As shown by the example, both `n` and `err` returns meaningful value. Now only a
         feeds = append(feeds, &Feed{               // 将帖子主题追加到返回列表中，假设帖子的结构体为 Feed
             ID:    v.MustGet("UID").String(),
             Title: v.MustGet("title").String(),
-        }) 
+        })
     }
 ```
 

@@ -13,5 +13,6 @@
 - [Value Comparing](./11_comparation.md)
 - [Additional Options](./12_option.md)
 - [Experimental Feature](./13_beta.md)
-- [New Features in v1.3.x](./14_1_13_new_feature.md)
-- [New Features in v1.2.x](./15_1_12_new_feature.md)
+- [New Features in v1.4.x](./14_1_14_new_feature.md)
+- [New Features in v1.3.x](./15_1_13_new_feature.md)
+- [New Features in v1.2.x](./16_1_12_new_feature.md)

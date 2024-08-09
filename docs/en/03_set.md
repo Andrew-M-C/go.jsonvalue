@@ -106,7 +106,7 @@ As for array auto-creating, the procedure is a bit complicated:
   - The corresponding child value specified by given index parameter value exists. In this case, the value in that slot my be replaced.
   - The given index value equals to length of the array. In this case, the value will be append to the end of array.
 
-This feature is so complicated that we will not use in most cases. But there is one situation which is useful: 
+This feature is so complicated that we will not use in most cases. But there is one situation which is useful:
 
 ```go
     const words = []string{"apple", "banana", "cat", "dog"}

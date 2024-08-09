@@ -2,6 +2,7 @@
 
 [English](./CHANGELOG.md)
 
+- [v1.4.0](#v140)
 - [v1.3.8](#v138)
 - [v1.3.7](#v137)
 - [v1.3.6](#v136)
@@ -14,6 +15,11 @@
 - [v1.2.1](#v121)
 - [v1.2.0](#v120)
 - [v1.1.1](#v111)
+
+## v1.4.0
+
+- 在 Get, Set, Append, Insert, Delete 等方法中, 允许传递一个切片参数, 用来标识 key 链
+- 添加 GreaterThan, LessThan, GreaterThanOrEqual, LessThanOrEqual 方法用于数字比较
 
 ## v1.3.8
 

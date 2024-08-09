@@ -1,7 +1,7 @@
 
 <font size=6>New Features in v1.3.x</font>
 
-[Prev Page](./13_beta.md) | [Contents](./README.md) | [Next Page](./15_1_12_new_feature.md)
+[Prev Page](./14_1_14_new_feature.md) | [Contents](./README.md) | [Next Page](./16_1_12_new_feature.md)
 
 ---
 

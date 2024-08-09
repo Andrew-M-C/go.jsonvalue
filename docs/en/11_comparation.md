@@ -5,6 +5,13 @@
 
 ---
 
+- [Equal](#equal)
+- [Number Comparation](#number-comparation)
+
+---
+
+## Equal
+
 From v 1.3.0, `Equal` method is added to tell whether two JSON values are the same. The comparing rules are:
 
 Firstly, if the types of two values are different, returns `false`
@@ -17,3 +24,9 @@ If types are the same, check them by types as follow:
 - `null`: all null values equal to each other.
 - `array`: the necessary and sufficient condition of that two array equal to each other are: they shares the same array length, and each elements equal to the other one in the same index.
 - `object`: the necessary and sufficient condition of that two array equal to each other are: they shares the exact same keys, and each elements equal to the other one with same key.
+
+---
+
+## Number Comparation
+
+From v1.4.0, `GreaterThan`, `LessThan`, `GreaterThanOrEqual`, `LessThanOrEqual` are added for comparing two digital values. If either values is not a number, these methods will always return `false`.

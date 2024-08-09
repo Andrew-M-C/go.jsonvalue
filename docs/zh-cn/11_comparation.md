@@ -5,6 +5,13 @@
 
 ---
 
+- [Equal](#equal)
+- [数值比较](#数值比较)
+
+---
+
+## Equal
+
 从 v1.3.0 开始，支持使用 `Equal` 函数判断两个 JSON 值是否相等。判断的规则如下：
 
 首先，如果两个 JSON 值的类型不同，则返回 `false`。
@@ -20,3 +27,9 @@
 - `object` 类型: 两个对象相等的充分必要条件是: key 列表完全相同，并且对应的每一个值都相等
 
 也即针对 array 和 object 类型，内部进行了递归判断。
+
+---
+
+## 数值比较
+
+从 v1.4.0 开始，支持 `GreaterThan`, `LessThan`, `GreaterThanOrEqual`, `LessThanOrEqual` 等方法，用于比对两个数值的大小。如果任一比较值不是数值类型，则前述方法无论如何都会返回 `false`。

@@ -1,7 +1,7 @@
 
 <font size=6>1.2.x 新特性</font>
 
-[上一页](./14_1_13_new_feature.md) | [总目录](./README.md) | [下一页](./16_others.md)
+[上一页](./15_1_13_new_feature.md) | [总目录](./README.md) | [下一页](./17_others.md)
 
 ---
 
