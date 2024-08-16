@@ -655,13 +655,13 @@ func testValueError(*testing.T) {
 		raw, _ = v.MarshalString()
 		so(raw, eq, `{"null":null}`)
 
-		raw, _ = v.MarshalString(Opt{OmitNull: true})
+		raw, _ = v.MarshalString(OptOmitNull(true))
 		so(raw, eq, `{}`)
 
 		raw, _ = v.MarshalString(OptOmitNull(true))
 		so(raw, eq, `{}`)
 
-		rawB, _ := v.Marshal(Opt{OmitNull: true})
+		rawB, _ := v.Marshal(OptOmitNull(true))
 		so(string(rawB), eq, `{}`)
 
 		rawB, _ = v.Marshal(OptOmitNull(true))

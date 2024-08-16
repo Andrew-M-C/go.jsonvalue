@@ -65,7 +65,7 @@ func testSortMarshal(t *testing.T) {
 			}
 		}
 
-		s := v.MustMarshalString(Opt{MarshalLessFunc: DefaultStringSequence})
+		s := v.MustMarshalString(OptKeySequenceWithLessFunc(DefaultStringSequence))
 		so(s, eq, expected)
 
 		s = v.MustMarshalString(OptDefaultStringSequence())
@@ -104,11 +104,10 @@ func testSortMarshal(t *testing.T) {
 		return len(keyA) <= len(keyB)
 	}
 
-	s := v.MustMarshalString(Opt{
-		OmitNull:        true,
-		MarshalLessFunc: less,
-	})
-
+	s := v.MustMarshalString(
+		OptOmitNull(true),
+		OptKeySequenceWithLessFunc(less),
+	)
 	expected = `{"object!":{"object!!":{"array!!!!":[1234,{"stringA":"a string","stringBB":"aa string"}]},"string!!!":"a string"}}`
 	t.Logf("marshaled string: %v", s)
 	so(s, eq, expected)
@@ -138,11 +137,10 @@ func testSortByStringSlice(t *testing.T) {
 	v.MustSetString("Chips").At("mother")
 	v.MustSetNull().At("relative")
 
-	s := v.MustMarshalString(Opt{
-		OmitNull:           true,
-		MarshalKeySequence: seq,
-	})
-
+	s := v.MustMarshalString(
+		OptOmitNull(true),
+		OptKeySequence(seq),
+	)
 	expected := `{"grandpa":"Kentucky","grandma":"McDonald","father":"Hanberger","mother":"Chips","son":"Ketchup","daughter":"Mayonnaise","friendA":"Fish","friendB":"Beef"}`
 	t.Logf("marshaled: '%s'", s)
 	so(s, eq, expected)

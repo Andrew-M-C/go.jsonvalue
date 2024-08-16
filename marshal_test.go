@@ -30,20 +30,11 @@ func testMarshalFloat64NaN(*testing.T) {
 		v = NewFloat32(float32(math.NaN()))
 		_, err = v.MarshalString()
 		so(err, isErr)
-
-		v = NewFloat64(math.NaN())
-		_, err = v.Marshal(Opt{
-			FloatNaNHandleType: FloatNaNHandleType(80),
-		})
-		so(err, isErr)
 	})
 
 	cv("to float", func() {
 		v := NewFloat64(math.NaN())
-		b, err := v.Marshal(Opt{
-			FloatNaNHandleType: FloatNaNConvertToFloat,
-			FloatNaNToFloat:    1.5,
-		})
+		b, err := v.Marshal(OptFloatNaNToFloat(1.5))
 		so(err, isNil)
 		so(string(b), eq, "1.5")
 
@@ -54,22 +45,13 @@ func testMarshalFloat64NaN(*testing.T) {
 
 	cv("to string", func() {
 		v := NewFloat64(math.NaN())
-		s, err := v.MarshalString(Opt{
-			FloatNaNHandleType: FloatNaNConvertToString,
-		})
+		s, err := v.MarshalString(OptFloatNaNToString(""))
 		so(err, isNil)
 		so(s, eq, `"NaN"`)
 
 		s, err = v.MarshalString(OptFloatNaNToStringNaN())
 		so(err, isNil)
 		so(s, eq, `"NaN"`)
-
-		s, err = v.MarshalString(Opt{
-			FloatNaNHandleType: FloatNaNConvertToString,
-			FloatNaNToString:   "not a number",
-		})
-		so(err, isNil)
-		so(s, eq, `"not a number"`)
 
 		s, err = v.MarshalString(OptFloatNaNToString("not a number"))
 		so(err, isNil)
@@ -78,35 +60,21 @@ func testMarshalFloat64NaN(*testing.T) {
 
 	cv("to null", func() {
 		v := NewFloat64(math.NaN())
-		s, err := v.MarshalString(Opt{
-			FloatNaNHandleType: FloatNaNNull,
-		})
-		so(err, isNil)
-		so(s, eq, "null")
 
-		s, err = v.MarshalString(OptFloatNaNToNull())
+		s, err := v.MarshalString(OptFloatNaNToNull())
 		so(err, isNil)
 		so(s, eq, "null")
 	})
 
 	cv("to float error", func() {
 		v := NewFloat64(math.NaN())
-		_, err := v.Marshal(Opt{
-			FloatNaNHandleType: FloatNaNConvertToFloat,
-			FloatNaNToFloat:    math.NaN(),
-		})
+		_, err := v.Marshal(OptFloatNaNToFloat(math.NaN()))
 		so(err, isErr)
 
-		_, err = v.Marshal(Opt{
-			FloatNaNHandleType: FloatNaNConvertToFloat,
-			FloatNaNToFloat:    math.Inf(1),
-		})
+		_, err = v.Marshal(OptFloatNaNToFloat(math.Inf(1)))
 		so(err, isErr)
 
-		_, err = v.Marshal(Opt{
-			FloatNaNHandleType: FloatNaNConvertToFloat,
-			FloatNaNToFloat:    math.Inf(-1),
-		})
+		_, err = v.Marshal(OptFloatNaNToFloat(math.Inf(-1)))
 		so(err, isErr)
 	})
 }
@@ -120,35 +88,15 @@ func testMarshalFloat64Inf(*testing.T) {
 		v = NewFloat32(float32(math.Inf(-1)))
 		_, err = v.MarshalString()
 		so(err, isErr)
-
-		v = NewFloat64(math.Inf(1))
-		_, err = v.Marshal(Opt{
-			FloatInfHandleType: FloatInfHandleType(80),
-		})
-		so(err, isErr)
-
-		v = NewFloat64(math.Inf(-1))
-		_, err = v.Marshal(Opt{
-			FloatInfHandleType: FloatInfHandleType(80),
-		})
-		so(err, isErr)
 	})
 
 	cv("to float", func() {
-		opt := Opt{
-			FloatInfHandleType: FloatInfConvertToFloat,
-			FloatInfToFloat:    2.25,
-		}
 		v := NewObject(map[string]any{
 			"+inf": math.Inf(1),
 			"-inf": math.Inf(-1),
 		})
-		s, err := v.MarshalString(opt)
-		so(err, isNil)
-		so(s, hasSubStr, `"+inf":2.25`)
-		so(s, hasSubStr, `"-inf":-2.25`)
 
-		s, err = v.MarshalString(OptFloatInfToFloat(2.25))
+		s, err := v.MarshalString(OptFloatInfToFloat(2.25))
 		so(err, isNil)
 		so(s, hasSubStr, `"+inf":2.25`)
 		so(s, hasSubStr, `"-inf":-2.25`)
@@ -156,22 +104,12 @@ func testMarshalFloat64Inf(*testing.T) {
 
 	cv("to string", func() {
 		v := NewFloat64(math.Inf(1))
-		s, err := v.MarshalString(Opt{
-			FloatInfHandleType: FloatInfConvertToString,
-		})
-		so(err, isNil)
-		so(s, eq, `"+Inf"`)
 
-		s, err = v.MarshalString(OptFloatInfToStringInf())
+		s, err := v.MarshalString(OptFloatInfToStringInf())
 		so(err, isNil)
 		so(s, eq, `"+Inf"`)
 
 		v = NewFloat64(math.Inf(-1))
-		s, err = v.MarshalString(Opt{
-			FloatInfHandleType: FloatInfConvertToString,
-		})
-		so(err, isNil)
-		so(s, eq, `"-Inf"`)
 
 		s, err = v.MarshalString(OptFloatInfToStringInf())
 		so(err, isNil)
@@ -182,40 +120,15 @@ func testMarshalFloat64Inf(*testing.T) {
 			"-inf": math.Inf(-1),
 		})
 
-		s, err = v.MarshalString(Opt{
-			FloatInfHandleType:       FloatInfConvertToString,
-			FloatInfPositiveToString: "infinity",
-		})
-		so(err, isNil)
-		so(s, hasSubStr, `"+inf":"infinity"`)
-		so(s, hasSubStr, `"-inf":"-infinity"`)
-
 		s, err = v.MarshalString(OptFloatInfToString("infinity", ""))
 		so(err, isNil)
 		so(s, hasSubStr, `"+inf":"infinity"`)
 		so(s, hasSubStr, `"-inf":"-infinity"`)
 
-		s, err = v.MarshalString(Opt{
-			FloatInfHandleType:       FloatInfConvertToString,
-			FloatInfPositiveToString: "+mugen",
-		})
-		so(err, isNil)
-		so(s, hasSubStr, `"+inf":"+mugen"`)
-		so(s, hasSubStr, `"-inf":"-mugen"`)
-
 		s, err = v.MarshalString(OptFloatInfToString("+mugen", ""))
 		so(err, isNil)
 		so(s, hasSubStr, `"+inf":"+mugen"`)
 		so(s, hasSubStr, `"-inf":"-mugen"`)
-
-		s, err = v.MarshalString(Opt{
-			FloatInfHandleType:       FloatInfConvertToString,
-			FloatInfPositiveToString: "heaven",
-			FloatInfNegativeToString: "hell",
-		})
-		so(err, isNil)
-		so(s, hasSubStr, `"+inf":"heaven"`)
-		so(s, hasSubStr, `"-inf":"hell"`)
 
 		s, err = v.MarshalString(OptFloatInfToString("heaven", "hell"))
 		so(err, isNil)
@@ -228,14 +141,8 @@ func testMarshalFloat64Inf(*testing.T) {
 			"+inf": math.Inf(1),
 			"-inf": math.Inf(-1),
 		})
-		s, err := v.MarshalString(Opt{
-			FloatInfHandleType: FloatInfNull,
-		})
-		so(err, isNil)
-		so(s, hasSubStr, `"+inf":null`)
-		so(s, hasSubStr, `"-inf":null`)
 
-		s, err = v.MarshalString(OptFloatInfToNull())
+		s, err := v.MarshalString(OptFloatInfToNull())
 		so(err, isNil)
 		so(s, hasSubStr, `"+inf":null`)
 		so(s, hasSubStr, `"-inf":null`)
@@ -244,22 +151,13 @@ func testMarshalFloat64Inf(*testing.T) {
 	cv("to float error", func() {
 		iter := func(f float64) {
 			v := NewFloat64(f)
-			_, err := v.Marshal(Opt{
-				FloatInfHandleType: FloatInfConvertToFloat,
-				FloatInfToFloat:    math.NaN(),
-			})
+			_, err := v.Marshal(OptFloatInfToFloat(math.NaN()))
 			so(err, isErr)
 
-			_, err = v.Marshal(Opt{
-				FloatInfHandleType: FloatInfConvertToFloat,
-				FloatInfToFloat:    math.Inf(1),
-			})
+			_, err = v.Marshal(OptFloatInfToFloat(math.Inf(1)))
 			so(err, isErr)
 
-			_, err = v.Marshal(Opt{
-				FloatInfHandleType: FloatInfConvertToFloat,
-				FloatInfToFloat:    math.Inf(-1),
-			})
+			_, err = v.Marshal(OptFloatInfToFloat(math.Inf(-1)))
 			so(err, isErr)
 		}
 

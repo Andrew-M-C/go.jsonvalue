@@ -63,7 +63,7 @@ func (v *V) MarshalString(opts ...Option) (s string, err error) {
 	return unsafe.BtoS(b), nil
 }
 
-func marshalToBuffer(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) (err error) {
+func marshalToBuffer(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *options) (err error) {
 	switch v.valueType {
 	default:
 		// do nothing
@@ -83,7 +83,7 @@ func marshalToBuffer(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) 
 	return err
 }
 
-func marshalString(v *V, buf buffer.Buffer, opt *Opt) {
+func marshalString(v *V, buf buffer.Buffer, opt *options) {
 	_ = buf.WriteByte('"')
 	escapeStringToBuff(v.valueStr, buf, opt)
 	_ = buf.WriteByte('"')
@@ -93,7 +93,7 @@ func marshalBoolean(v *V, buf buffer.Buffer) {
 	_, _ = buf.WriteString(formatBool(v.valueBool))
 }
 
-func marshalNumber(v *V, buf buffer.Buffer, opt *Opt) error {
+func marshalNumber(v *V, buf buffer.Buffer, opt *options) error {
 	if b := v.srcByte; len(b) > 0 {
 		_, _ = buf.Write(b)
 		return nil
@@ -109,7 +109,7 @@ func marshalNumber(v *V, buf buffer.Buffer, opt *Opt) error {
 	return marshalNaN(buf, opt)
 }
 
-func marshalNaN(buf buffer.Buffer, opt *Opt) error {
+func marshalNaN(buf buffer.Buffer, opt *options) error {
 	switch opt.FloatNaNHandleType {
 	default:
 		fallthrough
@@ -139,7 +139,7 @@ func marshalNaN(buf buffer.Buffer, opt *Opt) error {
 	return nil
 }
 
-func marshalInfP(buf buffer.Buffer, opt *Opt) error {
+func marshalInfP(buf buffer.Buffer, opt *options) error {
 	switch opt.FloatInfHandleType {
 	default:
 		fallthrough
@@ -169,7 +169,7 @@ func marshalInfP(buf buffer.Buffer, opt *Opt) error {
 	return nil
 }
 
-func marshalInfN(buf buffer.Buffer, opt *Opt) error {
+func marshalInfN(buf buffer.Buffer, opt *options) error {
 	switch opt.FloatInfHandleType {
 	default:
 		fallthrough
@@ -216,7 +216,7 @@ func marshalNull(buf buffer.Buffer) {
 	_, _ = buf.WriteString("null")
 }
 
-func marshalObject(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
+func marshalObject(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *options) {
 	if len(v.children.object) == 0 {
 		_, _ = buf.WriteString("{}")
 		return
@@ -249,7 +249,7 @@ func marshalObject(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 	_ = buf.WriteByte('}')
 }
 
-func writeObjectKVInRandomizedSequence(v *V, buf buffer.Buffer, opt *Opt) {
+func writeObjectKVInRandomizedSequence(v *V, buf buffer.Buffer, opt *options) {
 	firstWritten := false
 	for k, child := range v.children.object {
 		firstWritten = writeObjectChildren(nil, buf, !firstWritten, k, child.v, opt)
@@ -257,7 +257,7 @@ func writeObjectKVInRandomizedSequence(v *V, buf buffer.Buffer, opt *Opt) {
 }
 
 func writeObjectChildren(
-	parentInfo *ParentInfo, buf buffer.Buffer, isFirstOne bool, key string, child *V, opt *Opt,
+	parentInfo *ParentInfo, buf buffer.Buffer, isFirstOne bool, key string, child *V, opt *options,
 ) (written bool) {
 	if child.IsNull() && opt.OmitNull {
 		return false
@@ -284,14 +284,14 @@ func writeObjectChildren(
 	return true
 }
 
-func writeIndent(buf buffer.Buffer, opt *Opt) {
+func writeIndent(buf buffer.Buffer, opt *options) {
 	_, _ = buf.WriteString(opt.indent.prefix)
 	for i := 0; i < opt.indent.cnt; i++ {
 		_, _ = buf.WriteString(opt.indent.indent)
 	}
 }
 
-func marshalArray(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
+func marshalArray(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *options) {
 	if len(v.children.arr) == 0 {
 		_, _ = buf.WriteString("[]")
 		return

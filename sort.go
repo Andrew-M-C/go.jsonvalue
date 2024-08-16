@@ -186,7 +186,7 @@ func DefaultStringSequence(parent *ParentInfo, key1, key2 string, v1, v2 *V) boo
 	return strings.Compare(key1, key2) <= 0
 }
 
-func (sov *sortObjectV) marshalObjectWithLessFunc(buf buffer.Buffer, opt *Opt) {
+func (sov *sortObjectV) marshalObjectWithLessFunc(buf buffer.Buffer, opt *options) {
 	// sort
 	sort.Sort(sov)
 
@@ -219,7 +219,7 @@ func (sov *sortObjectV) Swap(i, j int) {
 	sov.values[i], sov.values[j] = sov.values[j], sov.values[i]
 }
 
-func newSortObjectV(v *V, parentInfo *ParentInfo, opt *Opt) *sortObjectV {
+func newSortObjectV(v *V, parentInfo *ParentInfo, opt *options) *sortObjectV {
 	sov := sortObjectV{
 		parentInfo: parentInfo,
 		lessFunc:   opt.MarshalLessFunc,
@@ -235,7 +235,7 @@ func newSortObjectV(v *V, parentInfo *ParentInfo, opt *Opt) *sortObjectV {
 }
 
 // marshalObjectWithStringSlice use a slice to determine sequence of object
-func (sssv *sortStringSliceV) marshalObjectWithStringSlice(buf buffer.Buffer, opt *Opt) {
+func (sssv *sortStringSliceV) marshalObjectWithStringSlice(buf buffer.Buffer, opt *options) {
 	// sort
 	sort.Sort(sssv)
 
@@ -254,7 +254,7 @@ type sortStringSliceV struct {
 	values []*V
 }
 
-func newSortStringSliceV(v *V, opt *Opt) *sortStringSliceV {
+func newSortStringSliceV(v *V, opt *options) *sortStringSliceV {
 	if nil == opt.keySequence {
 		opt.keySequence = make(map[string]int, len(opt.MarshalKeySequence))
 		for i, str := range opt.MarshalKeySequence {

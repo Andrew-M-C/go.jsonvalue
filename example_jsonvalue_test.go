@@ -40,7 +40,7 @@ func ExampleNewFloat64() {
 	// 1.2312345679e+02
 }
 
-func ExampleOpt() {
+func ExampleOption() {
 	raw := `{"null":null}`
 	v, _ := jsonvalue.UnmarshalString(raw)
 

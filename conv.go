@@ -122,7 +122,7 @@ func escAnd(_ byte, buf buffer.Buffer) {
 // 	buf.Write([]byte{'\\', 'u', '0', '0', '2', '5'})
 // }
 
-func escapeStringToBuff(s string, buf buffer.Buffer, opt *Opt) {
+func escapeStringToBuff(s string, buf buffer.Buffer, opt *options) {
 	for _, r := range s {
 		if r <= 0x7F {
 			b := byte(r)

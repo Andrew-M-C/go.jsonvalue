@@ -11,7 +11,7 @@ import (
 var internal = struct {
 	b64 *base64.Encoding
 
-	defaultMarshalOption *Opt
+	defaultMarshalOption *options
 
 	predict struct {
 		bytesPerValue uint64
