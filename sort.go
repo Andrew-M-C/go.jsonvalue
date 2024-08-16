@@ -158,7 +158,7 @@ type ParentInfo struct {
 	KeyPath KeyPath
 }
 
-func (v *V) newParentInfo(nilableParentInfo *ParentInfo, key Key) *ParentInfo {
+func newParentInfo(v *V, nilableParentInfo *ParentInfo, key Key) *ParentInfo {
 	if nil == nilableParentInfo {
 		return &ParentInfo{
 			Parent:  v,
@@ -194,7 +194,7 @@ func (sov *sortObjectV) marshalObjectWithLessFunc(buf buffer.Buffer, opt *Opt) {
 	firstWritten := false
 	for i, key := range sov.keys {
 		child := sov.values[i]
-		par := child.newParentInfo(sov.parentInfo, stringKey(key))
+		par := newParentInfo(child, sov.parentInfo, stringKey(key))
 		firstWritten = writeObjectChildren(par, buf, !firstWritten, key, child, opt)
 	}
 }
@@ -219,7 +219,7 @@ func (sov *sortObjectV) Swap(i, j int) {
 	sov.values[i], sov.values[j] = sov.values[j], sov.values[i]
 }
 
-func (v *V) newSortObjectV(parentInfo *ParentInfo, opt *Opt) *sortObjectV {
+func newSortObjectV(v *V, parentInfo *ParentInfo, opt *Opt) *sortObjectV {
 	sov := sortObjectV{
 		parentInfo: parentInfo,
 		lessFunc:   opt.MarshalLessFunc,
@@ -254,7 +254,7 @@ type sortStringSliceV struct {
 	values []*V
 }
 
-func (v *V) newSortStringSliceV(opt *Opt) *sortStringSliceV {
+func newSortStringSliceV(v *V, opt *Opt) *sortStringSliceV {
 	if nil == opt.keySequence {
 		opt.keySequence = make(map[string]int, len(opt.MarshalKeySequence))
 		for i, str := range opt.MarshalKeySequence {
@@ -276,7 +276,7 @@ func (v *V) newSortStringSliceV(opt *Opt) *sortStringSliceV {
 	return &sssv
 }
 
-func (v *V) newSortStringSliceVBySetSeq(_ *Opt) *sortStringSliceV {
+func newSortStringSliceVBySetSeq(v *V) *sortStringSliceV {
 	keySequence := make(map[string]int, len(v.children.object))
 	for k, child := range v.children.object {
 		keySequence[k] = int(child.id)

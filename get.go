@@ -26,7 +26,7 @@ func (v *V) Len() int {
 //
 // Get 返回按照参数指定的位置的 JSON 成员值。参数格式与 At() 函数相同
 func (v *V) Get(firstParam any, otherParams ...any) (*V, error) {
-	return v.get(false, firstParam, otherParams...)
+	return get(v, false, firstParam, otherParams...)
 }
 
 // MustGet is same as Get(), but does not return error. If error occurs, a JSON value with
@@ -35,18 +35,18 @@ func (v *V) Get(firstParam any, otherParams ...any) (*V, error) {
 // MustGet 与 Get() 函数相同，不过不返回错误。如果发生错误了，那么会返回一个 ValueType() 返回值为 NotExist
 // 的 JSON 值对象。
 func (v *V) MustGet(firstParam any, otherParams ...any) *V {
-	res, _ := v.get(false, firstParam, otherParams...)
+	res, _ := get(v, false, firstParam, otherParams...)
 	return res
 }
 
-func (v *V) get(caseless bool, firstParam any, otherParams ...any) (*V, error) {
+func get(v *V, caseless bool, firstParam any, otherParams ...any) (*V, error) {
 	if ok, p1, p2 := isSliceAndExtractDividedParams(firstParam); ok {
 		if len(otherParams) > 0 {
 			return &V{}, ErrMultipleParamNotSupportedWithIfSliceOrArrayGiven
 		}
-		return v.get(caseless, p1, p2...)
+		return get(v, caseless, p1, p2...)
 	}
-	child, err := v.getInCurrValue(caseless, firstParam)
+	child, err := getInCurrValue(v, caseless, firstParam)
 	if err != nil {
 		return &V{}, err
 	}
@@ -54,20 +54,20 @@ func (v *V) get(caseless bool, firstParam any, otherParams ...any) (*V, error) {
 	if len(otherParams) == 0 {
 		return child, nil
 	}
-	return child.get(caseless, otherParams[0], otherParams[1:]...)
+	return get(child, caseless, otherParams[0], otherParams[1:]...)
 }
 
-func (v *V) initCaselessStorage() {
+func initCaselessStorage(v *V) {
 	if v.children.lowerCaseKeys != nil {
 		return
 	}
 	v.children.lowerCaseKeys = make(map[string]map[string]struct{}, len(v.children.object))
 	for k := range v.children.object {
-		v.addCaselessKey(k)
+		addCaselessKey(v, k)
 	}
 }
 
-func (v *V) getFromObjectChildren(caseless bool, key string) (child *V, exist bool) {
+func getFromObjectChildren(v *V, caseless bool, key string) (child *V, exist bool) {
 	childProperty, exist := v.children.object[key]
 	if exist {
 		return childProperty.v, true
@@ -77,7 +77,7 @@ func (v *V) getFromObjectChildren(caseless bool, key string) (child *V, exist bo
 		return &V{}, false
 	}
 
-	v.initCaselessStorage()
+	initCaselessStorage(v)
 
 	lowerCaseKey := strings.ToLower(key)
 	keys, exist := v.children.lowerCaseKeys[lowerCaseKey]
@@ -95,14 +95,14 @@ func (v *V) getFromObjectChildren(caseless bool, key string) (child *V, exist bo
 	return &V{}, false
 }
 
-func (v *V) getInCurrValue(caseless bool, param any) (*V, error) {
+func getInCurrValue(v *V, caseless bool, param any) (*V, error) {
 	if v.valueType == Array {
 		// integer expected
 		pos, err := intfToInt(param)
 		if err != nil {
 			return &V{}, err
 		}
-		child, ok := v.childAtIndex(pos)
+		child, ok := childAtIndex(v, pos)
 		if !ok {
 			return &V{}, ErrOutOfRange
 		}
@@ -114,7 +114,7 @@ func (v *V) getInCurrValue(caseless bool, param any) (*V, error) {
 		if err != nil {
 			return &V{}, err
 		}
-		child, exist := v.getFromObjectChildren(caseless, key)
+		child, exist := getFromObjectChildren(v, caseless, key)
 		if !exist {
 			return &V{}, ErrNotFound
 		}
@@ -129,11 +129,11 @@ func (v *V) getInCurrValue(caseless bool, param any) (*V, error) {
 //
 // GetBytes 类似于 v, err := Get(...); v.Bytes()，但如果查询中发生错误，或者 base64 解码错误，则返回错误。
 func (v *V) GetBytes(firstParam any, otherParams ...any) ([]byte, error) {
-	return v.getBytes(false, firstParam, otherParams...)
+	return getBytes(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getBytes(caseless bool, firstParam any, otherParams ...any) ([]byte, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getBytes(v *V, caseless bool, firstParam any, otherParams ...any) ([]byte, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -151,11 +151,11 @@ func (v *V) getBytes(caseless bool, firstParam any, otherParams ...any) ([]byte,
 //
 // GetString 等效于 v, err := Get(...); v.String()。如果发生错误，则返回 ""。
 func (v *V) GetString(firstParam any, otherParams ...any) (string, error) {
-	return v.getString(false, firstParam, otherParams...)
+	return getString(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getString(caseless bool, firstParam any, otherParams ...any) (string, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getString(v *V, caseless bool, firstParam any, otherParams ...any) (string, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return "", err
 	}
@@ -169,11 +169,11 @@ func (v *V) getString(caseless bool, firstParam any, otherParams ...any) (string
 //
 // GetInt 等效于 v, err := Get(...); v.Int()。如果发生错误，则返回 0。
 func (v *V) GetInt(firstParam any, otherParams ...any) (int, error) {
-	return v.getInt(false, firstParam, otherParams...)
+	return getInt(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getInt(caseless bool, firstParam any, otherParams ...any) (int, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getInt(v *V, caseless bool, firstParam any, otherParams ...any) (int, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return 0, err
 	}
@@ -185,11 +185,11 @@ func (v *V) getInt(caseless bool, firstParam any, otherParams ...any) (int, erro
 //
 // GetUint 等效于 v, err := Get(...); v.Uint()。如果发生错误，则返回 0。
 func (v *V) GetUint(firstParam any, otherParams ...any) (uint, error) {
-	return v.getUint(false, firstParam, otherParams...)
+	return getUint(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getUint(caseless bool, firstParam any, otherParams ...any) (uint, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getUint(v *V, caseless bool, firstParam any, otherParams ...any) (uint, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return 0, err
 	}
@@ -201,11 +201,11 @@ func (v *V) getUint(caseless bool, firstParam any, otherParams ...any) (uint, er
 //
 // GetInt64 等效于 v, err := Get(...); v.Int64()。如果发生错误，则返回 0。
 func (v *V) GetInt64(firstParam any, otherParams ...any) (int64, error) {
-	return v.getInt64(false, firstParam, otherParams...)
+	return getInt64(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getInt64(caseless bool, firstParam any, otherParams ...any) (int64, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getInt64(v *V, caseless bool, firstParam any, otherParams ...any) (int64, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return 0, err
 	}
@@ -217,11 +217,11 @@ func (v *V) getInt64(caseless bool, firstParam any, otherParams ...any) (int64, 
 //
 // GetUint64 等效于 v, err := Get(...); v.Unt64()。如果发生错误，则返回 0。
 func (v *V) GetUint64(firstParam any, otherParams ...any) (uint64, error) {
-	return v.getUint64(false, firstParam, otherParams...)
+	return getUint64(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getUint64(caseless bool, firstParam any, otherParams ...any) (uint64, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getUint64(v *V, caseless bool, firstParam any, otherParams ...any) (uint64, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return 0, err
 	}
@@ -233,11 +233,11 @@ func (v *V) getUint64(caseless bool, firstParam any, otherParams ...any) (uint64
 //
 // GetInt32 等效于 v, err := Get(...); v.Int32()。如果发生错误，则返回 0。
 func (v *V) GetInt32(firstParam any, otherParams ...any) (int32, error) {
-	return v.getInt32(false, firstParam, otherParams...)
+	return getInt32(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getInt32(caseless bool, firstParam any, otherParams ...any) (int32, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getInt32(v *V, caseless bool, firstParam any, otherParams ...any) (int32, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return 0, err
 	}
@@ -249,11 +249,11 @@ func (v *V) getInt32(caseless bool, firstParam any, otherParams ...any) (int32, 
 //
 // GetUint32 等效于 v, err := Get(...); v.Uint32()。如果发生错误，则返回 0。
 func (v *V) GetUint32(firstParam any, otherParams ...any) (uint32, error) {
-	return v.getUint32(false, firstParam, otherParams...)
+	return getUint32(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getUint32(caseless bool, firstParam any, otherParams ...any) (uint32, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getUint32(v *V, caseless bool, firstParam any, otherParams ...any) (uint32, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return 0, err
 	}
@@ -265,11 +265,11 @@ func (v *V) getUint32(caseless bool, firstParam any, otherParams ...any) (uint32
 //
 // GetFloat64 等效于 v, err := Get(...); v.Float64()。如果发生错误，则返回 0.0。
 func (v *V) GetFloat64(firstParam any, otherParams ...any) (float64, error) {
-	return v.getFloat64(false, firstParam, otherParams...)
+	return getFloat64(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getFloat64(caseless bool, firstParam any, otherParams ...any) (float64, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getFloat64(v *V, caseless bool, firstParam any, otherParams ...any) (float64, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return 0, err
 	}
@@ -281,11 +281,11 @@ func (v *V) getFloat64(caseless bool, firstParam any, otherParams ...any) (float
 //
 // GetFloat32 等效于 v, err := Get(...); v.Float32()。如果发生错误，则返回 0.0。
 func (v *V) GetFloat32(firstParam any, otherParams ...any) (float32, error) {
-	return v.getFloat32(false, firstParam, otherParams...)
+	return getFloat32(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getFloat32(caseless bool, firstParam any, otherParams ...any) (float32, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getFloat32(v *V, caseless bool, firstParam any, otherParams ...any) (float32, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return 0, err
 	}
@@ -297,11 +297,11 @@ func (v *V) getFloat32(caseless bool, firstParam any, otherParams ...any) (float
 //
 // GetBool 等效于 v, err := Get(...); v.Bool()。如果发生错误，则返回 false。
 func (v *V) GetBool(firstParam any, otherParams ...any) (bool, error) {
-	return v.getBool(false, firstParam, otherParams...)
+	return getBool(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getBool(caseless bool, firstParam any, otherParams ...any) (bool, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getBool(v *V, caseless bool, firstParam any, otherParams ...any) (bool, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return false, err
 	}
@@ -313,11 +313,11 @@ func (v *V) getBool(caseless bool, firstParam any, otherParams ...any) (bool, er
 //
 // GetNull 等效于 v, err := Get(...);，如果发生错误或者 v.IsNull() == false 则返回错误。
 func (v *V) GetNull(firstParam any, otherParams ...any) error {
-	return v.getNull(false, firstParam, otherParams...)
+	return getNull(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getNull(caseless bool, firstParam any, otherParams ...any) error {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getNull(v *V, caseless bool, firstParam any, otherParams ...any) error {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return err
 	}
@@ -331,11 +331,11 @@ func (v *V) getNull(caseless bool, firstParam any, otherParams ...any) error {
 //
 // GetObject 等效于 v, err := Get(...);，如果发生错误或者 v.IsObject() == false 则返回错误。
 func (v *V) GetObject(firstParam any, otherParams ...any) (*V, error) {
-	return v.getObject(false, firstParam, otherParams...)
+	return getObject(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getObject(caseless bool, firstParam any, otherParams ...any) (*V, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getObject(v *V, caseless bool, firstParam any, otherParams ...any) (*V, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return &V{}, err
 	}
@@ -349,11 +349,11 @@ func (v *V) getObject(caseless bool, firstParam any, otherParams ...any) (*V, er
 //
 // GetArray 等效于 v, err := Get(...);，如果发生错误或者 v.IsArray() == false 则返回错误。
 func (v *V) GetArray(firstParam any, otherParams ...any) (*V, error) {
-	return v.getArray(false, firstParam, otherParams...)
+	return getArray(v, false, firstParam, otherParams...)
 }
 
-func (v *V) getArray(caseless bool, firstParam any, otherParams ...any) (*V, error) {
-	ret, err := v.get(caseless, firstParam, otherParams...)
+func getArray(v *V, caseless bool, firstParam any, otherParams ...any) (*V, error) {
+	ret, err := get(v, caseless, firstParam, otherParams...)
 	if err != nil {
 		return &V{}, err
 	}
@@ -418,68 +418,68 @@ type caselessOper struct {
 }
 
 func (g *caselessOper) Get(firstParam any, otherParams ...any) (*V, error) {
-	return g.v.get(true, firstParam, otherParams...)
+	return get(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) MustGet(firstParam any, otherParams ...any) *V {
-	res, _ := g.v.get(true, firstParam, otherParams...)
+	res, _ := get(g.v, true, firstParam, otherParams...)
 	return res
 }
 
 func (g *caselessOper) GetBytes(firstParam any, otherParams ...any) ([]byte, error) {
-	return g.v.getBytes(true, firstParam, otherParams...)
+	return getBytes(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetString(firstParam any, otherParams ...any) (string, error) {
-	return g.v.getString(true, firstParam, otherParams...)
+	return getString(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetInt(firstParam any, otherParams ...any) (int, error) {
-	return g.v.getInt(true, firstParam, otherParams...)
+	return getInt(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetUint(firstParam any, otherParams ...any) (uint, error) {
-	return g.v.getUint(true, firstParam, otherParams...)
+	return getUint(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetInt64(firstParam any, otherParams ...any) (int64, error) {
-	return g.v.getInt64(true, firstParam, otherParams...)
+	return getInt64(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetUint64(firstParam any, otherParams ...any) (uint64, error) {
-	return g.v.getUint64(true, firstParam, otherParams...)
+	return getUint64(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetInt32(firstParam any, otherParams ...any) (int32, error) {
-	return g.v.getInt32(true, firstParam, otherParams...)
+	return getInt32(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetUint32(firstParam any, otherParams ...any) (uint32, error) {
-	return g.v.getUint32(true, firstParam, otherParams...)
+	return getUint32(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetFloat64(firstParam any, otherParams ...any) (float64, error) {
-	return g.v.getFloat64(true, firstParam, otherParams...)
+	return getFloat64(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetFloat32(firstParam any, otherParams ...any) (float32, error) {
-	return g.v.getFloat32(true, firstParam, otherParams...)
+	return getFloat32(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetBool(firstParam any, otherParams ...any) (bool, error) {
-	return g.v.getBool(true, firstParam, otherParams...)
+	return getBool(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetNull(firstParam any, otherParams ...any) error {
-	return g.v.getNull(true, firstParam, otherParams...)
+	return getNull(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetObject(firstParam any, otherParams ...any) (*V, error) {
-	return g.v.getObject(true, firstParam, otherParams...)
+	return getObject(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) GetArray(firstParam any, otherParams ...any) (*V, error) {
-	return g.v.getArray(true, firstParam, otherParams...)
+	return getArray(g.v, true, firstParam, otherParams...)
 }
 
 func (g *caselessOper) Delete(firstParam any, otherParams ...any) error {
@@ -500,7 +500,7 @@ func getNumberFromNotNumberValue(v *V) *V {
 		return NewInt64(0)
 	}
 	ret, _ := newFromNumber(globalPool{}, bytes.TrimSpace([]byte(v.valueStr)))
-	err := ret.parseNumber(globalPool{})
+	err := parseNumber(ret, globalPool{})
 	if err != nil {
 		return NewInt64(0)
 	}
@@ -517,7 +517,7 @@ func getNumberAndErrorFromValue(v *V) (*V, error) {
 
 	case String:
 		ret, _ := newFromNumber(globalPool{}, bytes.TrimSpace([]byte(v.valueStr)))
-		err := ret.parseNumber(globalPool{})
+		err := parseNumber(ret, globalPool{})
 		if err != nil {
 			return NewInt(0), fmt.Errorf("%w: %v", ErrParseNumberFromString, err)
 		}

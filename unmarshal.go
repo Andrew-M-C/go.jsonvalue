@@ -104,7 +104,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.appendToArr(v)
+			appendToArr(arr, v)
 			offset = sectEnd
 
 		case '[':
@@ -112,7 +112,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.appendToArr(v)
+			appendToArr(arr, v)
 			offset = sectEnd
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
@@ -121,7 +121,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.appendToArr(v)
+			appendToArr(arr, v)
 			offset = sectEnd
 
 		case '"':
@@ -130,7 +130,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 				return nil, -1, err
 			}
 			v := NewString(unsafe.BtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
-			arr.appendToArr(v)
+			appendToArr(arr, v)
 			offset = sectEnd
 
 		case 't':
@@ -138,7 +138,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.appendToArr(NewBool(true))
+			appendToArr(arr, NewBool(true))
 			offset = sectEnd
 
 		case 'f':
@@ -146,7 +146,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.appendToArr(NewBool(false))
+			appendToArr(arr, NewBool(false))
 			offset = sectEnd
 
 		case 'n':
@@ -154,7 +154,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.appendToArr(NewNull())
+			appendToArr(arr, NewNull())
 			offset = sectEnd
 
 		default:
@@ -165,7 +165,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 	return nil, -1, fmt.Errorf("%w, cannot find ']'", ErrNotArrayValue)
 }
 
-func (v *V) appendToArr(child *V) {
+func appendToArr(v *V, child *V) {
 	if v.children.arr == nil {
 		v.children.arr = make([]*V, 0, initialArrayCapacity)
 	}
@@ -247,7 +247,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), v)
+			setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), v)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -259,7 +259,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), v)
+			setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), v)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -272,7 +272,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), v)
+			setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), v)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -289,7 +289,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 					return nil, -1, err
 				}
 				v := NewString(unsafe.BtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
-				obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), v)
+				setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), v)
 				keyEnd, colonFound = 0, false
 				offset = sectEnd
 
@@ -311,7 +311,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), NewBool(true))
+			setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), NewBool(true))
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -323,7 +323,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), NewBool(false))
+			setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), NewBool(false))
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -335,7 +335,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), NewNull())
+			setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), NewNull())
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -351,7 +351,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 // parseNumber parse a number string. Reference:
 //
 // - [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html)
-func (v *V) parseNumber(p pool) (err error) {
+func parseNumber(v *V, p pool) (err error) {
 	it := iter(v.srcByte)
 
 	parsed, end, reachEnd, err := it.parseNumber(p, 0)

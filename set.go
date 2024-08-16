@@ -164,13 +164,13 @@ func (v *V) SetArray() Setter {
 	return v.Set(NewArray())
 }
 
-func (v *V) setToObjectChildren(key string, child *V) {
+func setToObjectChildren(v *V, key string, child *V) {
 	v.children.incrID++
 	v.children.object[key] = childWithProperty{
 		id: v.children.incrID,
 		v:  child,
 	}
-	v.addCaselessKey(key)
+	addCaselessKey(v, key)
 }
 
 func (s *setter) At(firstParam any, otherParams ...any) (*V, error) {
@@ -224,7 +224,7 @@ func (s *setter) atLastParam(p any) (*V, error) {
 		if err != nil {
 			return &V{}, err
 		}
-		v.setToObjectChildren(k, c)
+		setToObjectChildren(v, k, c)
 		return c, nil
 
 	case Array:
@@ -232,7 +232,7 @@ func (s *setter) atLastParam(p any) (*V, error) {
 		if err != nil {
 			return &V{}, err
 		}
-		err = v.setAtIndex(c, pos)
+		err = setAtIndex(v, c, pos)
 		if err != nil {
 			return &V{}, err
 		}
@@ -247,7 +247,7 @@ func (s *setter) atObject(firstParam any, otherParams []any) (*V, error) {
 	if err != nil {
 		return &V{}, err
 	}
-	child, exist := v.getFromObjectChildren(false, k)
+	child, exist := getFromObjectChildren(v, false, k)
 	if !exist {
 		if _, err := intfToString(otherParams[0]); err == nil {
 			child = NewObject()
@@ -269,7 +269,7 @@ func (s *setter) atObject(firstParam any, otherParams []any) (*V, error) {
 		return &V{}, err
 	}
 	if !exist {
-		v.setToObjectChildren(k, child)
+		setToObjectChildren(v, k, child)
 	}
 	return c, nil
 }
@@ -281,7 +281,7 @@ func (s *setter) atArray(firstParam any, otherParams []any) (*V, error) {
 	if err != nil {
 		return &V{}, err
 	}
-	child, ok := v.childAtIndex(pos)
+	child, ok := childAtIndex(v, pos)
 	isNewChild := false
 	if !ok {
 		isNewChild = true
@@ -306,20 +306,20 @@ func (s *setter) atArray(firstParam any, otherParams []any) (*V, error) {
 	}
 	// OK to add this object
 	if isNewChild {
-		v.appendToArr(child)
+		appendToArr(v, child)
 	}
 	return c, nil
 }
 
-func (v *V) posAtIndexForSet(pos int) (newPos int, appendToEnd bool) {
+func posAtIndexForSet(v *V, pos int) (newPos int, appendToEnd bool) {
 	if pos == len(v.children.arr) {
 		return pos, true
 	}
-	pos = v.posAtIndexForRead(pos)
+	pos = posAtIndexForRead(v, pos)
 	return pos, false
 }
 
-func (v *V) posAtIndexForInsertBefore(pos int) (newPos int) {
+func posAtIndexForInsertBefore(v *V, pos int) (newPos int) {
 	le := len(v.children.arr)
 	if le == 0 {
 		return -1
@@ -344,7 +344,7 @@ func (v *V) posAtIndexForInsertBefore(pos int) (newPos int) {
 	return pos
 }
 
-func (v *V) posAtIndexForInsertAfter(pos int) (newPos int, appendToEnd bool) {
+func posAtIndexForInsertAfter(v *V, pos int) (newPos int, appendToEnd bool) {
 	le := len(v.children.arr)
 	if le == 0 {
 		return -1, false
@@ -369,7 +369,7 @@ func (v *V) posAtIndexForInsertAfter(pos int) (newPos int, appendToEnd bool) {
 	return pos + 1, false
 }
 
-func (v *V) posAtIndexForRead(pos int) int {
+func posAtIndexForRead(v *V, pos int) int {
 	le := len(v.children.arr)
 	if le == 0 {
 		return -1
@@ -390,16 +390,16 @@ func (v *V) posAtIndexForRead(pos int) int {
 	return pos
 }
 
-func (v *V) childAtIndex(pos int) (*V, bool) { // if nil returned, means that just push
-	pos = v.posAtIndexForRead(pos)
+func childAtIndex(v *V, pos int) (*V, bool) { // if nil returned, means that just push
+	pos = posAtIndexForRead(v, pos)
 	if pos < 0 {
 		return &V{}, false
 	}
 	return v.children.arr[pos], true
 }
 
-func (v *V) setAtIndex(child *V, pos int) error {
-	pos, appendToEnd := v.posAtIndexForSet(pos)
+func setAtIndex(v *V, child *V, pos int) error {
+	pos, appendToEnd := posAtIndexForSet(v, pos)
 	if pos < 0 {
 		return ErrOutOfRange
 	}

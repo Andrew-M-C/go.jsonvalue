@@ -126,7 +126,7 @@ func NewObject(keyValues ...M) *V {
 	if len(keyValues) > 0 {
 		kv := keyValues[0]
 		if kv != nil {
-			v.parseNewObjectKV(kv)
+			parseNewObjectKV(v, kv)
 		}
 	}
 
@@ -136,7 +136,7 @@ func NewObject(keyValues ...M) *V {
 // M is the alias of map[string]any
 type M map[string]any
 
-func (v *V) parseNewObjectKV(kv M) {
+func parseNewObjectKV(v *V, kv M) {
 	for k, val := range kv {
 		rv := reflect.ValueOf(val)
 		switch rv.Kind() {
