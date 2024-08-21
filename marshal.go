@@ -43,7 +43,7 @@ func (v *V) Marshal(opts ...Option) (b []byte, err error) {
 	buf := buffer.NewBuffer()
 	opt := combineOptions(opts)
 
-	err = v.marshalToBuffer(nil, buf, opt)
+	err = marshalToBuffer(v, nil, buf, opt)
 	if err != nil {
 		return nil, err
 	}
@@ -63,37 +63,37 @@ func (v *V) MarshalString(opts ...Option) (s string, err error) {
 	return unsafe.BtoS(b), nil
 }
 
-func (v *V) marshalToBuffer(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) (err error) {
+func marshalToBuffer(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) (err error) {
 	switch v.valueType {
 	default:
 		// do nothing
 	case String:
-		v.marshalString(buf, opt)
+		marshalString(v, buf, opt)
 	case Boolean:
-		v.marshalBoolean(buf)
+		marshalBoolean(v, buf)
 	case Number:
-		err = v.marshalNumber(buf, opt)
+		err = marshalNumber(v, buf, opt)
 	case Null:
-		v.marshalNull(buf)
+		marshalNull(buf)
 	case Object:
-		v.marshalObject(parentInfo, buf, opt)
+		marshalObject(v, parentInfo, buf, opt)
 	case Array:
-		v.marshalArray(parentInfo, buf, opt)
+		marshalArray(v, parentInfo, buf, opt)
 	}
 	return err
 }
 
-func (v *V) marshalString(buf buffer.Buffer, opt *Opt) {
+func marshalString(v *V, buf buffer.Buffer, opt *Opt) {
 	_ = buf.WriteByte('"')
 	escapeStringToBuff(v.valueStr, buf, opt)
 	_ = buf.WriteByte('"')
 }
 
-func (v *V) marshalBoolean(buf buffer.Buffer) {
+func marshalBoolean(v *V, buf buffer.Buffer) {
 	_, _ = buf.WriteString(formatBool(v.valueBool))
 }
 
-func (v *V) marshalNumber(buf buffer.Buffer, opt *Opt) error {
+func marshalNumber(v *V, buf buffer.Buffer, opt *Opt) error {
 	if b := v.srcByte; len(b) > 0 {
 		_, _ = buf.Write(b)
 		return nil
@@ -212,11 +212,11 @@ func isValidFloat(f float64) bool {
 	return true
 }
 
-func (v *V) marshalNull(buf buffer.Buffer) {
+func marshalNull(buf buffer.Buffer) {
 	_, _ = buf.WriteString("null")
 }
 
-func (v *V) marshalObject(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
+func marshalObject(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 	if len(v.children.object) == 0 {
 		_, _ = buf.WriteString("{}")
 		return
@@ -226,19 +226,19 @@ func (v *V) marshalObject(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 	_ = buf.WriteByte('{')
 
 	if opt.MarshalLessFunc != nil {
-		sov := v.newSortObjectV(parentInfo, opt)
+		sov := newSortObjectV(v, parentInfo, opt)
 		sov.marshalObjectWithLessFunc(buf, opt)
+
 	} else if len(opt.MarshalKeySequence) > 0 {
-		sssv := v.newSortStringSliceV(opt)
+		sssv := newSortStringSliceV(v, opt)
 		sssv.marshalObjectWithStringSlice(buf, opt)
+
 	} else if opt.marshalBySetSequence {
-		sssv := v.newSortStringSliceVBySetSeq(opt)
+		sssv := newSortStringSliceVBySetSeq(v)
 		sssv.marshalObjectWithStringSlice(buf, opt)
+
 	} else {
-		firstWritten := false
-		for k, child := range v.children.object {
-			firstWritten = writeObjectChildren(nil, buf, !firstWritten, k, child.v, opt)
-		}
+		writeObjectKVInRandomizedSequence(v, buf, opt)
 	}
 
 	opt.indent.cnt--
@@ -247,6 +247,13 @@ func (v *V) marshalObject(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 		writeIndent(buf, opt)
 	}
 	_ = buf.WriteByte('}')
+}
+
+func writeObjectKVInRandomizedSequence(v *V, buf buffer.Buffer, opt *Opt) {
+	firstWritten := false
+	for k, child := range v.children.object {
+		firstWritten = writeObjectChildren(nil, buf, !firstWritten, k, child.v, opt)
+	}
 }
 
 func writeObjectChildren(
@@ -273,7 +280,7 @@ func writeObjectChildren(
 		_, _ = buf.WriteString("\":")
 	}
 
-	_ = child.marshalToBuffer(parentInfo, buf, opt)
+	_ = marshalToBuffer(child, parentInfo, buf, opt)
 	return true
 }
 
@@ -284,7 +291,7 @@ func writeIndent(buf buffer.Buffer, opt *Opt) {
 	}
 }
 
-func (v *V) marshalArray(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
+func marshalArray(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 	if len(v.children.arr) == 0 {
 		_, _ = buf.WriteString("[]")
 		return
@@ -302,9 +309,9 @@ func (v *V) marshalArray(parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 			writeIndent(buf, opt)
 		}
 		if opt.MarshalLessFunc == nil {
-			_ = child.marshalToBuffer(nil, buf, opt)
+			_ = marshalToBuffer(child, nil, buf, opt)
 		} else {
-			_ = child.marshalToBuffer(v.newParentInfo(parentInfo, intKey(i)), buf, opt)
+			_ = marshalToBuffer(child, newParentInfo(v, parentInfo, intKey(i)), buf, opt)
 		}
 		return true
 	})

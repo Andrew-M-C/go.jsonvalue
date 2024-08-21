@@ -104,7 +104,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.appendToArr(v)
+			appendToArr(arr, v)
 			offset = sectEnd
 
 		case '[':
@@ -112,7 +112,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.appendToArr(v)
+			appendToArr(arr, v)
 			offset = sectEnd
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
@@ -121,7 +121,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.appendToArr(v)
+			appendToArr(arr, v)
 			offset = sectEnd
 
 		case '"':
@@ -130,7 +130,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 				return nil, -1, err
 			}
 			v := NewString(unsafe.BtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
-			arr.appendToArr(v)
+			appendToArr(arr, v)
 			offset = sectEnd
 
 		case 't':
@@ -138,7 +138,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.appendToArr(NewBool(true))
+			appendToArr(arr, NewBool(true))
 			offset = sectEnd
 
 		case 'f':
@@ -146,7 +146,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.appendToArr(NewBool(false))
+			appendToArr(arr, NewBool(false))
 			offset = sectEnd
 
 		case 'n':
@@ -154,7 +154,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			if err != nil {
 				return nil, -1, err
 			}
-			arr.appendToArr(NewNull())
+			appendToArr(arr, NewNull())
 			offset = sectEnd
 
 		default:
@@ -165,7 +165,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 	return nil, -1, fmt.Errorf("%w, cannot find ']'", ErrNotArrayValue)
 }
 
-func (v *V) appendToArr(child *V) {
+func appendToArr(v *V, child *V) {
 	if v.children.arr == nil {
 		v.children.arr = make([]*V, 0, initialArrayCapacity)
 	}
@@ -247,7 +247,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), v)
+			setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), v)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -259,7 +259,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), v)
+			setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), v)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -272,7 +272,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), v)
+			setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), v)
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -289,7 +289,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 					return nil, -1, err
 				}
 				v := NewString(unsafe.BtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
-				obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), v)
+				setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), v)
 				keyEnd, colonFound = 0, false
 				offset = sectEnd
 
@@ -311,7 +311,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), NewBool(true))
+			setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), NewBool(true))
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -323,7 +323,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), NewBool(false))
+			setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), NewBool(false))
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -335,7 +335,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			if err != nil {
 				return nil, -1, err
 			}
-			obj.setToObjectChildren(unsafe.BtoS(it[keyStart:keyEnd]), NewNull())
+			setToObjectChildren(obj, unsafe.BtoS(it[keyStart:keyEnd]), NewNull())
 			keyEnd, colonFound = 0, false
 			offset = sectEnd
 
@@ -351,7 +351,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 // parseNumber parse a number string. Reference:
 //
 // - [ECMA-404 The JSON Data Interchange Standard](https://www.json.org/json-en.html)
-func (v *V) parseNumber(p pool) (err error) {
+func parseNumber(v *V, p pool) (err error) {
 	it := iter(v.srcByte)
 
 	parsed, end, reachEnd, err := it.parseNumber(p, 0)
@@ -401,26 +401,26 @@ func (it iter) parseStrFromBytesForwardWithQuote(offset int) (sectLenWithoutQuot
 		chr := it[i]
 
 		// ACSII?
-		if chr == '\\' {
+		switch {
+		case chr == '\\':
 			err = it.handleEscapeStart(&i, &sectEnd)
-		} else if chr == '"' {
+		case chr == '"':
 			// found end quote
 			return sectEnd - offset, i + 1, nil
-		} else if chr <= 0x7F {
+		case chr <= 0x7F:
 			// shift(&i, 1)
 			it[sectEnd] = it[i]
 			i++
 			sectEnd++
-		} else if runeIdentifyingBytes2(chr) {
+		case runeIdentifyingBytes2(chr):
 			shift(&i, 2)
-		} else if runeIdentifyingBytes3(chr) {
+		case runeIdentifyingBytes3(chr):
 			shift(&i, 3)
-		} else if runeIdentifyingBytes4(chr) {
+		case runeIdentifyingBytes4(chr):
 			shift(&i, 4)
-		} else {
+		default:
 			err = fmt.Errorf("%w: illegal UTF8 string at Position %d", ErrIllegalString, i)
 		}
-
 		if err != nil {
 			return -1, -1, err
 		}
@@ -560,37 +560,34 @@ func (it iter) memcpy(dst, src, length int) {
 }
 
 func (it iter) assignASCIICodedRune(dst int, r rune) (offset int) {
+	switch {
 	// 0zzzzzzz ==>
 	// 0zzzzzzz
-	if r <= 0x7F {
+	case r <= 0x7F:
 		it[dst+0] = byte(r)
 		return 1
-	}
-
 	// 00000yyy yyzzzzzz ==>
 	// 110yyyyy 10zzzzzz
-	if r <= 0x7FF {
-		it[dst+0] = byte((r&0x7C0)>>6) + 0xC0
+	case r <= 0x7FF:
 		it[dst+1] = byte((r&0x03F)>>0) + 0x80
+		it[dst+0] = byte((r&0x7C0)>>6) + 0xC0
 		return 2
-	}
-
 	// xxxxyyyy yyzzzzzz ==>
 	// 1110xxxx 10yyyyyy 10zzzzzz
-	if r <= 0xFFFF {
-		it[dst+0] = byte((r&0xF000)>>12) + 0xE0
-		it[dst+1] = byte((r&0x0FC0)>>6) + 0x80
+	case r <= 0xFFFF:
 		it[dst+2] = byte((r&0x003F)>>0) + 0x80
+		it[dst+1] = byte((r&0x0FC0)>>6) + 0x80
+		it[dst+0] = byte((r&0xF000)>>12) + 0xE0
 		return 3
-	}
-
 	// 000wwwxx xxxxyyyy yyzzzzzz ==>
 	// 11110www 10xxxxxx 10yyyyyy 10zzzzzz
-	it[dst+0] = byte((r&0x1C0000)>>18) + 0xF0
-	it[dst+1] = byte((r&0x03F000)>>12) + 0x80
-	it[dst+2] = byte((r&0x000FC0)>>6) + 0x80
-	it[dst+3] = byte((r&0x00003F)>>0) + 0x80
-	return 4
+	default:
+		it[dst+3] = byte((r&0x00003F)>>0) + 0x80
+		it[dst+2] = byte((r&0x000FC0)>>6) + 0x80
+		it[dst+1] = byte((r&0x03F000)>>12) + 0x80
+		it[dst+0] = byte((r&0x1C0000)>>18) + 0xF0
+		return 4
+	}
 }
 
 func runeIdentifyingBytes2(chr byte) bool {

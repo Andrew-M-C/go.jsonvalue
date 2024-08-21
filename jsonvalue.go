@@ -162,7 +162,7 @@ func (c *children) deepCopy() children {
 	return res
 }
 
-func (v *V) addCaselessKey(k string) {
+func addCaselessKey(v *V, k string) {
 	if v.children.lowerCaseKeys == nil {
 		return
 	}
@@ -175,7 +175,7 @@ func (v *V) addCaselessKey(k string) {
 	keys[k] = struct{}{}
 }
 
-func (v *V) delCaselessKey(k string) {
+func delCaselessKey(v *V, k string) {
 	if v.children.lowerCaseKeys == nil {
 		return
 	}
@@ -552,19 +552,19 @@ func (v *V) String() string {
 	case Boolean:
 		return formatBool(v.valueBool)
 	case Object:
-		return v.packObjChildren()
+		return packObjChildren(v)
 	case Array:
-		return v.packArrChildren()
+		return packArrChildren(v)
 	}
 }
 
-func (v *V) packObjChildren() string {
+func packObjChildren(v *V) string {
 	buf := bytes.Buffer{}
-	v.bufObjChildren(&buf)
+	bufObjChildren(v, &buf)
 	return buf.String()
 }
 
-func (v *V) bufObjChildren(buf *bytes.Buffer) {
+func bufObjChildren(v *V, buf *bytes.Buffer) {
 	buf.WriteByte('{')
 	i := 0
 	for k, v := range v.children.object {
@@ -579,13 +579,13 @@ func (v *V) bufObjChildren(buf *bytes.Buffer) {
 	buf.WriteByte('}')
 }
 
-func (v *V) packArrChildren() string {
+func packArrChildren(v *V) string {
 	buf := bytes.Buffer{}
-	v.bufArrChildren(&buf)
+	bufArrChildren(v, &buf)
 	return buf.String()
 }
 
-func (v *V) bufArrChildren(buf *bytes.Buffer) {
+func bufArrChildren(v *V, buf *bytes.Buffer) {
 	buf.WriteByte('[')
 	v.RangeArray(func(i int, v *V) bool {
 		if i > 0 {

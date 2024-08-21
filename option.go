@@ -570,34 +570,16 @@ func (o *Opt) parseEscapingFuncs() {
 		o.asciiCharEscapingFunc[i] = escapeNothing
 	}
 
+	iterate := func(from, to int, fu func(b byte, buf buffer.Buffer)) {
+		for i := from; i <= to; i++ {
+			o.asciiCharEscapingFunc[i] = fu
+		}
+	}
+
 	// ASCII control bytes should always escaped
-	o.asciiCharEscapingFunc[0x00] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x01] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x02] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x03] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x04] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x05] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x06] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x07] = escAsciiControlChar
+	iterate(0x00, 0x07, escAsciiControlChar)
 	// 0x08 is \b, encoding/json marshal as \u0008, but according to JSON standard, it should be "\b"
-	o.asciiCharEscapingFunc[0x0E] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x0F] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x10] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x11] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x12] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x13] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x14] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x15] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x16] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x17] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x18] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x19] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x1A] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x1B] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x1C] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x1D] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x1E] = escAsciiControlChar
-	o.asciiCharEscapingFunc[0x1F] = escAsciiControlChar
+	iterate(0x0E, 0x1F, escAsciiControlChar)
 	o.asciiCharEscapingFunc[0x7F] = escAsciiControlChar // encoding/json does not escape DEL
 
 	// ASCII characters always to be escaped

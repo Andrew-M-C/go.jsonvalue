@@ -205,11 +205,11 @@ func (ins *insert) Before(firstParam any, otherParams ...any) (*V, error) {
 			return &V{}, err
 		}
 
-		pos = v.posAtIndexForInsertBefore(pos)
+		pos = posAtIndexForInsertBefore(v, pos)
 		if pos < 0 {
 			return &V{}, ErrOutOfRange
 		}
-		v.insertToArr(pos, c)
+		insertToArr(v, pos, c)
 		return c, nil
 	}
 
@@ -254,14 +254,14 @@ func (ins *insert) After(firstParam any, otherParams ...any) (*V, error) {
 			return &V{}, err
 		}
 
-		pos, appendToEnd := v.posAtIndexForInsertAfter(pos)
+		pos, appendToEnd := posAtIndexForInsertAfter(v, pos)
 		if pos < 0 {
 			return &V{}, ErrOutOfRange
 		}
 		if appendToEnd {
-			v.appendToArr(c)
+			appendToArr(v, c)
 		} else {
-			v.insertToArr(pos, c)
+			insertToArr(v, pos, c)
 		}
 		return c, nil
 	}
@@ -279,7 +279,7 @@ func (ins *insert) After(firstParam any, otherParams ...any) (*V, error) {
 	return childIns.After(otherParams[paramCount-1])
 }
 
-func (v *V) insertToArr(pos int, child *V) {
+func insertToArr(v *V, pos int, child *V) {
 	v.children.arr = append(v.children.arr, nil)
 	copy(v.children.arr[pos+1:], v.children.arr[pos:])
 	v.children.arr[pos] = child
@@ -441,9 +441,9 @@ func (apd *appender) InTheBeginning(params ...any) (*V, error) {
 			return &V{}, ErrNotArrayValue
 		}
 		if v.Len() == 0 {
-			v.appendToArr(c)
+			appendToArr(v, c)
 		} else {
-			v.insertToArr(0, c)
+			insertToArr(v, 0, c)
 		}
 		return c, nil
 	}
@@ -467,9 +467,9 @@ func (apd *appender) InTheBeginning(params ...any) (*V, error) {
 	}
 
 	if child.Len() == 0 {
-		child.appendToArr(c)
+		appendToArr(child, c)
 	} else {
-		child.insertToArr(0, c)
+		insertToArr(child, 0, c)
 	}
 	return c, nil
 }
@@ -491,7 +491,7 @@ func (apd *appender) InTheEnd(params ...any) (*V, error) {
 			return &V{}, ErrNotArrayValue
 		}
 
-		v.appendToArr(c)
+		appendToArr(v, c)
 		return c, nil
 	}
 	if ok, p := isSliceAndExtractJointParams(params[0]); ok {
@@ -513,7 +513,7 @@ func (apd *appender) InTheEnd(params ...any) (*V, error) {
 		}
 	}
 
-	child.appendToArr(c)
+	appendToArr(child, c)
 	return c, nil
 }
 
@@ -521,11 +521,11 @@ func (apd *appender) InTheEnd(params ...any) (*V, error) {
 
 // MARK: DELETE
 
-func (v *V) delFromObjectChildren(caseless bool, key string) (exist bool) {
+func delFromObjectChildren(v *V, caseless bool, key string) (exist bool) {
 	_, exist = v.children.object[key]
 	if exist {
 		delete(v.children.object, key)
-		v.delCaselessKey(key)
+		delCaselessKey(v, key)
 		return true
 	}
 
@@ -533,7 +533,7 @@ func (v *V) delFromObjectChildren(caseless bool, key string) (exist bool) {
 		return false
 	}
 
-	v.initCaselessStorage()
+	initCaselessStorage(v)
 
 	lowerKey := strings.ToLower(key)
 	keys, exist := v.children.lowerCaseKeys[lowerKey]
@@ -545,7 +545,7 @@ func (v *V) delFromObjectChildren(caseless bool, key string) (exist bool) {
 		_, exist = v.children.object[actualKey]
 		if exist {
 			delete(v.children.object, actualKey)
-			v.delCaselessKey(actualKey)
+			delCaselessKey(v, actualKey)
 			return true
 		}
 	}
@@ -572,10 +572,10 @@ func (v *V) delete(caseless bool, firstParam any, otherParams ...any) error {
 
 	paramCount := len(otherParams)
 	if paramCount == 0 {
-		return v.deleteInCurrValue(caseless, firstParam)
+		return deleteInCurrValue(v, caseless, firstParam)
 	}
 
-	child, err := v.get(caseless, firstParam, otherParams[:paramCount-1]...)
+	child, err := get(v, caseless, firstParam, otherParams[:paramCount-1]...)
 	if err != nil {
 		return err
 	}
@@ -586,7 +586,7 @@ func (v *V) delete(caseless bool, firstParam any, otherParams ...any) error {
 	return child.delete(caseless, otherParams[paramCount-1])
 }
 
-func (v *V) deleteInCurrValue(caseless bool, param any) error {
+func deleteInCurrValue(v *V, caseless bool, param any) error {
 	if v.valueType == Object {
 		// string expected
 		key, err := intfToString(param)
@@ -594,7 +594,7 @@ func (v *V) deleteInCurrValue(caseless bool, param any) error {
 			return err
 		}
 
-		if exist := v.delFromObjectChildren(caseless, key); !exist {
+		if exist := delFromObjectChildren(v, caseless, key); !exist {
 			return ErrNotFound
 		}
 		return nil
@@ -607,11 +607,11 @@ func (v *V) deleteInCurrValue(caseless bool, param any) error {
 			return err
 		}
 
-		pos = v.posAtIndexForRead(pos)
+		pos = posAtIndexForRead(v, pos)
 		if pos < 0 {
 			return ErrOutOfRange
 		}
-		v.deleteInArr(pos)
+		deleteInArr(v, pos)
 		return nil
 	}
 
@@ -619,7 +619,7 @@ func (v *V) deleteInCurrValue(caseless bool, param any) error {
 	return fmt.Errorf("%v type does not supports Delete()", v.valueType)
 }
 
-func (v *V) deleteInArr(pos int) {
+func deleteInArr(v *V, pos int) {
 	le := len(v.children.arr)
 	v.children.arr[pos] = nil
 	copy(v.children.arr[pos:], v.children.arr[pos+1:])
