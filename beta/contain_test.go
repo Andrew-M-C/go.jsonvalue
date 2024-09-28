@@ -26,7 +26,7 @@ func testContains(_ *testing.T) {
 	})
 
 	cv("test case by author's colleague", func() {
-		type P = []interface{}
+		type P = []any
 
 		f := func(res bool, vStr string, path P, subStr string) {
 			// t.Logf("%v - %v", vStr, subStr)

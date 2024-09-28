@@ -61,7 +61,7 @@ v.MustSet(child).At(path...)
 
 The semantics is "SET something AT some position". Please be advised that value the ahead of key.
 
-As the parameter type of `Set` method is `any` (`interface{}`), therefore you can set any supported type (even complex object or array data) into a jsonvalue.
+As the parameter type of `Set` method is `any` (`any`), therefore you can set any supported type (even complex object or array data) into a jsonvalue.
 
 Complete example:
 
@@ -80,7 +80,7 @@ After calling `Set`, `At` should be followed afterward to set child value into J
 
 ```go
 type Setter interface {
-	At(firstParam interface{}, otherParams ...interface{}) (*V, error)
+	At(firstParam any, otherParams ...any) (*V, error)
 }
 ```
 
@@ -167,26 +167,26 @@ Prototypes of these methods as below:
 ```go
 func (v *V) Append(child any) Appender
 type Appender interface {
-	InTheBeginning(params ...interface{}) (*V, error)
-	InTheEnd(params ...interface{}) (*V, error)
+	InTheBeginning(params ...any) (*V, error)
+	InTheEnd(params ...any) (*V, error)
 }
 
 func (v *V) Insert(child any) Inserter
 type Inserter interface {
-	After(firstParam interface{}, otherParams ...interface{}) (*V, error)
-	Before(firstParam interface{}, otherParams ...interface{}) (*V, error)
+	After(firstParam any, otherParams ...any) (*V, error)
+	Before(firstParam any, otherParams ...any) (*V, error)
 }
 
 func (v *V) MustAppend(child any) MustAppender
 type MustAppender interface {
-	InTheBeginning(params ...interface{})
-	InTheEnd(params ...interface{})
+	InTheBeginning(params ...any)
+	InTheEnd(params ...any)
 }
 
 func (v *V) MustInsert(child any) MustInserter
 type MustInserter interface {
-	After(firstParam interface{}, otherParams ...interface{})
-	Before(firstParam interface{}, otherParams ...interface{})
+	After(firstParam any, otherParams ...any)
+	Before(firstParam any, otherParams ...any)
 }
 ```
 

@@ -5,6 +5,6 @@ import (
 )
 
 // Deprecated: beta.Import is released, please use jsonvalue.Import.
-func Import(src interface{}) (*jsonvalue.V, error) {
+func Import(src any) (*jsonvalue.V, error) {
 	return jsonvalue.Import(src)
 }

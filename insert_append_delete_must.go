@@ -22,7 +22,7 @@ type MustInserter interface {
 	// 那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
 	//
 	// 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
-	After(firstParam interface{}, otherParams ...interface{})
+	After(firstParam any, otherParams ...any)
 
 	// Before completes the following operation of Insert(). It inserts value BEFORE
 	// specified position.
@@ -42,7 +42,7 @@ type MustInserter interface {
 	// 那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
 	//
 	// 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
-	Before(firstParam interface{}, otherParams ...interface{})
+	Before(firstParam any, otherParams ...any)
 }
 
 type mInsert struct {
@@ -137,12 +137,12 @@ type MustAppender interface {
 	// InTheBeginning completes the following operation of Append().
 	//
 	// InTheBeginning 函数将 Append 函数指定的 JSON 值，添加到参数指定的数组的最前端
-	InTheBeginning(params ...interface{})
+	InTheBeginning(params ...any)
 
 	// InTheEnd completes the following operation of Append().
 	//
 	// InTheEnd 函数将 Append 函数指定的 JSON 值，添加到参数指定的数组的最后面
-	InTheEnd(params ...interface{})
+	InTheEnd(params ...any)
 }
 
 type mAppender struct {

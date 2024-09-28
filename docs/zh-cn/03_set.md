@@ -77,7 +77,7 @@ fmt.Println(v.MustMarshalString())
 
 ```go
 type Setter interface {
-	At(firstParam interface{}, otherParams ...interface{}) (*V, error)
+	At(firstParam any, otherParams ...any) (*V, error)
 }
 ```
 
@@ -161,26 +161,26 @@ v.MustSet("Hello, object!").At([]string{"obj", "message"})
 ```go
 func (v *V) Append(child any) Appender
 type Appender interface {
-	InTheBeginning(params ...interface{}) (*V, error)
-	InTheEnd(params ...interface{}) (*V, error)
+	InTheBeginning(params ...any) (*V, error)
+	InTheEnd(params ...any) (*V, error)
 }
 
 func (v *V) Insert(child any) Inserter
 type Inserter interface {
-	After(firstParam interface{}, otherParams ...interface{}) (*V, error)
-	Before(firstParam interface{}, otherParams ...interface{}) (*V, error)
+	After(firstParam any, otherParams ...any) (*V, error)
+	Before(firstParam any, otherParams ...any) (*V, error)
 }
 
 func (v *V) MustAppend(child any) MustAppender
 type MustAppender interface {
-	InTheBeginning(params ...interface{})
-	InTheEnd(params ...interface{})
+	InTheBeginning(params ...any)
+	InTheEnd(params ...any)
 }
 
 func (v *V) MustInsert(child any) MustInserter
 type MustInserter interface {
-	After(firstParam interface{}, otherParams ...interface{})
-	Before(firstParam interface{}, otherParams ...interface{})
+	After(firstParam any, otherParams ...any)
+	Before(firstParam any, otherParams ...any)
 }
 ```
 

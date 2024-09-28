@@ -9,7 +9,7 @@ import (
 //
 // Contains 表示是否包含某个子集。只对 object 和 array 类型有效, 其他类型则需完全相等时,
 // 才返回 true
-func Contains(v *jsonvalue.V, sub interface{}, inPath ...interface{}) bool {
+func Contains(v *jsonvalue.V, sub any, inPath ...any) bool {
 	if v == nil {
 		return false
 	}

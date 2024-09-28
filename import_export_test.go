@@ -184,7 +184,7 @@ func testImport(*testing.T) {
 	})
 
 	cv("float", func() {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"32": float32(0.023),
 			"64": float64(0.023),
 		}

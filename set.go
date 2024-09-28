@@ -22,7 +22,7 @@ type Setter interface {
 	// 该函数的用法恐怕是 jsonvalue 中最重要的内容了：该函数会按照给定的可变参数递归地一层一层查找
 	// JSON 值的子成员，并且设置到指定的位置上。设置的逻辑说明起来比较抽象，请打开以下的例子以了解,
 	// 这非常重要。
-	At(firstParam interface{}, otherParams ...interface{}) (*V, error)
+	At(firstParam any, otherParams ...any) (*V, error)
 }
 
 type setter struct {

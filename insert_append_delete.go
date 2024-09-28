@@ -34,7 +34,7 @@ type Inserter interface {
 	// 那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
 	//
 	// 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
-	After(firstParam interface{}, otherParams ...interface{}) (*V, error)
+	After(firstParam any, otherParams ...any) (*V, error)
 
 	// Before completes the following operation of Insert(). It inserts value BEFORE
 	// specified position.
@@ -54,7 +54,7 @@ type Inserter interface {
 	// 那么它指定的是 JSON 数组中从最后一个位置开始算起的位置。
 	//
 	// 举例说明：0 表示第一个位置，而 -2 表示倒数第二个位置。
-	Before(firstParam interface{}, otherParams ...interface{}) (*V, error)
+	Before(firstParam any, otherParams ...any) (*V, error)
 }
 
 type insert struct {
@@ -294,8 +294,8 @@ func insertToArr(v *V, pos int, child *V) {
 // Appender 类型是用于 InTheEnd() 和 InTheBeginning() 函数的。使用者可以不用关注这个类型。
 // 并且这个类型只应当由 V.Append() 产生。
 type Appender interface {
-	InTheBeginning(params ...interface{}) (*V, error)
-	InTheEnd(params ...interface{}) (*V, error)
+	InTheBeginning(params ...any) (*V, error)
+	InTheEnd(params ...any) (*V, error)
 }
 
 type appender struct {

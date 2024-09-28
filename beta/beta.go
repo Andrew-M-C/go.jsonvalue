@@ -2,3 +2,5 @@
 //
 // 本包提供一些 jsonvalue 包的 beta 功能。
 package beta
+
+type any = interface{}
