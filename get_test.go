@@ -425,7 +425,7 @@ func testCaselessGet(t *testing.T) {
 
 func testNotExistGet(*testing.T) {
 	cv("unmarshal a not exist V", func() {
-		v := MustUnmarshalString("blahblah")
+		v := MustUnmarshalString("blah-blah")
 		so(v, notNil)
 		so(v.ValueType(), eq, NotExist)
 
@@ -436,14 +436,14 @@ func testNotExistGet(*testing.T) {
 	})
 
 	cv("not-exist-V.GetArray", func() {
-		v, err := MustUnmarshalString("blahblah").GetArray("some_array", 1, 2, 3)
+		v, err := MustUnmarshalString("blah-blah").GetArray("some_array", 1, 2, 3)
 		so(v, notNil)
 		so(err, isErr)
 		so(v.ValueType(), eq, NotExist)
 	})
 
 	cv("not-exist-V.GetObject", func() {
-		v, err := MustUnmarshalString("blahblah").GetArray("some_object", 1, 2, 3)
+		v, err := MustUnmarshalString("blah-blah").GetArray("some_object", 1, 2, 3)
 		so(v, notNil)
 		so(err, isErr)
 		so(v.ValueType(), eq, NotExist)

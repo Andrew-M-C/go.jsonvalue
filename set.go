@@ -220,7 +220,7 @@ func (s *setter) atLastParam(p any) (*V, error) {
 
 	case Object:
 		var k string
-		k, err := intfToString(p)
+		k, err := anyToString(p)
 		if err != nil {
 			return &V{}, err
 		}
@@ -228,7 +228,7 @@ func (s *setter) atLastParam(p any) (*V, error) {
 		return c, nil
 
 	case Array:
-		pos, err := intfToInt(p)
+		pos, err := anyToInt(p)
 		if err != nil {
 			return &V{}, err
 		}
@@ -243,15 +243,15 @@ func (s *setter) atLastParam(p any) (*V, error) {
 func (s *setter) atObject(firstParam any, otherParams []any) (*V, error) {
 	v := s.v
 	c := s.c
-	k, err := intfToString(firstParam)
+	k, err := anyToString(firstParam)
 	if err != nil {
 		return &V{}, err
 	}
 	child, exist := getFromObjectChildren(v, false, k)
 	if !exist {
-		if _, err := intfToString(otherParams[0]); err == nil {
+		if _, err := anyToString(otherParams[0]); err == nil {
 			child = NewObject()
-		} else if i, err := intfToInt(otherParams[0]); err == nil {
+		} else if i, err := anyToInt(otherParams[0]); err == nil {
 			if i != 0 {
 				return &V{}, ErrOutOfRange
 			}
@@ -277,7 +277,7 @@ func (s *setter) atObject(firstParam any, otherParams []any) (*V, error) {
 func (s *setter) atArray(firstParam any, otherParams []any) (*V, error) {
 	v := s.v
 	c := s.c
-	pos, err := intfToInt(firstParam)
+	pos, err := anyToInt(firstParam)
 	if err != nil {
 		return &V{}, err
 	}
@@ -285,9 +285,9 @@ func (s *setter) atArray(firstParam any, otherParams []any) (*V, error) {
 	isNewChild := false
 	if !ok {
 		isNewChild = true
-		if _, err := intfToString(otherParams[0]); err == nil {
+		if _, err := anyToString(otherParams[0]); err == nil {
 			child = NewObject()
-		} else if i, err := intfToInt(otherParams[0]); err == nil {
+		} else if i, err := anyToInt(otherParams[0]); err == nil {
 			if i != 0 {
 				return &V{}, ErrOutOfRange
 			}

@@ -95,7 +95,7 @@ func testInsertAppend(t *testing.T) {
 
 	so(s, eq, expected)
 
-	// unmarshal and then marchal back
+	// unmarshal and then marshal back
 	a, err = UnmarshalString(expected)
 	so(err, isNil)
 	s, err = a.MarshalString()
@@ -157,7 +157,7 @@ func testMustInsertAppend(t *testing.T) {
 
 		so(s, eq, expected)
 
-		// unmarshal and then marchal back
+		// unmarshal and then marshal back
 		a, err := UnmarshalString(expected)
 		so(err, isNil)
 		s, err = a.MarshalString()
@@ -643,16 +643,16 @@ func testMiscInsertError(*testing.T) {
 func testMiscAppendError(t *testing.T) {
 	cv("uninitialized AppendString to uninitialized V", func() {
 		v := V{}
-		_, err := v.AppendString("blahblah").InTheBeginning()
+		_, err := v.AppendString("blah-blah").InTheBeginning()
 		so(err, isErr)
 
-		_, err = v.AppendString("blahblah").InTheEnd()
+		_, err = v.AppendString("blah-blah").InTheEnd()
 		so(err, isErr)
 	})
 
 	cv("uninitialized AppendString to string", func() {
-		v := NewString("blahblah")
-		_, err := v.AppendString("blahblah").InTheBeginning()
+		v := NewString("blah-blah")
+		_, err := v.AppendString("blah-blah").InTheBeginning()
 		so(err, isErr)
 	})
 

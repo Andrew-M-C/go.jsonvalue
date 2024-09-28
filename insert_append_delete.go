@@ -200,7 +200,7 @@ func (ins *insert) Before(firstParam any, otherParams ...any) (*V, error) {
 			return &V{}, ErrNotArrayValue
 		}
 
-		pos, err := intfToInt(firstParam)
+		pos, err := anyToInt(firstParam)
 		if err != nil {
 			return &V{}, err
 		}
@@ -249,7 +249,7 @@ func (ins *insert) After(firstParam any, otherParams ...any) (*V, error) {
 			return &V{}, ErrNotArrayValue
 		}
 
-		pos, err := intfToInt(firstParam)
+		pos, err := anyToInt(firstParam)
 		if err != nil {
 			return &V{}, err
 		}
@@ -572,7 +572,7 @@ func (v *V) delete(caseless bool, firstParam any, otherParams ...any) error {
 
 	paramCount := len(otherParams)
 	if paramCount == 0 {
-		return deleteInCurrValue(v, caseless, firstParam)
+		return deleteInCurrentValue(v, caseless, firstParam)
 	}
 
 	child, err := get(v, caseless, firstParam, otherParams[:paramCount-1]...)
@@ -586,10 +586,10 @@ func (v *V) delete(caseless bool, firstParam any, otherParams ...any) error {
 	return child.delete(caseless, otherParams[paramCount-1])
 }
 
-func deleteInCurrValue(v *V, caseless bool, param any) error {
+func deleteInCurrentValue(v *V, caseless bool, param any) error {
 	if v.valueType == Object {
 		// string expected
-		key, err := intfToString(param)
+		key, err := anyToString(param)
 		if err != nil {
 			return err
 		}
@@ -602,7 +602,7 @@ func deleteInCurrValue(v *V, caseless bool, param any) error {
 
 	if v.valueType == Array {
 		// integer expected
-		pos, err := intfToInt(param)
+		pos, err := anyToInt(param)
 		if err != nil {
 			return err
 		}

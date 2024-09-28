@@ -220,7 +220,7 @@ func UnmarshalString(s string) (*V, error) {
 	return UnmarshalNoCopy(b)
 }
 
-// MustUnmarshal just like Unmarshal(). If error occurres, a JSON value with "NotExist"
+// MustUnmarshal just like Unmarshal(). If error occurs, a JSON value with "NotExist"
 // type would be returned, which could do nothing and return nothing in later use. It
 // is useful to shorten codes.
 //
@@ -250,7 +250,7 @@ func Unmarshal(b []byte) (ret *V, err error) {
 	return
 }
 
-// MustUnmarshalNoCopy just like UnmarshalNoCopy(). If error occurres, a JSON value
+// MustUnmarshalNoCopy just like UnmarshalNoCopy(). If error occurs, a JSON value
 // with "NotExist" type would be returned, which could do nothing and return nothing
 // in later use. It is useful to shorten codes.
 //
@@ -320,7 +320,7 @@ func (v *V) IsFloat() bool {
 	return v.num.floated
 }
 
-// IsInteger tells whether value is a fix point interger
+// IsInteger tells whether value is a fix point integer
 //
 // IsNumber 判断当前值是不是一个定点数整型
 func (v *V) IsInteger() bool {
@@ -476,7 +476,7 @@ func (v *V) Float32() float32 {
 	return float32(v.num.f64)
 }
 
-// Bytes returns represented binary data which is encoede as Base64 string. []byte{}
+// Bytes returns represented binary data which is encoded as Base64 string. []byte{}
 // would be returned if value is
 // not a string type or base64 decode failed.
 //

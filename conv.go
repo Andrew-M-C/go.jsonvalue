@@ -133,7 +133,7 @@ func escapeStringToBuff(s string, buf buffer.Buffer, opt *Opt) {
 	}
 }
 
-func intfToInt(v any) (u int, err error) {
+func anyToInt(v any) (u int, err error) {
 	switch v := v.(type) {
 	case int:
 		u = v
@@ -162,7 +162,7 @@ func intfToInt(v any) (u int, err error) {
 	return
 }
 
-// func intfToInt64(v any) (i int64, err error) {
+// func anyToInt64(v any) (i int64, err error) {
 // 	switch v.(type) {
 // 	case int:
 // 		i = int64(v.(int))
@@ -191,7 +191,7 @@ func intfToInt(v any) (u int, err error) {
 // 	return
 // }
 
-func intfToString(v any) (s string, err error) {
+func anyToString(v any) (s string, err error) {
 	if v == nil {
 		return "", fmt.Errorf("%w: parameter is nil", ErrParameterError)
 	}

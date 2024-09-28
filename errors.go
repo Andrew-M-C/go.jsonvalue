@@ -1,6 +1,6 @@
 package jsonvalue
 
-// Error is equavilent to string and used to create some error constants in this package.
+// Error is equivalent to string and used to create some error constants in this package.
 // Error constants: http://godoc.org/github.com/Andrew-M-C/go.jsonvalue/#pkg-constants
 type Error string
 
@@ -9,7 +9,7 @@ func (e Error) Error() string {
 }
 
 const (
-	// ErrNilParameter identifies input paremeter is nil
+	// ErrNilParameter identifies input parameter is nil
 	//
 	// ErrNilParameter 表示参数为空
 	ErrNilParameter = Error("nil parameter")
@@ -19,10 +19,10 @@ const (
 	// ErrValueUninitialized 表示当前的 jsonvalue 实例未初始化
 	ErrValueUninitialized = Error("jsonvalue instance is not initialized")
 
-	// ErrRawBytesUnrecignized identifies all unexpected raw bytes
+	// ErrRawBytesUnrecognized identifies all unexpected raw bytes
 	//
-	// ErrRawBytesUnrecignized 表示无法识别的序列文本
-	ErrRawBytesUnrecignized = Error("unrecognized raw text")
+	// ErrRawBytesUnrecognized 表示无法识别的序列文本
+	ErrRawBytesUnrecognized = Error("unrecognized raw text")
 
 	// ErrNotValidNumberValue shows that a value starts with number or '-' is not eventually a number value
 	//
@@ -34,10 +34,10 @@ const (
 	// ErrNotValidBoolValue 表示当前值不是一个合法的布尔值
 	ErrNotValidBoolValue = Error("not a valid bool value")
 
-	// ErrNotValidNulllValue shows that a value starts with 'n' is not eventually a bool value
+	// ErrNotValidNullValue shows that a value starts with 'n' is not eventually a bool value
 	//
-	// ErrNotValidNulllValue 表示当前不是一个 null 值类型的 JSON
-	ErrNotValidNulllValue = Error("not a valid null value")
+	// ErrNotValidNullValue 表示当前不是一个 null 值类型的 JSON
+	ErrNotValidNullValue = Error("not a valid null value")
 
 	// ErrOutOfRange identifies that given position for a JSON array is out of range
 	//
@@ -64,7 +64,7 @@ const (
 	// ErrNotArrayValue 表示当前不是一个数组类型 JSON
 	ErrNotArrayValue = Error("not an array typed value")
 
-	// ErrNotObjectValue shows that operation target value is not an valie object
+	// ErrNotObjectValue shows that operation target value is not an valid object
 	//
 	// ErrNotObjectValue 表示当前不是一个合法的对象类型 JSON
 	ErrNotObjectValue = Error("not an object typed value")

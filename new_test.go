@@ -530,12 +530,12 @@ func testValueError(*testing.T) {
 		so(err, isErr)
 	})
 
-	cv("illegal negative interger", func() {
+	cv("illegal negative integer", func() {
 		_, err = UnmarshalString(`-1a`)
 		so(err, isErr)
 	})
 
-	cv("illegal positive interger", func() {
+	cv("illegal positive integer", func() {
 		_, err = UnmarshalString(`11a`)
 		so(err, isErr)
 	})

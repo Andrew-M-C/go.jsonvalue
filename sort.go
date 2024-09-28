@@ -150,7 +150,7 @@ func (p KeyPath) String() (s string) {
 	return
 }
 
-// ParentInfo show informations of parent of a JSON value.
+// ParentInfo show information of parent of a JSON value.
 //
 // ParentInfo 表示一个 JSON 值的父节点信息。
 type ParentInfo struct {

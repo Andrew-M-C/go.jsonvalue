@@ -15,7 +15,7 @@ func unmarshalWithIter(p pool, it iter, offset int) (v *V, err error) {
 	end := len(it)
 	offset, reachEnd := it.skipBlanks(offset)
 	if reachEnd {
-		return &V{}, fmt.Errorf("%w, cannot find any symbol characters found", ErrRawBytesUnrecignized)
+		return &V{}, fmt.Errorf("%w, cannot find any symbol characters found", ErrRawBytesUnrecognized)
 	}
 
 	chr := it[offset]
@@ -61,7 +61,7 @@ func unmarshalWithIter(p pool, it iter, offset int) (v *V, err error) {
 		}
 
 	default:
-		return &V{}, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+		return &V{}, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecognized, chr, offset)
 	}
 
 	if err != nil {
@@ -69,7 +69,7 @@ func unmarshalWithIter(p pool, it iter, offset int) (v *V, err error) {
 	}
 
 	if offset, reachEnd = it.skipBlanks(offset, end); !reachEnd {
-		return &V{}, fmt.Errorf("%w, unnecessary trailing data remains at Position %d", ErrRawBytesUnrecignized, offset)
+		return &V{}, fmt.Errorf("%w, unnecessary trailing data remains at Position %d", ErrRawBytesUnrecognized, offset)
 	}
 
 	return v, nil
@@ -158,7 +158,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			offset = sectEnd
 
 		default:
-			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecognized, chr, offset)
 		}
 	}
 
@@ -340,7 +340,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			offset = sectEnd
 
 		default:
-			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecignized, chr, offset)
+			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecognized, chr, offset)
 		}
 
 	}
@@ -438,7 +438,7 @@ func (it iter) handleEscapeStart(i *int, sectEnd *int) error {
 	chr := it[*i+1]
 	switch chr {
 	default:
-		return fmt.Errorf("unreconized character 0x%02X after escape symbol", chr)
+		return fmt.Errorf("unrecognized character 0x%02X after escape symbol", chr)
 	case '"', '\'', '/', '\\':
 		it[*sectEnd] = chr
 		*sectEnd++
@@ -635,7 +635,7 @@ func (it iter) parseFalse(offset int) (end int, err error) {
 
 func (it iter) parseNull(offset int) (end int, err error) {
 	if len(it)-offset < 4 {
-		return -1, fmt.Errorf("%w, insufficient character from Position %d", ErrNotValidNulllValue, offset)
+		return -1, fmt.Errorf("%w, insufficient character from Position %d", ErrNotValidNullValue, offset)
 	}
 
 	if it[offset] == 'n' &&
@@ -648,7 +648,7 @@ func (it iter) parseNull(offset int) (end int, err error) {
 	return -1, fmt.Errorf("%w, not 'null' at Position %d", ErrNotValidBoolValue, offset)
 }
 
-// skipBlanks skip blank characters until end or reaching a non-blank characher
+// skipBlanks skip blank characters until end or reaching a non-blank character
 func (it iter) skipBlanks(offset int, endPos ...int) (newOffset int, reachEnd bool) {
 	end := 0
 	if len(endPos) > 0 {

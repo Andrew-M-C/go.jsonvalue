@@ -21,7 +21,7 @@ func (v *V) Export(dst any) error {
 	return json.Unmarshal(b, dst)
 }
 
-// Import convert json value from a marsalable parameter to *V. This a experimental function.
+// Import convert json value from a marshal-able parameter to *V. This a experimental function.
 //
 // Import 将符合 encoding/json 的 struct 转为 *V 类型。不经过 encoding/json，并且支持 Option.
 func Import(src any, opts ...Option) (*V, error) {

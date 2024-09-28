@@ -7,9 +7,9 @@ type MustInserter interface {
 	// After completes the following operation of Insert(). It inserts value AFTER
 	// specified position.
 	//
-	// The last parameter identifies the postion where a new JSON is inserted after,
-	// it should ba an interger, no matter signed or unsigned. If the position is
-	// zero or positive interger, it tells the index of an array. If the position
+	// The last parameter identifies the position where a new JSON is inserted after,
+	// it should ba an integer, no matter signed or unsigned. If the position is
+	// zero or positive integer, it tells the index of an array. If the position
 	// is negative, it tells the backward index of an array.
 	//
 	// For example, 0 represents the first, and -2 represents the second last.
@@ -27,9 +27,9 @@ type MustInserter interface {
 	// Before completes the following operation of Insert(). It inserts value BEFORE
 	// specified position.
 	//
-	// The last parameter identifies the postion where a new JSON is inserted after,
-	// it should ba an interger, no matter signed or unsigned. If the position is
-	// zero or positive interger, it tells the index of an array. If the position
+	// The last parameter identifies the position where a new JSON is inserted after,
+	// it should ba an integer, no matter signed or unsigned. If the position is
+	// zero or positive integer, it tells the index of an array. If the position
 	// is negative, it tells the backward index of an array.
 	//
 	// For example, 0 represents the first, and -2 represents the second last.
@@ -153,9 +153,9 @@ type mAppender struct {
 //
 // Append 开始将一个 JSON 值添加到一个数组中。需结合 InTheEnd() 和 InTheBeginning() 函数使用。
 func (v *V) MustAppend(child any) MustAppender {
-	appd := v.Append(child)
+	a := v.Append(child)
 	return &mAppender{
-		appender: appd,
+		appender: a,
 	}
 }
 
