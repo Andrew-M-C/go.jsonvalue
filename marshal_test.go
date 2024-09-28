@@ -464,12 +464,12 @@ func testMarshalIndent(t *testing.T) {
 		bJS, _ := json.MarshalIndent(m, "", "  ")
 
 		so(string(b), eq, string(bJS))
-		t.Logf(string(b))
+		t.Log(string(b))
 
 		b = v.MustMarshal(OptIndent("+", "  "))
 		bJS, _ = json.MarshalIndent(m, "+", "  ")
 		so(string(b), eq, string(bJS))
-		t.Logf(string(b))
+		t.Log(string(b))
 	})
 
 	cv("array", func() {
@@ -485,12 +485,12 @@ func testMarshalIndent(t *testing.T) {
 		bJS, _ := json.MarshalIndent(m, "", "  ")
 
 		so(string(b), eq, string(bJS))
-		t.Logf(string(b))
+		t.Log(string(b))
 
 		b = v.MustMarshal(OptIndent("+", "  "))
 		bJS, _ = json.MarshalIndent(m, "+", "  ")
 		so(string(b), eq, string(bJS))
-		t.Logf(string(b))
+		t.Log(string(b))
 	})
 
 	cv("multiple indents", func() {
@@ -525,7 +525,7 @@ func testMarshalIndent(t *testing.T) {
 		bJS, _ := json.MarshalIndent(data, "", "  ")
 
 		so(string(b), eq, string(bJS))
-		t.Logf(string(b))
+		t.Log(string(b))
 	})
 
 	cv("empty indent", func() {
@@ -538,7 +538,7 @@ func testMarshalIndent(t *testing.T) {
 		bJS, _ := json.MarshalIndent(m, "", "")
 
 		so(string(b), eq, string(bJS))
-		t.Logf(string(b))
+		t.Log(string(b))
 	})
 }
 

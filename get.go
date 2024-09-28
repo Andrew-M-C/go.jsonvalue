@@ -96,33 +96,40 @@ func getFromObjectChildren(v *V, caseless bool, key string) (child *V, exist boo
 }
 
 func getInCurrentValue(v *V, caseless bool, param any) (*V, error) {
-	if v.valueType == Array {
-		// integer expected
-		pos, err := anyToInt(param)
-		if err != nil {
-			return &V{}, err
-		}
-		child, ok := childAtIndex(v, pos)
-		if !ok {
-			return &V{}, ErrOutOfRange
-		}
-		return child, nil
-
-	} else if v.valueType == Object {
-		// string expected
-		key, err := anyToString(param)
-		if err != nil {
-			return &V{}, err
-		}
-		child, exist := getFromObjectChildren(v, caseless, key)
-		if !exist {
-			return &V{}, ErrNotFound
-		}
-		return child, nil
-
-	} else {
+	switch v.valueType {
+	case Array:
+		return getInCurrentArray(v, param)
+	case Object:
+		return getInCurrentObject(v, caseless, param)
+	default:
 		return &V{}, fmt.Errorf("%v type does not supports Get()", v.valueType)
 	}
+}
+
+func getInCurrentArray(v *V, param any) (*V, error) {
+	// integer expected
+	pos, err := anyToInt(param)
+	if err != nil {
+		return &V{}, err
+	}
+	child, ok := childAtIndex(v, pos)
+	if !ok {
+		return &V{}, ErrOutOfRange
+	}
+	return child, nil
+}
+
+func getInCurrentObject(v *V, caseless bool, param any) (*V, error) {
+	// string expected
+	key, err := anyToString(param)
+	if err != nil {
+		return &V{}, err
+	}
+	child, exist := getFromObjectChildren(v, caseless, key)
+	if !exist {
+		return &V{}, ErrNotFound
+	}
+	return child, nil
 }
 
 // GetBytes is similar with v, err := Get(...); v.Bytes(). But if error occurs or Base64 decode error, returns error.
