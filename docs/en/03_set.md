@@ -119,6 +119,15 @@ This feature is so complicated that we will not use in most cases. But there is 
     fmt.Println(c.MustMarshalString())
 ```
 
+If you like placing keys ahead, you can use the `v.At(...).Set(...)` pattern:
+
+```go
+    // ...
+        v.At("array", i, "word").Set(words[i])
+        v.At("array", i, "lesson").Set(lessons[i]).
+    // ...
+```
+
 Final output:
 
 ```json
