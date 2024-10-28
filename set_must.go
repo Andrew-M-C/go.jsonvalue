@@ -1,5 +1,7 @@
 package jsonvalue
 
+// MARK: v.MustSet(xxx).At(xxx)
+
 // MustSetter is just like Setter, but not returning sub-value or error.
 type MustSetter interface {
 	// At completes the following operation of Set(). It defines position of value
@@ -25,7 +27,7 @@ type mSetter struct {
 // MustSet is just like Set, but not returning sub-value or error.
 func (v *V) MustSet(child any) MustSetter {
 	setter := v.Set(child)
-	return &mSetter{
+	return mSetter{
 		setter: setter,
 	}
 }
@@ -129,6 +131,32 @@ func (v *V) MustSetArray() MustSetter {
 	return v.MustSet(NewArray())
 }
 
-func (s *mSetter) At(firstParam any, otherParams ...any) {
+func (s mSetter) At(firstParam any, otherParams ...any) {
 	_, _ = s.setter.At(firstParam, otherParams...)
+}
+
+// MARK: v.At(xxx).Set(xxx)
+
+// AtSetter works like v.MustSet(...).At(...), just with different sequence.
+type AtSetter interface {
+	Set(subValue any)
+}
+
+// At works like v.MustSet(...).At(...), just with different sequence.
+func (v *V) At(firstParam any, otherParams ...any) AtSetter {
+	return atSetter{
+		v:           v,
+		firstParam:  firstParam,
+		otherParams: otherParams,
+	}
+}
+
+type atSetter struct {
+	v           *V
+	firstParam  any
+	otherParams []any
+}
+
+func (a atSetter) Set(sub any) {
+	a.v.MustSet(sub).At(a.firstParam, a.otherParams...)
 }

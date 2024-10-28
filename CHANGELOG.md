@@ -2,6 +2,7 @@
 
 [中文](./CHANGELOG_zh-cn.md)
 
+- [v1.4.1](#v141)
 - [v1.4.0](#v140)
 - [v1.3.8](#v138)
 - [v1.3.7](#v137)
@@ -15,6 +16,10 @@
 - [v1.2.1](#v121)
 - [v1.2.0](#v120)
 - [v1.1.1](#v111)
+
+## v1.4.1
+
+- Add `v.At(...).Set(...)` pattern, allowing putting keys ahead (comparing to `v.Set(...).At(...)`).
 
 ## v1.4.0
 

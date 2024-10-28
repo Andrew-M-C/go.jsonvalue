@@ -115,6 +115,15 @@ v.MustSet("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, ob
     fmt.Println(c.MustMarshalString())
 ```
 
+如果你喜欢把 key 放在前面，那你可以使用 `v.At(...).Set(...)` 模式:
+
+```go
+    // ...
+        v.At("array", i, "word").Set(words[i])
+        v.At("array", i, "lesson").Set(lessons[i]).
+    // ...
+```
+
 最终输出为:
 
 ```json

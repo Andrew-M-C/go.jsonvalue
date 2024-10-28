@@ -27,7 +27,7 @@ func testRangeArray(t *testing.T) {
 			t.Errorf("should NOT iter here!!!")
 		}
 
-		invalidV, _ := MustUnmarshalString("invalid").Get("another invalid", 1, 2, 3, "opps")
+		invalidV, _ := MustUnmarshalString("invalid").Get("another invalid", 1, 2, 3, "oops")
 		for range invalidV.IterArray() {
 			t.Errorf("should NOT iter here!!!")
 		}
@@ -116,7 +116,7 @@ func testRangeObject(t *testing.T) {
 			t.Errorf("should NOT iter here!!!")
 		}
 
-		invalidV, _ := MustUnmarshalString("invalid").Get("another invalid", 1, 2, 3, "opps")
+		invalidV, _ := MustUnmarshalString("invalid").Get("another invalid", 1, 2, 3, "oops")
 		for range invalidV.IterObjects() {
 			t.Errorf("should NOT iter here!!!")
 		}

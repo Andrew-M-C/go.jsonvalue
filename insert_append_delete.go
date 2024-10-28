@@ -200,7 +200,7 @@ func (ins *insert) Before(firstParam any, otherParams ...any) (*V, error) {
 			return &V{}, ErrNotArrayValue
 		}
 
-		pos, err := intfToInt(firstParam)
+		pos, err := anyToInt(firstParam)
 		if err != nil {
 			return &V{}, err
 		}
@@ -249,7 +249,7 @@ func (ins *insert) After(firstParam any, otherParams ...any) (*V, error) {
 			return &V{}, ErrNotArrayValue
 		}
 
-		pos, err := intfToInt(firstParam)
+		pos, err := anyToInt(firstParam)
 		if err != nil {
 			return &V{}, err
 		}
@@ -572,7 +572,7 @@ func (v *V) delete(caseless bool, firstParam any, otherParams ...any) error {
 
 	paramCount := len(otherParams)
 	if paramCount == 0 {
-		return deleteInCurrValue(v, caseless, firstParam)
+		return deleteInCurrentValue(v, caseless, firstParam)
 	}
 
 	child, err := get(v, caseless, firstParam, otherParams[:paramCount-1]...)
@@ -586,37 +586,42 @@ func (v *V) delete(caseless bool, firstParam any, otherParams ...any) error {
 	return child.delete(caseless, otherParams[paramCount-1])
 }
 
-func deleteInCurrValue(v *V, caseless bool, param any) error {
-	if v.valueType == Object {
-		// string expected
-		key, err := intfToString(param)
-		if err != nil {
-			return err
-		}
-
-		if exist := delFromObjectChildren(v, caseless, key); !exist {
-			return ErrNotFound
-		}
-		return nil
+func deleteInCurrentValue(v *V, caseless bool, param any) error {
+	switch v.valueType {
+	case Object:
+		return deleteInCurrentObject(v, caseless, param)
+	case Array:
+		return deleteInCurrentArray(v, param)
+	default:
+		// else, this is an object value
+		return fmt.Errorf("%v type does not supports Delete()", v.valueType)
 	}
+}
 
-	if v.valueType == Array {
-		// integer expected
-		pos, err := intfToInt(param)
-		if err != nil {
-			return err
-		}
-
-		pos = posAtIndexForRead(v, pos)
-		if pos < 0 {
-			return ErrOutOfRange
-		}
-		deleteInArr(v, pos)
-		return nil
+func deleteInCurrentObject(v *V, caseless bool, param any) error {
+	// string expected
+	key, err := anyToString(param)
+	if err != nil {
+		return err
 	}
+	if exist := delFromObjectChildren(v, caseless, key); !exist {
+		return ErrNotFound
+	}
+	return nil
+}
 
-	// else, this is an object value
-	return fmt.Errorf("%v type does not supports Delete()", v.valueType)
+func deleteInCurrentArray(v *V, param any) error {
+	// integer expected
+	pos, err := anyToInt(param)
+	if err != nil {
+		return err
+	}
+	pos = posAtIndexForRead(v, pos)
+	if pos < 0 {
+		return ErrOutOfRange
+	}
+	deleteInArr(v, pos)
+	return nil
 }
 
 func deleteInArr(v *V, pos int) {

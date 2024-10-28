@@ -189,6 +189,9 @@ func testSetMisc(t *testing.T) {
 	_, err = a.SetBool(true).At(0, 0, -1)
 	so(err, isNil)
 	so(a.MustMarshalString(), eq, "[[[[],true]]]")
+
+	a.At(0, 0, -1).Set(false)
+	so(a.MustMarshalString(), eq, "[[[[],false]]]")
 }
 
 func testSetError(t *testing.T) {

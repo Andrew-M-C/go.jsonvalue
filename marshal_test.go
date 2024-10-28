@@ -431,24 +431,24 @@ func testMarshalEscapeUTF8(*testing.T) {
 
 func testMarshalEscapeSlash(*testing.T) {
 	v := NewString("https://google.com")
-	dflt := `"https:\/\/google.com"`
-	nonesc := `"https://google.com"`
+	defaultStr := `"https:\/\/google.com"`
+	nonEsc := `"https://google.com"`
 
 	cv("default", func() {
 		s := v.MustMarshalString()
-		so(s, eq, dflt)
+		so(s, eq, defaultStr)
 		so(MustUnmarshalString(s).String(), eq, v.String())
 	})
 
 	cv("escape slash", func() {
 		s := v.MustMarshalString(OptEscapeSlash(true))
-		so(s, eq, dflt)
+		so(s, eq, defaultStr)
 		so(MustUnmarshalString(s).String(), eq, v.String())
 	})
 
 	cv("non-escape slash", func() {
 		s := v.MustMarshalString(OptEscapeSlash(false))
-		so(s, eq, nonesc)
+		so(s, eq, nonEsc)
 		so(MustUnmarshalString(s).String(), eq, v.String())
 	})
 }
@@ -464,12 +464,12 @@ func testMarshalIndent(t *testing.T) {
 		bJS, _ := json.MarshalIndent(m, "", "  ")
 
 		so(string(b), eq, string(bJS))
-		t.Logf(string(b))
+		t.Log(string(b))
 
 		b = v.MustMarshal(OptIndent("+", "  "))
 		bJS, _ = json.MarshalIndent(m, "+", "  ")
 		so(string(b), eq, string(bJS))
-		t.Logf(string(b))
+		t.Log(string(b))
 	})
 
 	cv("array", func() {
@@ -485,12 +485,12 @@ func testMarshalIndent(t *testing.T) {
 		bJS, _ := json.MarshalIndent(m, "", "  ")
 
 		so(string(b), eq, string(bJS))
-		t.Logf(string(b))
+		t.Log(string(b))
 
 		b = v.MustMarshal(OptIndent("+", "  "))
 		bJS, _ = json.MarshalIndent(m, "+", "  ")
 		so(string(b), eq, string(bJS))
-		t.Logf(string(b))
+		t.Log(string(b))
 	})
 
 	cv("multiple indents", func() {
@@ -525,7 +525,7 @@ func testMarshalIndent(t *testing.T) {
 		bJS, _ := json.MarshalIndent(data, "", "  ")
 
 		so(string(b), eq, string(bJS))
-		t.Logf(string(b))
+		t.Log(string(b))
 	})
 
 	cv("empty indent", func() {
@@ -538,12 +538,12 @@ func testMarshalIndent(t *testing.T) {
 		bJS, _ := json.MarshalIndent(m, "", "")
 
 		so(string(b), eq, string(bJS))
-		t.Logf(string(b))
+		t.Log(string(b))
 	})
 }
 
 func testMarshalControlCharacters(t *testing.T) {
-	unshownableControlChars := []byte{
+	unShowAbleControlChars := []byte{
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 		0x0E, 0x0F,
 		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
@@ -552,14 +552,14 @@ func testMarshalControlCharacters(t *testing.T) {
 	}
 	expectedBuilder := strings.Builder{}
 	expectedBuilder.WriteByte('"')
-	for _, b := range unshownableControlChars {
+	for _, b := range unShowAbleControlChars {
 		expectedBuilder.WriteString(fmt.Sprintf("\\u%04X", b))
 	}
 	expectedBuilder.WriteByte('"')
 	expected := expectedBuilder.String()
 
-	goVer, _ := json.Marshal(string(unshownableControlChars))
-	v := New(string(unshownableControlChars))
+	goVer, _ := json.Marshal(string(unShowAbleControlChars))
+	v := New(string(unShowAbleControlChars))
 	s := v.MustMarshalString()
 	so(s, eq, expected)
 	so(strings.ToLower(s), eq, strings.ReplaceAll(string(goVer), string('\u007f'), "\\u007f"))
@@ -571,11 +571,11 @@ func testMarshalControlCharacters(t *testing.T) {
 
 	v, err := UnmarshalString(s)
 	so(err, isNil)
-	so(v.String(), eq, string(unshownableControlChars))
+	so(v.String(), eq, string(unShowAbleControlChars))
 }
 
 func testMarshalJSONPAndControlAsciiForUTF8(t *testing.T) {
-	unshownableControlCharsAndJSONPSpecial := []rune{
+	unShowAbleControlCharsAndJSONPSpecial := []rune{
 		0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
 		0x0E, 0x0F,
 		0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
@@ -586,14 +586,14 @@ func testMarshalJSONPAndControlAsciiForUTF8(t *testing.T) {
 
 	expectedBuilder := strings.Builder{}
 	expectedBuilder.WriteByte('"')
-	for _, r := range unshownableControlCharsAndJSONPSpecial {
+	for _, r := range unShowAbleControlCharsAndJSONPSpecial {
 		expectedBuilder.WriteString(fmt.Sprintf("\\u%04X", r))
 	}
 	expectedBuilder.WriteByte('"')
 	expected := expectedBuilder.String()
 
-	goVer, _ := json.Marshal(string(unshownableControlCharsAndJSONPSpecial))
-	v := New(string(unshownableControlCharsAndJSONPSpecial))
+	goVer, _ := json.Marshal(string(unShowAbleControlCharsAndJSONPSpecial))
+	v := New(string(unShowAbleControlCharsAndJSONPSpecial))
 	s := v.MustMarshalString(OptUTF8())
 	so(s, eq, expected)
 	so(strings.ToLower(s), eq, strings.ReplaceAll(string(goVer), string('\u007f'), "\\u007f"))
@@ -604,7 +604,7 @@ func testMarshalJSONPAndControlAsciiForUTF8(t *testing.T) {
 
 	v, err := UnmarshalString(s)
 	so(err, isNil)
-	so(v.String(), eq, string(unshownableControlCharsAndJSONPSpecial))
+	so(v.String(), eq, string(unShowAbleControlCharsAndJSONPSpecial))
 }
 
 func testIssue30(t *testing.T) {

@@ -133,65 +133,22 @@ func escapeStringToBuff(s string, buf buffer.Buffer, opt *Opt) {
 	}
 }
 
-func intfToInt(v any) (u int, err error) {
-	switch v := v.(type) {
-	case int:
-		u = v
-	case uint:
-		u = int(v)
-	case int64:
-		u = int(v)
-	case uint64:
-		u = int(v)
-	case int32:
-		u = int(v)
-	case uint32:
-		u = int(v)
-	case int16:
-		u = int(v)
-	case uint16:
-		u = int(v)
-	case int8:
-		u = int(v)
-	case uint8:
-		u = int(v)
-	default:
-		err = fmt.Errorf("%s is not a number", reflect.TypeOf(v).String())
+func anyToInt(v any) (u int, err error) {
+	if v == nil {
+		return 0, fmt.Errorf("%w: parameter is nil", ErrParameterError)
 	}
-
-	return
+	value := reflect.ValueOf(v)
+	switch value.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return int(value.Int()), nil
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return int(value.Uint()), nil
+	default:
+		return 0, fmt.Errorf("%v is not a number", reflect.TypeOf(v))
+	}
 }
 
-// func intfToInt64(v any) (i int64, err error) {
-// 	switch v.(type) {
-// 	case int:
-// 		i = int64(v.(int))
-// 	case uint:
-// 		i = int64(v.(uint))
-// 	case int64:
-// 		i = int64(v.(int64))
-// 	case uint64:
-// 		i = int64(v.(uint64))
-// 	case int32:
-// 		i = int64(v.(int32))
-// 	case uint32:
-// 		i = int64(v.(uint32))
-// 	case int16:
-// 		i = int64(v.(int16))
-// 	case uint16:
-// 		i = int64(v.(uint16))
-// 	case int8:
-// 		i = int64(v.(int8))
-// 	case uint8:
-// 		i = int64(v.(uint8))
-// 	default:
-// 		err = fmt.Errorf("%s is not a number", reflect.TypeOf(v).String())
-// 	}
-
-// 	return
-// }
-
-func intfToString(v any) (s string, err error) {
+func anyToString(v any) (s string, err error) {
 	if v == nil {
 		return "", fmt.Errorf("%w: parameter is nil", ErrParameterError)
 	}

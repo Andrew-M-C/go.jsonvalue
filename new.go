@@ -247,7 +247,7 @@ func newArray(p pool) *V {
 	return v
 }
 
-func newFloat64f(p pool, f float64, format byte, prec, bitsize int) *V {
+func newFloat64f(p pool, f float64, format byte, prec, bitSize int) *V {
 	v := new(p, Number)
 	// v.num = &num{}
 	v.num.negative = f < 0
@@ -256,7 +256,7 @@ func newFloat64f(p pool, f float64, format byte, prec, bitsize int) *V {
 	v.num.u64 = uint64(f)
 
 	if isValidFloat(f) {
-		s := strconv.FormatFloat(f, format, prec, bitsize)
+		s := strconv.FormatFloat(f, format, prec, bitSize)
 		v.srcByte = []byte(s)
 	}
 

@@ -46,7 +46,7 @@ func get(v *V, caseless bool, firstParam any, otherParams ...any) (*V, error) {
 		}
 		return get(v, caseless, p1, p2...)
 	}
-	child, err := getInCurrValue(v, caseless, firstParam)
+	child, err := getInCurrentValue(v, caseless, firstParam)
 	if err != nil {
 		return &V{}, err
 	}
@@ -95,34 +95,41 @@ func getFromObjectChildren(v *V, caseless bool, key string) (child *V, exist boo
 	return &V{}, false
 }
 
-func getInCurrValue(v *V, caseless bool, param any) (*V, error) {
-	if v.valueType == Array {
-		// integer expected
-		pos, err := intfToInt(param)
-		if err != nil {
-			return &V{}, err
-		}
-		child, ok := childAtIndex(v, pos)
-		if !ok {
-			return &V{}, ErrOutOfRange
-		}
-		return child, nil
-
-	} else if v.valueType == Object {
-		// string expected
-		key, err := intfToString(param)
-		if err != nil {
-			return &V{}, err
-		}
-		child, exist := getFromObjectChildren(v, caseless, key)
-		if !exist {
-			return &V{}, ErrNotFound
-		}
-		return child, nil
-
-	} else {
+func getInCurrentValue(v *V, caseless bool, param any) (*V, error) {
+	switch v.valueType {
+	case Array:
+		return getInCurrentArray(v, param)
+	case Object:
+		return getInCurrentObject(v, caseless, param)
+	default:
 		return &V{}, fmt.Errorf("%v type does not supports Get()", v.valueType)
 	}
+}
+
+func getInCurrentArray(v *V, param any) (*V, error) {
+	// integer expected
+	pos, err := anyToInt(param)
+	if err != nil {
+		return &V{}, err
+	}
+	child, ok := childAtIndex(v, pos)
+	if !ok {
+		return &V{}, ErrOutOfRange
+	}
+	return child, nil
+}
+
+func getInCurrentObject(v *V, caseless bool, param any) (*V, error) {
+	// string expected
+	key, err := anyToString(param)
+	if err != nil {
+		return &V{}, err
+	}
+	child, exist := getFromObjectChildren(v, caseless, key)
+	if !exist {
+		return &V{}, ErrNotFound
+	}
+	return child, nil
 }
 
 // GetBytes is similar with v, err := Get(...); v.Bytes(). But if error occurs or Base64 decode error, returns error.
@@ -147,7 +154,7 @@ func getBytes(v *V, caseless bool, firstParam any, otherParams ...any) ([]byte, 
 	return b, nil
 }
 
-// GetString is equalivent to v, err := Get(...); v.String(). If error occurs, returns "".
+// GetString is equivalent to v, err := Get(...); v.String(). If error occurs, returns "".
 //
 // GetString 等效于 v, err := Get(...); v.String()。如果发生错误，则返回 ""。
 func (v *V) GetString(firstParam any, otherParams ...any) (string, error) {
@@ -165,7 +172,7 @@ func getString(v *V, caseless bool, firstParam any, otherParams ...any) (string,
 	return ret.String(), nil
 }
 
-// GetInt is equalivent to v, err := Get(...); v.Int(). If error occurs, returns 0.
+// GetInt is equivalent to v, err := Get(...); v.Int(). If error occurs, returns 0.
 //
 // GetInt 等效于 v, err := Get(...); v.Int()。如果发生错误，则返回 0。
 func (v *V) GetInt(firstParam any, otherParams ...any) (int, error) {
@@ -181,7 +188,7 @@ func getInt(v *V, caseless bool, firstParam any, otherParams ...any) (int, error
 	return ret.Int(), err
 }
 
-// GetUint is equalivent to v, err := Get(...); v.Uint(). If error occurs, returns 0.
+// GetUint is equivalent to v, err := Get(...); v.Uint(). If error occurs, returns 0.
 //
 // GetUint 等效于 v, err := Get(...); v.Uint()。如果发生错误，则返回 0。
 func (v *V) GetUint(firstParam any, otherParams ...any) (uint, error) {
@@ -197,7 +204,7 @@ func getUint(v *V, caseless bool, firstParam any, otherParams ...any) (uint, err
 	return ret.Uint(), err
 }
 
-// GetInt64 is equalivent to v, err := Get(...); v.Int64(). If error occurs, returns 0.
+// GetInt64 is equivalent to v, err := Get(...); v.Int64(). If error occurs, returns 0.
 //
 // GetInt64 等效于 v, err := Get(...); v.Int64()。如果发生错误，则返回 0。
 func (v *V) GetInt64(firstParam any, otherParams ...any) (int64, error) {
@@ -213,7 +220,7 @@ func getInt64(v *V, caseless bool, firstParam any, otherParams ...any) (int64, e
 	return ret.Int64(), err
 }
 
-// GetUint64 is equalivent to v, err := Get(...); v.Unt64(). If error occurs, returns 0.
+// GetUint64 is equivalent to v, err := Get(...); v.Unt64(). If error occurs, returns 0.
 //
 // GetUint64 等效于 v, err := Get(...); v.Unt64()。如果发生错误，则返回 0。
 func (v *V) GetUint64(firstParam any, otherParams ...any) (uint64, error) {
@@ -229,7 +236,7 @@ func getUint64(v *V, caseless bool, firstParam any, otherParams ...any) (uint64,
 	return ret.Uint64(), err
 }
 
-// GetInt32 is equalivent to v, err := Get(...); v.Int32(). If error occurs, returns 0.
+// GetInt32 is equivalent to v, err := Get(...); v.Int32(). If error occurs, returns 0.
 //
 // GetInt32 等效于 v, err := Get(...); v.Int32()。如果发生错误，则返回 0。
 func (v *V) GetInt32(firstParam any, otherParams ...any) (int32, error) {
@@ -245,7 +252,7 @@ func getInt32(v *V, caseless bool, firstParam any, otherParams ...any) (int32, e
 	return ret.Int32(), err
 }
 
-// GetUint32 is equalivent to v, err := Get(...); v.Uint32(). If error occurs, returns 0.
+// GetUint32 is equivalent to v, err := Get(...); v.Uint32(). If error occurs, returns 0.
 //
 // GetUint32 等效于 v, err := Get(...); v.Uint32()。如果发生错误，则返回 0。
 func (v *V) GetUint32(firstParam any, otherParams ...any) (uint32, error) {
@@ -261,7 +268,7 @@ func getUint32(v *V, caseless bool, firstParam any, otherParams ...any) (uint32,
 	return ret.Uint32(), err
 }
 
-// GetFloat64 is equalivent to v, err := Get(...); v.Float64(). If error occurs, returns 0.0.
+// GetFloat64 is equivalent to v, err := Get(...); v.Float64(). If error occurs, returns 0.0.
 //
 // GetFloat64 等效于 v, err := Get(...); v.Float64()。如果发生错误，则返回 0.0。
 func (v *V) GetFloat64(firstParam any, otherParams ...any) (float64, error) {
@@ -277,7 +284,7 @@ func getFloat64(v *V, caseless bool, firstParam any, otherParams ...any) (float6
 	return ret.Float64(), err
 }
 
-// GetFloat32 is equalivent to v, err := Get(...); v.Float32(). If error occurs, returns 0.0.
+// GetFloat32 is equivalent to v, err := Get(...); v.Float32(). If error occurs, returns 0.0.
 //
 // GetFloat32 等效于 v, err := Get(...); v.Float32()。如果发生错误，则返回 0.0。
 func (v *V) GetFloat32(firstParam any, otherParams ...any) (float32, error) {
@@ -293,7 +300,7 @@ func getFloat32(v *V, caseless bool, firstParam any, otherParams ...any) (float3
 	return ret.Float32(), err
 }
 
-// GetBool is equalivent to v, err := Get(...); v.Bool(). If error occurs, returns false.
+// GetBool is equivalent to v, err := Get(...); v.Bool(). If error occurs, returns false.
 //
 // GetBool 等效于 v, err := Get(...); v.Bool()。如果发生错误，则返回 false。
 func (v *V) GetBool(firstParam any, otherParams ...any) (bool, error) {
@@ -309,7 +316,7 @@ func getBool(v *V, caseless bool, firstParam any, otherParams ...any) (bool, err
 	return ret.Bool(), err
 }
 
-// GetNull is equalivent to v, err := Get(...); raise err if error occurs or v.IsNull() == false.
+// GetNull is equivalent to v, err := Get(...); raise err if error occurs or v.IsNull() == false.
 //
 // GetNull 等效于 v, err := Get(...);，如果发生错误或者 v.IsNull() == false 则返回错误。
 func (v *V) GetNull(firstParam any, otherParams ...any) error {
@@ -327,7 +334,7 @@ func getNull(v *V, caseless bool, firstParam any, otherParams ...any) error {
 	return nil
 }
 
-// GetObject is equalivent to v, err := Get(...); raise err if error occurs or v.IsObject() == false.
+// GetObject is equivalent to v, err := Get(...); raise err if error occurs or v.IsObject() == false.
 //
 // GetObject 等效于 v, err := Get(...);，如果发生错误或者 v.IsObject() == false 则返回错误。
 func (v *V) GetObject(firstParam any, otherParams ...any) (*V, error) {
@@ -345,7 +352,7 @@ func getObject(v *V, caseless bool, firstParam any, otherParams ...any) (*V, err
 	return ret, nil
 }
 
-// GetArray is equalivent to v, err := Get(...); raise err if or v.IsArray() == false.
+// GetArray is equivalent to v, err := Get(...); raise err if or v.IsArray() == false.
 //
 // GetArray 等效于 v, err := Get(...);，如果发生错误或者 v.IsArray() == false 则返回错误。
 func (v *V) GetArray(firstParam any, otherParams ...any) (*V, error) {
@@ -407,86 +414,86 @@ func (v *V) Caseless() Caseless {
 		return v
 
 	case Array, Object:
-		return &caselessOper{
+		return &caselessOp{
 			v: v,
 		}
 	}
 }
 
-type caselessOper struct {
+type caselessOp struct {
 	v *V
 }
 
-func (g *caselessOper) Get(firstParam any, otherParams ...any) (*V, error) {
+func (g *caselessOp) Get(firstParam any, otherParams ...any) (*V, error) {
 	return get(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) MustGet(firstParam any, otherParams ...any) *V {
+func (g *caselessOp) MustGet(firstParam any, otherParams ...any) *V {
 	res, _ := get(g.v, true, firstParam, otherParams...)
 	return res
 }
 
-func (g *caselessOper) GetBytes(firstParam any, otherParams ...any) ([]byte, error) {
+func (g *caselessOp) GetBytes(firstParam any, otherParams ...any) ([]byte, error) {
 	return getBytes(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetString(firstParam any, otherParams ...any) (string, error) {
+func (g *caselessOp) GetString(firstParam any, otherParams ...any) (string, error) {
 	return getString(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetInt(firstParam any, otherParams ...any) (int, error) {
+func (g *caselessOp) GetInt(firstParam any, otherParams ...any) (int, error) {
 	return getInt(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetUint(firstParam any, otherParams ...any) (uint, error) {
+func (g *caselessOp) GetUint(firstParam any, otherParams ...any) (uint, error) {
 	return getUint(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetInt64(firstParam any, otherParams ...any) (int64, error) {
+func (g *caselessOp) GetInt64(firstParam any, otherParams ...any) (int64, error) {
 	return getInt64(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetUint64(firstParam any, otherParams ...any) (uint64, error) {
+func (g *caselessOp) GetUint64(firstParam any, otherParams ...any) (uint64, error) {
 	return getUint64(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetInt32(firstParam any, otherParams ...any) (int32, error) {
+func (g *caselessOp) GetInt32(firstParam any, otherParams ...any) (int32, error) {
 	return getInt32(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetUint32(firstParam any, otherParams ...any) (uint32, error) {
+func (g *caselessOp) GetUint32(firstParam any, otherParams ...any) (uint32, error) {
 	return getUint32(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetFloat64(firstParam any, otherParams ...any) (float64, error) {
+func (g *caselessOp) GetFloat64(firstParam any, otherParams ...any) (float64, error) {
 	return getFloat64(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetFloat32(firstParam any, otherParams ...any) (float32, error) {
+func (g *caselessOp) GetFloat32(firstParam any, otherParams ...any) (float32, error) {
 	return getFloat32(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetBool(firstParam any, otherParams ...any) (bool, error) {
+func (g *caselessOp) GetBool(firstParam any, otherParams ...any) (bool, error) {
 	return getBool(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetNull(firstParam any, otherParams ...any) error {
+func (g *caselessOp) GetNull(firstParam any, otherParams ...any) error {
 	return getNull(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetObject(firstParam any, otherParams ...any) (*V, error) {
+func (g *caselessOp) GetObject(firstParam any, otherParams ...any) (*V, error) {
 	return getObject(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) GetArray(firstParam any, otherParams ...any) (*V, error) {
+func (g *caselessOp) GetArray(firstParam any, otherParams ...any) (*V, error) {
 	return getArray(g.v, true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) Delete(firstParam any, otherParams ...any) error {
+func (g *caselessOp) Delete(firstParam any, otherParams ...any) error {
 	return g.v.delete(true, firstParam, otherParams...)
 }
 
-func (g *caselessOper) MustDelete(firstParam any, otherParams ...any) {
+func (g *caselessOp) MustDelete(firstParam any, otherParams ...any) {
 	_ = g.v.delete(true, firstParam, otherParams...)
 }
 

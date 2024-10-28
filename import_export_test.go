@@ -19,7 +19,7 @@ func testImportExport(t *testing.T) {
 	cv("export to float", func() { testExportFloat(t) })
 	cv("export to bool", func() { testExportBool(t) })
 	cv("misc import", func() { testImport(t) })
-	cv("test structconv.go Import", func() { testStructConv_Import(t) })
+	cv("test struct conv.go Import", func() { testStructConv_Import(t) })
 
 	cv("test Issue 19", func() { testImportBugIssue19(t) })
 	cv("test Issue 22", func() { testImportBugIssue22(t) })
@@ -214,7 +214,7 @@ func testStructConv_Import(t *testing.T) {
 	cv("general types", func() { testStructConv_Import_NormalTypes(t) })
 	cv("array and slice", func() { testStructConv_Import_ArrayAndSlice(t) })
 	cv("json.Marshaler", func() { testStructConv_Import_JSONMarshaler(t) })
-	cv("encding.TextMarshaler", func() { testStructConv_Import_TextMarshaler(t) })
+	cv("encoding.TextMarshaler", func() { testStructConv_Import_TextMarshaler(t) })
 }
 
 func testStructConv_Import_RawAndBytes(t *testing.T) {
@@ -979,7 +979,6 @@ func testStructConv_Import_TextMarshaler(*testing.T) {
 		so(v.Len(), eq, 0)
 		so(v.MustMarshalString(), eq, "{}")
 	})
-	// TODO:
 }
 
 type customizedTextMarshaler struct {

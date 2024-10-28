@@ -53,8 +53,8 @@ func testIterAssignWideRune(t *testing.T) {
 
 func testIterChrSearching(t *testing.T) {
 	raw := []byte("   {  [ {  } ]  }  ")
-	t.Logf("")
-	t.Logf(string(raw))
+	t.Log("")
+	t.Log(string(raw))
 	t.Logf("01234567890123456789")
 
 	it := iter(raw)
@@ -92,8 +92,8 @@ func testIterParseNumber(t *testing.T) {
 
 		v, end, reachEnd, err := it.parseNumber(globalPool{}, 0)
 		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
-		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
-		t.Logf(string(b[:end]))
+		t.Logf("end = %d, reachEnd = %v", end, reachEnd)
+		t.Log(string(b[:end]))
 		so(err, isNil)
 		so(v.num.f64, eq, -12345.6789)
 		so(reachEnd, isTrue)
@@ -107,8 +107,8 @@ func testIterParseNumber(t *testing.T) {
 		so(v.num.f64, eq, -12345.6789)
 		so(reachEnd, isFalse)
 		t.Logf("i64 = %v, u64 = %v, f64 = %v", v.num.i64, v.num.u64, v.num.f64)
-		t.Logf("end = %d, readnEnd = %v", end, reachEnd)
-		t.Logf(string(b[:end]))
+		t.Logf("end = %d, reachEnd = %v", end, reachEnd)
+		t.Log(string(b[:end]))
 	})
 }
 

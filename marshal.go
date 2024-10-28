@@ -10,7 +10,7 @@ import (
 	"github.com/Andrew-M-C/go.jsonvalue/internal/unsafe"
 )
 
-// MustMarshal is the same as Marshal. If error pccurred, an empty byte slice will be returned.
+// MustMarshal is the same as Marshal. If error occurs, an empty byte slice will be returned.
 //
 // MustMarshal 与 Marshal 相同，但是当错误发生时，什么都不做，直接返回空数据
 func (v *V) MustMarshal(opts ...Option) []byte {
@@ -21,7 +21,7 @@ func (v *V) MustMarshal(opts ...Option) []byte {
 	return ret
 }
 
-// MustMarshalString is the same as MarshalString, If error pccurred, an empty byte slice will be returned.
+// MustMarshalString is the same as MarshalString, If error occurs, an empty byte slice will be returned.
 //
 // MustMarshalString 与 MarshalString 相同，但是当错误发生时，什么都不做，直接返回空数据
 func (v *V) MustMarshalString(opt ...Option) string {

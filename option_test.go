@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-// This function used to ovwrwrite system default marshal options
+// This function used to overwrite system default marshal options
 func init() {
 	SetDefaultMarshalOptions(OptEscapeSlash(false))
 }
