@@ -25,6 +25,8 @@ func testImportExport(t *testing.T) {
 	cv("test Issue 22", func() { testImportBugIssue22(t) })
 
 	cv("test miscellaneous anonymous situations", func() { testImportMiscAnonymous(t) })
+
+	cv("test ExtractAll", func() { testExtractAll(t) })
 }
 
 func testExportString(*testing.T) {
@@ -1380,4 +1382,49 @@ type refTextMarshaler struct {
 
 func (r *refTextMarshaler) MarshalText() ([]byte, error) {
 	return []byte(r.s), nil
+}
+
+func testExtractAll(t *testing.T) {
+	cv("general situation", func() {
+		v := NewObject()
+		v.At("string").Set("hello, world")
+		v.At("int").Set("12345")
+		v.At("bool").Set(true)
+		v.At("array").Set([]any{`{"str_in_obj_in_arr":"sub_sub_str"}`})
+		t.Log(v.MustMarshalString())
+
+		v = New(map[string]any{"embeded": v.MustMarshalString()})
+		v = New(map[string]any{"embeded_again": v.MustMarshalString()})
+		t.Log(v.MustMarshalString()) // should contains "\\\""
+		_, err := v.Get("embeded_again", "embeded", "string")
+		so(err, isErr)
+
+		v, err = ExtractAll(v)
+		t.Log(v.MustMarshalString())
+		so(err, isNil)
+
+		subV, err := v.Get("embeded_again", "embeded", "string")
+		so(err, isNil)
+		so(subV.ValueType(), eq, String)
+		so(subV.String(), eq, "hello, world")
+
+		subV, err = v.Get("embeded_again", "embeded", "int")
+		so(err, isNil)
+		so(subV.ValueType(), eq, Number)
+		so(subV.Int(), eq, 12345)
+
+		subV, err = v.Get("embeded_again", "embeded", "array", 0, "str_in_obj_in_arr")
+		so(err, isNil)
+		so(subV.ValueType(), eq, String)
+		so(subV.String(), eq, "sub_sub_str")
+	})
+
+	cv("extact error", func() {
+		ch := make(chan bool)
+		defer close(ch)
+
+		v, err := ExtractAll(ch)
+		so(err, isErr)
+		so(v, notNil)
+	})
 }

@@ -39,7 +39,59 @@ func Import(src any, opts ...Option) (*V, error) {
 	return res, nil
 }
 
-// parserFunc 处理对应 reflect.Value 的函数
+// ExtractAll firstly does Import, then checks all string-typed value. Once they
+// could be successfully unmarshal again, they will be unmarshaled again until
+// no sub-value could be unmarshaled any more.
+//
+// ExtractAll 首先执行 Import 操作, 然后再迭代检查所有 string 类型的值, 如果能够再成功执行
+// unmarshal 操作, 则继续将这些值 unmarshal 掉。如此以往直至所有值均无法再反序列化。
+func ExtractAll(src any, opts ...Option) (*V, error) {
+	v, err := Import(src, opts...)
+	if err != nil {
+		return v, err
+	}
+	return extractValue(v), nil
+}
+
+func extractValue(v *V) *V {
+	switch v.valueType {
+	case String:
+		return extractStringValue(v)
+	case Object:
+		return extractObjectValue(v)
+	case Array:
+		return extractArrayValue(v)
+	default:
+		return v
+	}
+}
+
+func extractStringValue(v *V) *V {
+	newV, err := UnmarshalString(v.valueStr)
+	if err != nil {
+		return v
+	}
+	return extractValue(newV)
+}
+
+func extractObjectValue(v *V) *V {
+	for key, subV := range v.children.object {
+		v.children.object[key] = childWithProperty{
+			id: subV.id,
+			v:  extractValue(subV.v),
+		}
+	}
+	return v
+}
+
+func extractArrayValue(v *V) *V {
+	for i, subV := range v.children.arr {
+		v.children.arr[i] = extractValue(subV)
+	}
+	return v
+}
+
+// parserFunc handle functions operating various reflect.Value types
 type parserFunc func(v reflect.Value, ex ext) (*V, error)
 
 type ext struct {
@@ -61,7 +113,7 @@ func (e ext) shouldOmitEmpty() bool {
 	return e.omitempty || e.private
 }
 
-// validateValAndReturnParser 检查入参合法性并返回相应的处理函数
+// validateValAndReturnParser checks incoming parameter and return corresponding handler
 func validateValAndReturnParser(v reflect.Value, ex ext) (out reflect.Value, fu parserFunc, err error) {
 	out = v
 
@@ -138,7 +190,7 @@ func validateValAndReturnParser(v reflect.Value, ex ext) (out reflect.Value, fu 
 	return
 }
 
-// Hit marshaler if fu is not nil.
+// Get marshaler if fu is not nil.
 func checkAndParseMarshaler(v reflect.Value) (out reflect.Value, fu parserFunc) {
 	out = v
 	if !v.IsValid() {
