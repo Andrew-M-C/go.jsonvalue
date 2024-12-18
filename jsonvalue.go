@@ -70,6 +70,8 @@ const (
 	Unknown
 )
 
+type any = interface{}
+
 var typeStr = [Unknown + 1]string{
 	"illegal",
 	"string",
