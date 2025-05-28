@@ -45,7 +45,7 @@ v.Set(child).At("child")
 fmt.Println(v.MustMarshalString())
 ```
 
-输出为: `{"data":{"message":"Hello, JSON!"}}`
+输出为: `{"child":{"text":"Hello, jsonvalue!"}}`
 
 也可以直接配置一个合法的 JSON 值：
 

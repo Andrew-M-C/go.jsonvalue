@@ -109,14 +109,14 @@ As for array auto-creating, the procedure is a bit complicated:
 This feature is so complicated that we will not use in most cases. But there is one situation which is useful:
 
 ```go
-    const words = []string{"apple", "banana", "cat", "dog"}
-    const lessons = []int{1, 2, 3, 4}
+    var words = []string{"apple", "banana", "cat", "dog"}
+    var lessons = []int{1, 2, 3, 4}
     v := jsonvalue.NewObject()
     for i := range words {
         v.MustSet(words[i]).At("array", i, "word")
         v.MustSet(lessons[i]).At("array", i, "lesson")
     }
-    fmt.Println(c.MustMarshalString())
+    fmt.Println(v.MustMarshalString())
 ```
 
 If you like placing keys ahead, you can use the `v.At(...).Set(...)` pattern:
