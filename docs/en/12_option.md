@@ -1,31 +1,30 @@
-
 <font size=6>Additional Options</font>
 
 [Prev Page](./11_comparation.md) | [Contents](./README.md) | [Next Page](./13_beta.md)
 
 ---
 
-This sections describe the usage of additional options in detail. Or you can refer to Section [Special Application Scenarios](./10_scenarios.md).
+This section describes the usage of additional options in detail. Or you can refer to Section [Special Application Scenarios](./10_scenarios.md).
 
 ---
 
 - [Overview](#overview)
 - [Ignoring null values](#ignoring-null-values)
-- [Visible Indention](#visible-indention)
-- [Specify the Sequence of Keys in Object Value.](#specify-the-sequence-of-keys-in-object-value)
+- [Visible Indentation](#visible-indentation)
+- [Specify the Sequence of Keys in Object Value](#specify-the-sequence-of-keys-in-object-value)
   - [Sequence of When the Keys Are Set](#sequence-of-when-the-keys-are-set)
   - [Use Callback to Specify Sequence](#use-callback-to-specify-sequence)
-  - [Use Alphabet Sequence](#use-alphabet-sequence)
+  - [Use Alphabetical Sequence](#use-alphabetical-sequence)
   - [Use Pre-defined \[\]string Identifying Key Sequence](#use-pre-defined-string-identifying-key-sequence)
-- [Handing NaN](#handing-nan)
+- [Handling NaN](#handling-nan)
   - [NaN to Another Floating Value](#nan-to-another-floating-value)
   - [NaN to Null Type](#nan-to-null-type)
   - [NaN to String](#nan-to-string)
-- [Handing +/-Inf](#handing--inf)
+- [Handling +/-Inf](#handling--inf)
   - [+/-Inf to Another Floating Value](#-inf-to-another-floating-value)
   - [+/-Inf to Null Type](#-inf-to-null-type)
   - [+/-Inf to String](#-inf-to-string)
-- [Escaping Un-essential Characters](#escaping-un-essential-characters)
+- [Escaping Non-essential Characters](#escaping-non-essential-characters)
   - [SetEscapeHTML Options](#setescapehtml-options)
   - [The Slash `/`](#the-slash-)
   - [Escaping Unicode Greater than 0x7F](#escaping-unicode-greater-than-0x7f)
@@ -35,7 +34,7 @@ This sections describe the usage of additional options in detail. Or you can ref
 
 ## Overview
 
-Let us take a look back to `Marshal` methods:
+Let us take a look back at the `Marshal` methods:
 
 ```go
 func (v *V) Marshal          (opts ...Option) (b []byte, err error)
@@ -44,9 +43,9 @@ func (v *V) MustMarshal      (opts ...Option) []byte
 func (v *V) MustMarshalString(opts ...Option) string
 ```
 
-You can see that every methods supports additional `opts ...Option`, identifying additional options in serializing jsonvalue data.
+You can see that every method supports additional `opts ...Option`, specifying additional options for serializing jsonvalue data.
 
-For a simple example: you can ignore all null value with following option:
+For a simple example: you can ignore all null values with the following option:
 
 ```go
 v := jsonvalue.NewObject()
@@ -62,7 +61,7 @@ Outputs:
 {}
 ```
 
-Currently, only `OptIgnoreOmitempty()` options os designed for `Import()`, while all others for marshal.
+Currently, only the `OptIgnoreOmitempty()` option is designed for `Import()`, while all others are for marshaling.
 
 ---
 
@@ -72,16 +71,16 @@ Already mentioned above.
 
 ---
 
-## Visible Indention
+## Visible Indentation
 
-This is like the `json.MarshalIndent` function in `encoding/json`. Take the previous example, you can added the following option:
+This is like the `json.MarshalIndent` function in `encoding/json`. Taking the previous example, you can add the following option:
 
 ```go
 s := v.MustMarshalString(jsonvalue.OptIndent("", "  "))
 fmt.Println(s)
 ```
 
-Which will outputs:
+Which will output:
 
 ```json
 {
@@ -91,15 +90,15 @@ Which will outputs:
 
 ---
 
-## Specify the Sequence of Keys in Object Value.
+## Specify the Sequence of Keys in Object Value
 
-In general, specifying the sequence of key-values are unnecessary and a waste of CPU time. But there are some special situations make key sequence important:
+In general, specifying the sequence of key-values is unnecessary and a waste of CPU time. But there are some special situations that make key sequence important:
 
 - Hash checksum mentioned previously.
 - Quickly finding some specific key-value pairs when debugging.
-- Nonstandard use of JSON, which depends on the order if keys.
+- Non-standard use of JSON, which depends on the order of keys.
 
-This sub section will tell you how to specify the sequence of keys when marshaling.
+This subsection will tell you how to specify the sequence of keys when marshaling.
 
 ### Sequence of When the Keys Are Set
 
@@ -111,21 +110,21 @@ Please refer to [Special Application Scenarios](./10_scenarios.md).
 func OptKeySequenceWithLessFunc(f MarshalLessFunc) Option
 ```
 
-`MarshalLessFunc` is a callback function, prototype:
+`MarshalLessFunc` is a callback function with the following prototype:
 
 ```go
 type MarshalLessFunc func(nilableParent *ParentInfo, key1, key2 string, v1, v2 *V) bool
 ```
 
-This function acts like `sort.Sort`. The definitions of input parameters are:
+This function acts like `sort.Sort`. The definitions of the input parameters are:
 
-- `nilableParent` - parent keys of current value.
-- `key1`, `v1` - first K-V to rearrange.
-- `key2`, `v2` - second K-V to rearrange.
+- `nilableParent` - parent keys of the current value.
+- `key1`, `v1` - first K-V pair to rearrange.
+- `key2`, `v2` - second K-V pair to rearrange.
 
-return whether v1 should be ahead of v2. It acts like `Less` function in Package `sort`.
+It returns whether v1 should be ahead of v2. It acts like the `Less` function in package `sort`.
 
-### Use Alphabet Sequence
+### Use Alphabetical Sequence
 
 ```go
 func OptDefaultStringSequence() Option
@@ -133,19 +132,19 @@ func OptDefaultStringSequence() Option
 
 ### Use Pre-defined []string Identifying Key Sequence
 
-It is quite complicated to use "less" callback. You can simple pass a `[]string`, then jsonvalue will arrange the key sequence according the given string slice. If there is any keys not specified in it, it will be put after all specified ones.
+It is quite complicated to use the "less" callback. You can simply pass a `[]string`, then jsonvalue will arrange the key sequence according to the given string slice. If there are any keys not specified in it, they will be put after all specified ones.
 
 ```go
 func OptKeySequence(seq []string) Option
 ```
 
-If both `OptKeySequence` and `OptKeySequenceWithLessFunc` are specified, `OptKeySequenceWithLessFunc` will be used in priority.
+If both `OptKeySequence` and `OptKeySequenceWithLessFunc` are specified, `OptKeySequenceWithLessFunc` will be used with priority.
 
 --- 
 
-## Handing NaN
+## Handling NaN
 
-In standard JSON, NaN (not a number) and +/-Inf (plus / minus infinity) are illegal. But in some cases, we had to handle those values.
+In standard JSON, NaN (not a number) and +/-Inf (plus / minus infinity) are illegal. But in some cases, we have to handle those values.
 
 By default, jsonvalue will raise an error when handling those values. But some non-error conversion options are also provided. 
 
@@ -157,7 +156,7 @@ Let us see NaN first:
 func OptFloatNaNToFloat(f float64) Option
 ```
 
-Specifying another floating number, all NaN will be replaced with it. You cannot specify the replacement as NaN or +/-Inf.
+By specifying another floating number, all NaN values will be replaced with it. You cannot specify the replacement as NaN or +/-Inf.
 
 ### NaN to Null Type
 
@@ -165,7 +164,7 @@ Specifying another floating number, all NaN will be replaced with it. You cannot
 func OptFloatNaNToNull() Option
 ```
 
-Replace NaN with JSON null. Please be advised that this option does NOT affected by `OptOmitNull`. It will ALWAYS convert NaN to `null` with option.
+Replace NaN with JSON null. Please be advised that this option is NOT affected by `OptOmitNull`. It will ALWAYS convert NaN to `null` with this option.
 
 ### NaN to String
 
@@ -174,13 +173,13 @@ func OptFloatNaNToString   (s string) Option
 func OptFloatNaNToStringNaN() Option
 ```
 
-`OptFloatNaNToStringNaN()` is equivalent to `OptFloatNaNToString("NaN")`。
+`OptFloatNaNToStringNaN()` is equivalent to `OptFloatNaNToString("NaN")`.
 
 ---
 
-## Handing +/-Inf
+## Handling +/-Inf
 
-The processing with +/-Inf are similar to NaN:
+The processing of +/-Inf is similar to NaN:
 
 ### +/-Inf to Another Floating Value
 
@@ -188,7 +187,7 @@ The processing with +/-Inf are similar to NaN:
 func OptFloatInfToFloat(f float64) Option
 ```
 
-+Inf will be replaced to `f`, while -Inf to `-f`. You cannot specify the replacement as NaN or +/-Inf.
++Inf will be replaced with `f`, while -Inf will be replaced with `-f`. You cannot specify the replacement as NaN or +/-Inf.
 
 ### +/-Inf to Null Type
 
@@ -196,7 +195,7 @@ func OptFloatInfToFloat(f float64) Option
 func OptFloatInfToNull() Option
 ```
 
-Similarly, this option does NOT affected by `OptOmitNull`.
+Similarly, this option is NOT affected by `OptOmitNull`.
 
 ### +/-Inf to String
 
@@ -205,44 +204,44 @@ func OptFloatInfToString   (positiveInf, negativeInf string) Option
 func OptFloatInfToStringInf() Option
 ```
 
-Specifying two strings as replacement for +/-Inf. If the given string is empty, replace in following priority:
+Specify two strings as replacements for +/-Inf. If the given string is empty, replace with the following priority:
 
-- As for +Inf, if given string is empty, then replace as `"+Inf"`
-- As for -Inf, if given string is empty, first find the +Inf configuration. If present, remove the `+` prefix and add a `-`.
-- If configuration of both +/-Inf are empty, -Inf will be replaced with `"-Inf"`
+- For +Inf, if the given string is empty, then replace with `"+Inf"`
+- For -Inf, if the given string is empty, first find the +Inf configuration. If present, remove the `+` prefix and add a `-`.
+- If the configuration for both +/-Inf is empty, -Inf will be replaced with `"-Inf"`
 
 `OptFloatInfToStringInf()` is equivalent to `OptFloatInfToString("+Inf", "-Inf")`
 
-## Escaping Un-essential Characters
+## Escaping Non-essential Characters
 
-In JSON standard, there are several characters need to be escaped:
+In the JSON standard, there are several characters that need to be escaped:
 
 1. Some important formatting or reserved characters
-2. Unicodes greater than 127
+2. Unicode characters greater than 127
 
-However, not all JSON encoder follows the full escaping rules. This sections tells how to specify special escaping rules.
+However, not all JSON encoders follow the full escaping rules. This section tells you how to specify special escaping rules.
 
 ### SetEscapeHTML Options
 
-According to JSON standard, `&`, `<` and `>` should be escaped to `\u00XX`. However it is safe not escaping these three characters in practical. By default, jsonvalue will escape them all. However, you can disable the escaping to these characters by using option:
+According to the JSON standard, `&`, `<` and `>` should be escaped to `\u00XX`. However, it is safe not to escape these three characters in practice. By default, jsonvalue will escape them all. However, you can disable the escaping of these characters by using this option:
 
 ```go
 func OptEscapeHTML(on bool) Option
 ```
 
-Passing `true` to enable the escaping while `false` not escaping them.
+Pass `true` to enable the escaping while `false` disables escaping them.
 
-This options is quite like [`SetEscapeHTML`](https://pkg.go.dev/encoding/json#Encoder.SetEscapeHTML) method In `encoding/json`.
+This option is quite like the [`SetEscapeHTML`](https://pkg.go.dev/encoding/json#Encoder.SetEscapeHTML) method in `encoding/json`.
 
 ### The Slash `/`
 
-According to JSON standard, slash `/` should be escaped. But actually it is OK to not escaping it. By default, jsonvalue escapes the slash, but you can use this switch option:
+According to the JSON standard, slash `/` should be escaped. But actually it is OK not to escape it. By default, jsonvalue escapes the slash, but you can use this switch option:
 
 ```go
 func OptEscapeSlash(on bool) Option
 ```
 
-Passing `false` to not escape slash. By default, it is `true`.
+Pass `false` to not escape slash. By default, it is `true`.
 
 ### Escaping Unicode Greater than 0x7F
 
@@ -250,8 +249,8 @@ Passing `false` to not escape slash. By default, it is `true`.
 func OptUTF8() Option
 ```
 
-By default, jsonvalue will escape all unicode values greater than 0x7F to `\uXXXX` format (UTF-16). This will avoid almost all encoding problem. However, it may be a waste of network traffic if most of your payload are unicode. In this case, you may consider using UTF-8 encoding. This is what `encoding/json` does.
+By default, jsonvalue will escape all unicode values greater than 0x7F to `\uXXXX` format (UTF-16). This will avoid almost all encoding problems. However, it may be a waste of network traffic if most of your payload is unicode. In this case, you may consider using UTF-8 encoding. This is what `encoding/json` does.
 
 ## Ignoring Tag omitempty of A Struct
 
-This is a rare feature. Please refer to sub section "Ignoring `omitempty` JSON Tag of A Struct" in [Special Application Scenarios](./10_scenarios.md).
+This is a rare feature. Please refer to the subsection "Ignoring `omitempty` JSON Tag of A Struct" in [Special Application Scenarios](./10_scenarios.md).

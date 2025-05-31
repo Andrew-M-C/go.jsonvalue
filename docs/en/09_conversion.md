@@ -1,4 +1,3 @@
-
 <font size=6>Value Conversions</font>
 
 [Prev Page](./08_caseless.md) | [Contents](./README.md) | [Next Page](./10_scenarios.md)
@@ -14,7 +13,7 @@
 
 ## Overview
 
-In `encoding/json`, there is a `tag` called "string", which means to convert current value (no matter what type it is) to a JSON string. For example:
+In `encoding/json`, there is a `tag` called "string", which means converting the current value (no matter what type it is) to a JSON string. For example:
 
 ```go
 type st struct {
@@ -29,26 +28,26 @@ func main() {
 }
 ```
 
-It is clear that `num` is serialized to a string instead of number
+It is clear that `num` is serialized as a string instead of a number.
 
-Jsonvalue also supports reading such type of value from a string. Please read the following descriptions for detail.
+Jsonvalue also supports reading this type of value from a string. Please read the following descriptions for details.
 
 ---
 
 ## String to Number
 
-All number typed `GetXxx` methods support parsing a number from string value.
+All number-typed `GetXxx` methods support parsing a number from a string value.
 
-But at the same time, if the target value is not a number typed JSON value, the `error` will not be nil. But various types of error may returned due to different situation:
+However, if the target value is not a number-typed JSON value, the `error` will not be nil. Various types of errors may be returned due to different situations:
 
-- If target key is not found, returns `ErrNotFound`
-- If target value is a number, the number type will be returned and with a `nil` err.
-- If target value is neither a string or number, returns `ErrTypeNotMatch`
-- If target value is a string, then parse the value of the string, and:
-  - if the parsing succeed, returns the number with error `ErrTypeNotMatch`
-  - if the parsing failed (illegal number), returns error `ErrParseNumberFromString`, including the detailed parsing description.
+- If the target key is not found, returns `ErrNotFound`
+- If the target value is a number, the number type will be returned with a `nil` err.
+- If the target value is neither a string nor a number, returns `ErrTypeNotMatch`
+- If the target value is a string, then parse the value of the string, and:
+  - if the parsing succeeds, returns the number with error `ErrTypeNotMatch`
+  - if the parsing fails (illegal number), returns error `ErrParseNumberFromString`, including the detailed parsing description.
 
-You can use `errors.Is()` to check the different type of errors. For example:
+You can use `errors.Is()` to check the different types of errors. For example:
 
 ```go
 	const raw = `{"legal":"1.25E-1","illegal":"ABCD"}`
@@ -76,21 +75,21 @@ Output:
 
 ## String and Number to Boolean
 
-Similar with number, strings can hold a boolean.
+Similar to numbers, strings can hold a boolean value.
 
-A `true` will be returned in only one situation then converting string to boolean:
+A `true` will be returned in only one situation when converting a string to boolean:
 
-- The value of the string value is exactly the lower-cased string `"true"`.
+- The value of the string is exactly the lower-cased string `"true"`.
 
 In other cases, `false` will be returned for the conversion.
 
-Number could also converted into boolean. As long as the number value does NOT equal to zero, `true` will be returned. Otherwise, `false`
+Numbers can also be converted into boolean values. As long as the number value does NOT equal zero, `true` will be returned. Otherwise, `false`.
 
 ---
 
 ## Difference between `GetString` and `MustGet(...).String()`
 
-The logic between `GetXxx()` series methods and its corresponding `MustGet().Xxx()` function are mostly the same. Instead, the `Xxx()` methods does not return error.
+The logic between `GetXxx()` series methods and their corresponding `MustGet().Xxx()` functions is mostly the same. However, the `Xxx()` methods do not return an error.
 
 For example:
 
@@ -104,15 +103,15 @@ For example:
 
 But there is one exception: `GetString` and `MustGet().String()`
 
-`GetString` returns a string of a string-typed JSON value. If target is not found, or not a string, error will be returned.
+`GetString` returns a string of a string-typed JSON value. If the target is not found, or is not a string, an error will be returned.
 
-But `String` is quite special. In on hand, it can get the string value of a string-typed JSON value. In the other hand, it implements the `fmt.Stringer` interface, which is invoked in `%v` keyword of `fmt` package.
+But `String` is quite special. On one hand, it can get the string value of a string-typed JSON value. On the other hand, it implements the `fmt.Stringer` interface, which is invoked by the `%v` keyword of the `fmt` package.
 
-Therefore the logic of `String` is a bit complicated:
+Therefore, the logic of `String` is a bit complicated:
 
-- If current `*jsovalue.V` is string-typed, returns its string value.
-- If number-typed, returns the string of the number.
+- If the current `*jsonvalue.V` is string-typed, returns its string value.
+- If number-typed, returns the string representation of the number.
 - If null-typed ("null" type defined in JSON standard), returns `null`.
 - If boolean-typed, returns `true` or `false`.
-- If object-typed, returns a string with format of `{K1: V1, K2: V2}`, and no escaping, not JSON format.
-- If array-typed, returns a string with format of `[v1, v2]`. Also, no escaping.
+- If object-typed, returns a string with the format `{K1: V1, K2: V2}`, with no escaping, not in JSON format.
+- If array-typed, returns a string with the format `[v1, v2]`. Also, no escaping.

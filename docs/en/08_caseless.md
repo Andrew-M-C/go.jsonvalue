@@ -1,4 +1,3 @@
-
 <font size=6>Caseless</font>
 
 [Prev Page](./07_iteration.md) | [Contents](./README.md) | [Next Page](./09_conversion.md)
@@ -12,15 +11,15 @@
 
 ## Issue with `encoding/json`
 
-With `encoding/json`, it handles the key of an object caselessly with JSON tags in a `struct`. Such as:
+With `encoding/json`, it handles object keys case-insensitively when using JSON tags in a `struct`. For example:
 
 ```go
 type st struct {
-    Name string `json:"name"` // lower cases
+    Name string `json:"name"` // lower case
 }
 
 func main() {
-    raw := []byte(`{"NAME":"json"}`) // upper cases
+    raw := []byte(`{"NAME":"json"}`) // upper case
     s := st{}
     json.Unmarshal(raw, &s)
     fmt.Println("name:", s.Name)
@@ -29,9 +28,9 @@ func main() {
 }
 ```
 
-Although the text of JSON uses full-upper-case `NAME` as key, while the tag definition in the `struct` is lower-case `name`, the value is parsed into the `struct` correctly.
+Although the JSON text uses the full-uppercase `NAME` as the key, while the tag definition in the `struct` is lowercase `name`, the value is parsed into the `struct` correctly.
 
-But it is different to `map`. With `encoding/json`, the access to a map is case-sensitive:
+But it is different with `map`. With `encoding/json`, access to a map is case-sensitive:
 
 ```go
 func main() {
@@ -50,9 +49,9 @@ Can we solve this issue in jsonvalue? Yes!
 
 ## Doing Caseless in Jsonvalue
 
-In jsonvalue, I use a map to store object typed JSON value. By default, the `Get` method is case-sensitive.
+In jsonvalue, I use a map to store object-typed JSON values. By default, the `Get` method is case-sensitive.
 
-If you want to be caseless when getting sub values in an JSON value, just insert a `Caseless()` before the `Get` method. Such as:
+If you want to perform case-insensitive operations when getting sub-values in a JSON value, just insert a `Caseless()` before the `Get` method. For example:
 
 ```go
 func main() {
@@ -68,10 +67,10 @@ func main() {
 
 The second `Println` outputs the value.
 
-When getting sub values with `Caseless`, jsonvalue will hit the strictly equaled key. If not found, other keys will be searched until one found. Therefore, the key `name` and `NAME` may be together in the same jsonvalue object.
+When getting sub-values with `Caseless`, jsonvalue will first try to match the key exactly. If not found, other keys will be searched until one is found. Therefore, the keys `name` and `NAME` may coexist in the same jsonvalue object.
 
-**IMPORTANT:** Please be advised of following knowledge of `Caseless()` method:
+**IMPORTANT:** Please be aware of the following characteristics of the `Caseless()` method:
 
-- `Caseless` may change the inside structure of `*jsonvalue.V`. As `jsonvalue` is goroutine-unsafe, please add a write-lock when using `Caseless` for multi-goroutine operating.
-- `Caseless` takes additional CPU time, if not necessary, please do not use it.
-- `Equal` method is NOT supported after `Caseless`. Because it is quite difficult to define "equal" when comparing two caseless values. Therefore I gave up supporting `Equal` for `Caseless`.
+- `Caseless` may change the internal structure of `*jsonvalue.V`. Since `jsonvalue` is not goroutine-safe, please add a write-lock when using `Caseless` in multi-goroutine operations.
+- `Caseless` takes additional CPU time. If not necessary, please do not use it.
+- The `Equal` method is NOT supported after `Caseless`. Because it is quite difficult to define "equal" when comparing two caseless values, I decided not to support `Equal` for `Caseless`.

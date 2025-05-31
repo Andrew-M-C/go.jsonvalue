@@ -1,4 +1,3 @@
-
 <font size=6>Get Values from JSON Structure</font>
 
 [Prev Page](./03_set.md) | [Contents](./README.md) | [Next Page](./05_marshal_unmarshal.md)
@@ -9,9 +8,9 @@
   - [Parameters](#parameters)
   - [GetXxx Series](#getxxx-series)
 - [`MustGet` and Other Related Methods](#mustget-and-other-related-methods)
-- [jsonvalue.V 对象的属性](#jsonvaluev-对象的属性)
-  - [官方定义](#官方定义)
-  - [jsonvalue 基础属性](#jsonvalue-基础属性)
+- [Properties of jsonvalue.V Object](#properties-of-jsonvaluev-object)
+  - [Official Definition](#official-definition)
+  - [jsonvalue Basic Properties](#jsonvalue-basic-properties)
 
 ---
 
@@ -19,7 +18,7 @@
 
 ### Parameters
 
-Get function is the core of reading information of jsonvalue. Here is the prototype:
+The Get function is the core of reading information from jsonvalue. Here is the prototype:
 
 ```go
 func (v *V) Get(param1 any, params ...any) (*V, error)
@@ -29,41 +28,41 @@ For a practical example:
 
 ```go
 const raw = `{"someObject": {"someObject": {"someObject": {"message": "Hello, JSON!"}}}}`
-child, _ := jsonvalue.MustUnmarshalString(s).Get("someObject", "someObject", "someObject", "message")
+child, _ := jsonvalue.MustUnmarshalString(raw).Get("someObject", "someObject", "someObject", "message")
 fmt.Println(child.String())
 ```
 
-The meaning of the `Get` parameters above are:
+The meaning of the `Get` parameters above is:
 
--  Locate and get the sub value with key `someObject` from the `*V` instance, and then get another value with key `someObject` from the previous located `*V` instance, and then go on...
-  - This operation could also be described as domain format, like: `child = v.someObject.someObject.someObject.message`
+- Locate and get the sub-value with key `someObject` from the `*V` instance, then get another value with key `someObject` from the previously located `*V` instance, and continue...
+  - This operation could also be described in dot notation format, like: `child = v.someObject.someObject.someObject.message`
 
-The type of parameters of `Get` is `any`. In fact, only ones with string or integer (both signed and unsigned are OK) kind are allowed. `Get` will check the parameter type and decide whether to treat the next value an object or array for the next iteration.
+The type of parameters for `Get` is `any`. In fact, only those with string or integer (both signed and unsigned are OK) kinds are allowed. `Get` will check the parameter type and decide whether to treat the next value as an object or array for the next iteration.
 
-If the [Kind](https://pkg.go.dev/reflect#Kind) of current path node's parameter is string, then:
+If the [Kind](https://pkg.go.dev/reflect#Kind) of the current path node's parameter is string, then:
 
-- If value type of current `jsonvalue` value is "Object", then locate the sub value specified by the string key.
-  - If the sub value exists and it is "Object" typed, then continue iteration with this value and the parameter of next path node.
-  - If the value with specified key does not exist, a value with type `NotExist` will be returned, with error [ErrNotFound](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
-- If current value is not an "Object", a `NotExist` typed value will be returned, with another error [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
+- If the value type of the current `jsonvalue` value is "Object", then locate the sub-value specified by the string key.
+  - If the sub-value exists and it is "Object" typed, then continue iteration with this value and the parameter of the next path node.
+  - If the value with the specified key does not exist, a value with type `NotExist` will be returned, along with error [ErrNotFound](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
+- If the current value is not an "Object", a `NotExist` typed value will be returned, along with error [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
 
-If the [Kind](https://pkg.go.dev/reflect#Kind) of current path node's parameter is integer, then:
+If the [Kind](https://pkg.go.dev/reflect#Kind) of the current path node's parameter is integer, then:
 
-- If value type of current `jsonvalue` value is "Array", then find the sub value from specified index by the integer key. At this moment, the meaning of various value of this integer may be:
-  - If index >= 0, it will be a normal index value, and locate sub value just like a ordinary Go slice. If the index is out of range, `NotExist` value and [ErrOutOfRange](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) will be returned.
-  - If index < 0, it will be treated as "XXth to the last", counting backwards. But also, should be within range of the JSON array.
-    - For example, if the length of a JSON array is 5, then -5 locates the element in Index 0, while -6 leads to error returned.
-  - If the searching success in current JSON node, iterations will continue if there are more parameters remaining.
-- If current value of the path node is not an "Array", a `NotExist` typed value will be returned, with another error [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
+- If the value type of the current `jsonvalue` value is "Array", then find the sub-value at the specified index using the integer key. At this moment, the meaning of various values of this integer may be:
+  - If index >= 0, it will be a normal index value, and locate the sub-value just like an ordinary Go slice. If the index is out of range, a `NotExist` value and [ErrOutOfRange](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) will be returned.
+  - If index < 0, it will be treated as "XXth from the end", counting backwards. However, it should still be within the range of the JSON array.
+    - For example, if the length of a JSON array is 5, then -5 locates the element at index 0, while -6 leads to an error being returned.
+  - If the search succeeds in the current JSON node, iterations will continue if there are more parameters remaining.
+- If the current value at the path node is not an "Array", a `NotExist` typed value will be returned, along with error [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
 
-You may curious that why do I cut parameters of `Get` function into two parts, instead of a simple `...any`? Just like I answered in [this issue](https://github.com/Andrew-M-C/go.jsonvalue/issues/4), I designed it in purpose:
+You may be curious about why I split the parameters of the `Get` function into two parts, instead of using a simple `...any`? Just like I answered in [this issue](https://github.com/Andrew-M-C/go.jsonvalue/issues/4), I designed it this way on purpose:
 
-- This is to avoid the programming error like `v.Get` (lacking parameter). By making this method with at least one parameter, an error will thrown in compiling phase instead of runtime.
-- If you are 100% sure that there is at least one parameter for the input `[]any`, you may call this method like this: `subValue, _ := Get(para[0], para[1:]...)`
+- This is to avoid programming errors like `v.Get()` (lacking parameters). By making this method require at least one parameter, an error will be thrown at compile time instead of runtime.
+- If you are 100% sure that there is at least one parameter in the input `[]any`, you may call this method like this: `subValue, _ := v.Get(para[0], para[1:]...)`
 
 ### GetXxx Series
 
-In practical codes the `Get` itself is rarely used, we use its "siblings" to access basic typed values instead:
+In practical code, `Get` itself is rarely used; we use its "siblings" to access basic typed values instead:
 
 ```go
 func (v *V) GetObject (param1 any, params ...any) (*V, error)
@@ -82,15 +81,15 @@ func (v *V) GetFloat32(param1 any, params ...any) (float32, error)
 func (v *V) GetFloat64(param1 any, params ...any) (float64, error)
 ```
 
-There are some commons within this methods:
+There are some commonalities among these methods:
 
-- If the sub value exists, and with correct type specified by the method, the returned `error` is nil. And all methods will return the corresponding value besides `GetNull`.
-- If the sub value exists but the type does not match, the error will be [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
-- If the sub value does not exist, the error will be [ErrNotFound](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
+- If the sub-value exists and has the correct type specified by the method, the returned `error` is nil. All methods will return the corresponding value except `GetNull`.
+- If the sub-value exists but the type does not match, the error will be [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
+- If the sub-value does not exist, the error will be [ErrNotFound](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants).
 
-Also, some of these methods do not simply match types and return, they also provide some additional features, which will be described later in later sections. Here I will show you an example:
+Also, some of these methods do not simply match types and return; they also provide some additional features, which will be described later in subsequent sections. Here I will show you an example:
 
-In many cases, we need to extract number from a string typed value, such as: `{"number":"12345"}`. In this case, `GetInt` method would return the corresponding integer value from this string correctly:
+In many cases, we need to extract a number from a string-typed value, such as: `{"number":"12345"}`. In this case, the `GetInt` method will return the corresponding integer value from this string correctly:
 
 ```go
 raw := `{"number":"12345"}`
@@ -99,25 +98,24 @@ fmt.Println("n =", n)
 fmt.Println("err =", err)
 ```
 
-Output：
+Output:
 
 ```
 n = 12345
-err = not match given type
+err = type does not match
 ```
 
-As shown by the example, both `n` and `err` returns meaningful value. Now only a valid number is returned, but also the [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) error thrown.
+As shown in the example, both `n` and `err` return meaningful values. Not only is a valid number returned, but also the [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) error is thrown.
 
 ---
 
 ## `MustGet` and Other Related Methods
 
-上文中提到了 `Get` 和 `GetXxx` 系列函数。除了 `GetNull` 之外，各个函数的返回值均为两个。而针对 Get 函数，jsonvalue 也提供了一个 `MustGet` 函数，仅返回一个参数，从而便于实现即为简单的逻辑。
+As mentioned above, we have the `Get` and `GetXxx` series functions. Except for `GetNull`, each function returns two values. For the Get function, jsonvalue also provides a `MustGet` function that returns only one value, making it convenient to implement very simple logic.
 
-为了便于理解，我们举个场景作为例子——
+To facilitate understanding, let's use a scenario as an example:
 
-比如我们开发一个论坛功能，论坛支持将若干个帖子进行置顶。置顶功能的配置是一段 JSON 字符串的 "top" 字段，举例如下：
-
+Suppose we are developing a forum feature, and the forum supports pinning several posts to the top. The pinning feature configuration is stored in a "top" field in a JSON string, as shown in the following example:
 
 ```json
 {
@@ -125,27 +123,27 @@ As shown by the example, both `n` and `err` returns meaningful value. Now only a
     "top":[
         {
             "UID": "12345",
-            "title": "发帖规范"
+            "title": "Posting Guidelines"
         }, {
             "UID": "67890",
-            "title": "论坛精华"
+            "title": "Forum Highlights"
         }
     ]
 }
 ```
 
-在实际，可能由于各种原因，获取到的配置字符串会有以下几种异常情况：
+In practice, due to various reasons, the obtained configuration string may have the following exceptional situations:
 
-- 整个字符串都是一个空字符串 ""
-- 字符串由于错误编辑，不合法，或者是格式错误
-- "top" 字段可能是 `null`，或者是空字符串
+- The entire string is an empty string ""
+- The string is invalid due to incorrect editing, or has format errors
+- The "top" field might be `null`, or an empty string
 
-如果按照传统的逻辑，需要对这些异常情况一一处理。但如果开发者不需要关心这些异常，只关心合法的配置。那么我们完全可以利用 `MustXxx` 函数必然返回一个 `*V` 对象的特点，将逻辑简化如下：
+If following traditional logic, we would need to handle these exceptional situations one by one. But if developers don't need to care about these exceptions and only care about valid configurations, we can completely utilize the characteristic that `MustXxx` functions always return a `*V` object to simplify the logic as follows:
 
 ```go
-    c := jsonvalue.MustUnmarshalString(confString) // 假设 confString 是获取到的配置字符串
-    for _, v := range c.Get("top").ForRangeArr() {
-        feeds = append(feeds, &Feed{               // 将帖子主题追加到返回列表中，假设帖子的结构体为 Feed
+    c := jsonvalue.MustUnmarshalString(confString) // Assume confString is the obtained configuration string
+    for _, v := range c.MustGet("top").ForRangeArr() {
+        feeds = append(feeds, &Feed{               // Append post topics to the return list, assuming the post structure is Feed
             ID:    v.MustGet("UID").String(),
             Title: v.MustGet("title").String(),
         })
@@ -154,35 +152,35 @@ As shown by the example, both `n` and `err` returns meaningful value. Now only a
 
 ---
 
-## jsonvalue.V 对象的属性
+## Properties of jsonvalue.V Object
 
-首先我们要了解一下 JSON 官方定义的一些属性，然后再说明这些属性在 `jsonvalue` 中是如何体现的。
+First, we need to understand some properties defined by the official JSON specification, and then explain how these properties are reflected in `jsonvalue`.
 
-### 官方定义
+### Official Definition
 
-在标准的 [JSON 规范](https://www.json.org/json-en.html)中，规定了以下的几个概念：
+In the standard [JSON specification](https://www.json.org/json-en.html), the following concepts are defined:
 
-- 一个有效的 JSON 值，称为一个 JSON 的 `value`。在本工具包中，则使用一个 `*V` 来表示一个 JSON value
-- JSON 值的类型有以下几种：
+- A valid JSON value is called a JSON `value`. In this toolkit, a `*V` is used to represent a JSON value
+- JSON value types include the following:
 
-|   类型    | 说明                                                                                                          |
-| :-------: | :------------------------------------------------------------------------------------------------------------ |
-| `object`  | 也就是一个对象，对应着一个 K-V 格式的值。其中 K 必然是一个 string，而 V 则是有效的 JSON `value`               |
-|  `array`  | 一个数组，对应着一系列 `value` 的有序组合                                                                     |
-| `string`  | 字符串类型，这很好理解                                                                                        |
-| `number`  | 数字型，准确地说，是双精度浮点数                                                                              |
-|           | 由于 JSON 是基于 JavaScript 定义的，而 JS 中只有 double 这一种数字，所以 number 实际上就是 double。这是个小坑 |
-| `"true"`  | 表示布尔 “真”                                                                                                 |
-| `"false"` | 表示布尔 “假”                                                                                                 |
-| `"null"`  | 表示空值                                                                                                      |
+|   Type    | Description                                                                                                                                    |
+| :-------: | :--------------------------------------------------------------------------------------------------------------------------------------------- |
+| `object`  | An object, corresponding to a key-value format value. The key must be a string, while the value is a valid JSON `value`                      |
+|  `array`  | An array, corresponding to an ordered combination of a series of `values`                                                                      |
+| `string`  | String type, which is easy to understand                                                                                                       |
+| `number`  | Numeric type, more precisely speaking, a double-precision floating-point number                                                               |
+|           | Since JSON is defined based on JavaScript, and JS only has double as the numeric type, number is actually double. This is a small pitfall    |
+| `"true"`  | Represents boolean "true"                                                                                                                      |
+| `"false"` | Represents boolean "false"                                                                                                                     |
+| `"null"`  | Represents null value                                                                                                                          |
 
-### jsonvalue 基础属性
+### jsonvalue Basic Properties
 
-在 `*jsonvalue.V` 对象中，参照绝大多数 JSON 工具包的做法，将 `"true"` 和 `"false"` 合并为一个 `Boolean` 类型。此外，将 `"null"` 也映射为一个 `Null` 类型。
+In the `*jsonvalue.V` object, following the approach of most JSON toolkits, `"true"` and `"false"` are merged into a `Boolean` type. Additionally, `"null"` is also mapped to a `Null` type.
 
-此外，还定义了一个 `NotExist` 类型，表示当前不是一个合法的 JSON 对象。此外还有一个 `Unknown`，开发者可以不用关心，使用中不会出现这个值。
+Furthermore, a `NotExist` type is defined to indicate that the current value is not a valid JSON object. There is also an `Unknown` type, which developers don't need to worry about, as this value will not appear during normal usage.
 
-使用以下函数，可以获得 value 的类型属性：
+The following functions can be used to get the type properties of a value:
 
 ```go
 func (v *V) ValueType() ValueType

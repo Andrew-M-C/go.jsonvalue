@@ -4,7 +4,7 @@
 
 ---
 
-创建一个比如如下的复杂 JSON 对象：
+创建一个如下的复杂 JSON 对象：
 
 ```json
 {
@@ -18,7 +18,7 @@
 }
 ```
 
-使用 jsonvalue 只需要三行:
+使用 jsonvalue 只需要三行：
 
 ```go
 	v := jsonvalue.NewObject()
@@ -28,11 +28,11 @@
 
 输出结果为: `{"obj":{"obj":{"obj":{"str":"Hello, JSON!"}}}`
 
-反过来，我们如果要直接读取上面的 json 数据，也可以这么用 jsonvalue: 
+反过来，我们如果要直接读取上面的 json 数据，也可以这么用 jsonvalue：
 
 ```go
 const raw = `{"obj": {"obj": {"obj": {"str": "Hello, JSON!"}}}}`
-s := jsonvalue.MustUnmarshalString(s).MustGet("obj", "obj", "obj", "str").String()
+s := jsonvalue.MustUnmarshalString(raw).MustGet("obj", "obj", "obj", "str").String()
 fmt.Println(s)
 ```
 

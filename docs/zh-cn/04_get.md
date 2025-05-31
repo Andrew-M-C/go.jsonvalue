@@ -1,4 +1,3 @@
-
 <font size=6>获取 JSON 中的值</font>
 
 [上一页](./03_set.md) | [总目录](./README.md) | [下一页](./05_marshal_unmarshal.md)
@@ -29,7 +28,7 @@ func (v *V) Get(param1 any, params ...any) (*V, error)
 
 ```go
 const raw = `{"someObject": {"someObject": {"someObject": {"message": "Hello, JSON!"}}}}`
-child, _ := jsonvalue.MustUnmarshalString(s).Get("someObject", "someObject", "someObject", "message")
+child, _ := jsonvalue.MustUnmarshalString(raw).Get("someObject", "someObject", "someObject", "message")
 fmt.Println(child.String())
 ```
 
@@ -44,27 +43,27 @@ fmt.Println(child.String())
 
 如果当前层级的参数是一个字符串时，则：
 
-- 如果当前的 `jsonvalue` 对象是一个 `Object` 类型时，则查找当浅层级字符串所指定的 value
+- 如果当前的 `jsonvalue` 对象是一个 `Object` 类型时，则查找当前层级字符串所指定的 value
   - 如果找到，若有下一层参数，则使用当前 value 和下一层参数继续迭代查找
-  - 如果无法找到参数所指定的错误，则返回类型为 `NotExist` 的对象，以及 [ErrNotFound](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) 错误。
+  - 如果无法找到参数所指定的 value，则返回类型为 `NotExist` 的对象，以及 [ErrNotFound](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) 错误。
 - 如果当前的对象不是 `Object` 类型，则返回 `NotExist` 对象以及 [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) 错误。
 
 如果当前层级的参数是一个整数时，则：
 
 - 如果当前的对象是一个 `Array` 类型时，则将整数视为 index 参数，查找在指定 index 中是否包含 JSON value。此时 Index 的含义如下：
   - 当 Index >= 0，则按照正常的切片下标逻辑来查找。如果 JSON array 的长度不足，则返回 `NotExist` 对象以及 [ErrOutOfRange](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) 错误。
-  - 当 Index < 0，则视为 “倒数第几个” 的语义，但最多依然不大于 JSON array 的长度。比如说 array 长度为 5，那么 -5 会返回下标为 0 的子成员，而 -6 则会返回错误。
+  - 当 Index < 0，则视为 "倒数第几个" 的语义，但最多依然不能超过 JSON array 的长度。比如说 array 长度为 5，那么 -5 会返回下标为 0 的子成员，而 -6 则会返回错误。
   - 如果找到，则根据后续参数情况继续迭代或返回。如果无法找到，则返回 `NotExist` 对象以及 [ErrNotFound](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) 错误。
 - 如果当前的对象不是 `Array` 类型，则返回 `NotExist` 对象以及 [ErrTypeNotMatch](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue#pkg-constants) 错误。
 
-相信开发者会有[这样的一个疑问](https://github.com/Andrew-M-C/go.jsonvalue/issues/4)：为什么输入参数要强行切为两个部分，而不是直接一个 `...any` 就搞定呢？
+相信开发者会有[这样的一个疑问](https://github.com/Andrew-M-C/go.jsonvalue/issues/4)：为什么输入参数要强行分为两个部分，而不是直接一个 `...any` 就搞定呢？
 
-- 理由是：这是为了是避免出现 `v.Get()` 这样的笔误。让函数至少需要一个参数，就可以在编译阶段就检查出类似的错误，而不会带到线上程序中。
+- 理由是：这是为了避免出现 `v.Get()` 这样的笔误。让函数至少需要一个参数，就可以在编译阶段就检查出类似的错误，而不会带到线上程序中。
 - 如果开发者需要传入类似参数的话，那么开发者需要检查 `[]any` 参数的长度是否大于一；如果能确保大于一的话，可以采用 `v, _ := Get(para[0], para[1:]...)` 的格式进行调用。
 
 ### GetXxx 系列函数
 
-实际操作中，开发者完全不关心 `*V` 对象本身，而只关心它所承载的值。在开发者可以确定或限定某个字段只能是某个值的时候，可以使用以下函数：
+实际操作中，开发者完全不关心 `*V` 对象本身，而只关心它所承载的值。在开发者可以确定或限定某个字段只能是某个类型的时候，可以使用以下函数：
 
 ```go
 func (v *V) GetObject (param1 any, params ...any) (*V, error)
@@ -85,14 +84,14 @@ func (v *V) GetFloat64(param1 any, params ...any) (float64, error)
 
 这些函数都有以下共同点：
 
-- 如果参数指定的子值存在，并且类型匹配上，那么 error 字段为 nil；除了 `GetNull` 函数之外，其他函数都会返回对应的值。
+- 如果参数指定的子值存在，并且类型匹配，那么 error 字段为 nil；除了 `GetNull` 函数之外，其他函数都会返回对应的值。
 - 如果参数指定的子值不存在，或者值存在但是类型不匹配，则 error 必然非 nil；但在不同的情况下，返回的 error 值会有不同。
 
 此外，这些函数并不是简简单单地只是匹配类型并返回，它们还拥有更加方便的功能，在后续小节中会着重说明，这里笔者先举一个小例子：
 
 比如很多情况下，我们可能需要使用 JSON 的 string 类型，实际上承载数字值，比如: `{"number":"12345"}`。
 
-按照 JSON 标准的定义，`number` 成员是一个 string 值。但使用 jsonvalue 的 GetInt 值，是能够正确获得数字值的：
+按照 JSON 标准的定义，`number` 成员是一个 string 值。但使用 jsonvalue 的 GetInt 函数，是能够正确获得数字值的：
 
 ```go
 raw := `{"number":"12345"}`
@@ -114,7 +113,7 @@ err = not match given type
 
 ## MustGet 和相关函数
 
-上文中提到了 `Get` 和 `GetXxx` 系列函数。除了 `GetNull` 之外，各个函数的返回值均为两个。而针对 Get 函数，jsonvalue 也提供了一个 `MustGet` 函数，仅返回一个参数，从而便于实现即为简单的逻辑。
+上文中提到了 `Get` 和 `GetXxx` 系列函数。除了 `GetNull` 之外，各个函数的返回值均为两个。而针对 Get 函数，jsonvalue 也提供了一个 `MustGet` 函数，仅返回一个参数，从而便于实现极为简单的逻辑。
 
 为了便于理解，我们举个场景作为例子——
 
@@ -136,13 +135,13 @@ err = not match given type
 }
 ```
 
-在实际，可能由于各种原因，获取到的配置字符串会有以下几种异常情况：
+在实际使用中，可能由于各种原因，获取到的配置字符串会有以下几种异常情况：
 
 - 整个字符串都是一个空字符串 ""
 - 字符串由于错误编辑，不合法，或者是格式错误
 - "top" 字段可能是 `null`，或者是空字符串
 
-如果按照传统的逻辑，需要对这些异常情况一一处理。但如果开发者不需要关心这些异常，只关心合法的配置。那么我们完全可以利用 `MustXxx` 函数必然返回一个 `*V` 对象的特点，将逻辑简化如下：
+如果按照传统的逻辑，需要对这些异常情况一一处理。但如果开发者不需要关心这些异常，只关心合法的配置，那么我们完全可以利用 `MustXxx` 函数必然返回一个 `*V` 对象的特点，将逻辑简化如下：
 
 ```go
     c := jsonvalue.MustUnmarshalString(confString) // 假设 confString 是获取到的配置字符串
@@ -174,8 +173,8 @@ err = not match given type
 | `string`  | 字符串类型，这很好理解                                                                                        |
 | `number`  | 数字型，准确地说，是双精度浮点数                                                                              |
 |           | 由于 JSON 是基于 JavaScript 定义的，而 JS 中只有 double 这一种数字，所以 number 实际上就是 double。这是个小坑 |
-| `"true"`  | 表示布尔 “真”                                                                                                 |
-| `"false"` | 表示布尔 “假”                                                                                                 |
+| `"true"`  | 表示布尔 "真"                                                                                                 |
+| `"false"` | 表示布尔 "假"                                                                                                 |
 | `"null"`  | 表示空值                                                                                                      |
 
 ### jsonvalue 基础属性

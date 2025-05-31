@@ -1,4 +1,3 @@
-
 <font size=6>Iteration</font>
 
 [Prev Page](./06_import_export.md) | [Contents](./README.md) | [Next Page](./08_caseless.md)
@@ -14,29 +13,29 @@
 
 ## Overview
 
-In jsonvalue, you can iterate an array or object typed JSON value. 
+In jsonvalue, you can iterate over an array or object typed JSON value. 
 
-There are two mode of iteration:
+There are two modes of iteration:
 
 1. Use a callback function to receive iteration data, like [`ArrayEach`](https://pkg.go.dev/github.com/buger/jsonparser#ArrayEach) and [`ObjectEach`](https://pkg.go.dev/github.com/buger/jsonparser#ObjectEach) in `jsonparser`.
-2. Use `for-range` to iterate, which make codes much more like operating `map` and `slice`.
+2. Use `for-range` to iterate, which makes code much more like operating on `map` and `slice`.
 
-**IMPORTANT**: All jsonvalue iterating methods are goroutine-unsafe. Please add lock or other protection in multi-goroutine operating. However, if none of `Set` series methods and `Caseless` method are used during iteration, it will be goroutine-safe. In the other hand, just read-lock required for these operation.
+**IMPORTANT**: All jsonvalue iterating methods are goroutine-unsafe. Please add locks or other protection in multi-goroutine operations. However, if none of the `Set` series methods and `Caseless` method are used during iteration, it will be goroutine-safe. On the other hand, only a read-lock is required for these operations.
 
 ## Iterate array values
 
-Use following methods to iterate an array typed JSON value.
+Use the following methods to iterate over an array typed JSON value.
 
 ```go
 func (v *V) RangeArray(callback func(i int, v *V) bool)
 func (v *V) ForRangeArr() []*V
 ```
 
-For callback pattern, use `RangeArray`. Return `true` in callback to continue iteration (which means `continue`), while `false` as `break`, breaking iteration.
+For the callback pattern, use `RangeArray`. Return `true` in the callback to continue iteration (which means `continue`), while `false` acts as `break`, breaking the iteration.
 
-`ForRangeArr` returns a slice with `[]*jsonvalue.V`, which you can append to a `for-range` text.
+`ForRangeArr` returns a slice with `[]*jsonvalue.V`, which you can use in a `for-range` statement.
 
-For detailed example:
+For a detailed example:
 
 ```go
 anArr.RangeArray(func(i int, v *jsonvalue.V) bool {
@@ -51,7 +50,7 @@ for i, v := range anArr.ForRangeArr() {
 
 ## Iterate object values
 
-Use following methods to iterate an object typed JSON value:
+Use the following methods to iterate over an object typed JSON value:
 
 ```go
 func (v *V) RangeObjects(callback func(k string, v *V) bool)
@@ -66,18 +65,18 @@ anObj.RangeObject(func(key string, v *jsonvalue.V) bool {
     return true // continue
 })
 
-for key, v := range anArr.ForRangeObj() {
+for key, v := range anObj.ForRangeObj() {
     // ...... handle with key and v
 }
 ```
 
 ## Acquiring the Original Key Sequence of An Object
 
-Theoretically, the key sequence of an JSON object should be undefined, unexpected. But in practical, it is quite surprising that this feature is quite popular.
+Theoretically, the key sequence of a JSON object should be undefined and unexpected. But in practice, it is quite surprising that this feature is quite popular.
 
-After v1.3.1, this feature is added, and it takes almost no affecting the the unmarshal efficiency.
+After v1.3.1, this feature was added, and it has almost no effect on the unmarshal efficiency.
 
-The caller may still execute the `Unmarshal` operation, and then use `RangeObjectsBySetSequence` method, which accept the same callback like `RangeObjects`.
+The caller may still execute the `Unmarshal` operation, and then use the `RangeObjectsBySetSequence` method, which accepts the same callback as `RangeObjects`.
 
 For example:
 
@@ -91,5 +90,5 @@ v.RangeObjectsBySetSequence(func(key string, _ *V) bool {
 fmt.Println(keys)
 ```
 
-The output is `[a, b, c]` and always be guaranteed.
+The output is `[a, b, c]` and is always guaranteed.
 

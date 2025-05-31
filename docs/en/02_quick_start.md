@@ -4,7 +4,7 @@
 
 ---
 
-To create a complex JSON object as follow:
+To create a complex JSON object as follows:
 
 ```json
 {
@@ -28,11 +28,11 @@ Just three lines with jsonvalue:
 
 Output: `{"obj":{"obj":{"obj":{"str":"Hello, JSON!"}}}`
 
-On the other hand, if we want to fetch one single data from the JSON bytes above, it is also easy:
+On the other hand, if we want to fetch a single value from the JSON bytes above, it is also easy:
 
 ```go
 const raw = `{"obj": {"obj": {"obj": {"str": "Hello, JSON!"}}}}`
-s := jsonvalue.MustUnmarshalString(s).MustGet("obj", "obj", "obj", "str").String()
+s := jsonvalue.MustUnmarshalString(raw).MustGet("obj", "obj", "obj", "str").String()
 fmt.Println(s)
 ```
 

@@ -1,4 +1,3 @@
-
 <font size=6>Create and Serialize JSON</font>
 
 [Prev Page](./02_quick_start.md) | [Contents](./README.md) | [Next Page](./04_get.md)
@@ -19,21 +18,21 @@ This section shows how to generate a jsonvalue value and set it
 
 ## Create JSON Value
 
-In most situations, we need to create an outer JSON value with object-or-array-typed. In jsonvalue, we use following functions:
+In most situations, we need to create an outer JSON value with object or array type. In jsonvalue, we use the following functions:
 
 ```go
 o := jsonvalue.NewObject()
 a := jsonvalue.NewArray()
 ```
 
-Also we can convert (import) any JSON-legal data types to jsonvalue. Just use `New` function. Take the object and array above for example:
+We can also convert (import) any JSON-legal data types to jsonvalue. Just use the `New` function. Take the object and array above for example:
 
 ```go
 o := jsonvalue.New(struct{}{})  // construct a JSON object
 a := jsonvalue.New([]int{})     // construct a JSON array
 ```
 
-Also other simple JSON elements are supported:
+Other simple JSON elements are also supported:
 
 ```go
 i := jsonvalue.New(100)             // construct a JSON number
@@ -47,21 +46,21 @@ n := jsonvalue.New(nil)             // construct a JSON null
 
 ## Set Sub Value into JSON
 
-After generating the outer object or array, the next step is to create there inside structures. Like `Get` method shown in previous section, we can use `Set` or `MustSet` to achieve this.
+After generating the outer object or array, the next step is to create the inside structures. Like the `Get` method shown in the previous section, we can use `Set` or `MustSet` to achieve this.
 
-The `Set(xxx).At(yyy)` methods will return sub-value and error. While `MustSet(xxx).At(yyy)` not. If you does not case the return values please use `MustSet` methods, which will avoid golangci-lint's "return value unused" warning.
+The `Set(xxx).At(yyy)` methods will return sub-value and error. While `MustSet(xxx).At(yyy)` will not. If you do not care about the return values, please use `MustSet` methods, which will avoid golangci-lint's "return value unused" warning.
 
 ### Basic Usage
 
-Generally, we can Use `Set` to construct child value:
+Generally, we can use `Set` to construct child values:
 
 ```go
 v.MustSet(child).At(path...)
 ```
 
-The semantics is "SET something AT some position". Please be advised that value the ahead of key.
+The semantics is "SET something AT some position". Please be advised that the value comes ahead of the key.
 
-As the parameter type of `Set` method is `any` (`any`), therefore you can set any supported type (even complex object or array data) into a jsonvalue.
+As the parameter type of the `Set` method is `any`, therefore you can set any supported type (even complex object or array data) into a jsonvalue.
 
 Complete example:
 
@@ -76,7 +75,7 @@ Output: `{"data":{"message":"Hello, JSON!","date":221101}}`
 
 ### Semantics of `At` Method
 
-After calling `Set`, `At` should be followed afterward to set child value into JSON. The prototype of `At` is:
+After calling `Set`, `At` should be called afterward to set child value into JSON. The prototype of `At` is:
 
 ```go
 type Setter interface {
@@ -84,14 +83,14 @@ type Setter interface {
 }
 ```
 
-Basic semantics of this method is consistent with `Get`. To prevent programming error, at least one parameter should be given, this the meaning of `param1`.
+The basic semantics of this method is consistent with `Get`. To prevent programming errors, at least one parameter should be given, which is the meaning of `firstParam`.
 
-The more important feature of `At` is that it can generate target JSON structure automatically. It process with following logic:
+The more important feature of `At` is that it can generate the target JSON structure automatically. It processes with the following logic:
 
-- Firstly locate sub position by given parameter, just like `Get`. If the target path already exists previously, simple set the sub value in specified path.
-- If target position does not exist, the structure wil be created automatically. Either `string` or `int`-like type parameters supported in this method. String type identifies an object while integer an array.
+- First, locate the sub position by the given parameter, just like `Get`. If the target path already exists previously, simply set the sub value in the specified path.
+- If the target position does not exist, the structure will be created automatically. Either `string` or `int`-like type parameters are supported in this method. String type identifies an object while integer identifies an array.
 
-Here is an example with automatic path generating:
+Here is an example with automatic path generation:
 
 ```go
 v := jsonvalue.NewObject()                       // {}
@@ -99,14 +98,14 @@ v.MustSet("Hello, object!").At("obj", "message") // {"obj":{"message":"Hello, ob
 v.MustSet("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, object!"},"arr":["Hello, array!"]}
 ```
 
-As for array auto-creating, the procedure is a bit complicated:
+As for array auto-creation, the procedure is a bit complicated:
 
-- If the array specified in given parameters does not exist, the index value SHOULD be zero to make the operation success.
-- If the array already exists, either two cases will be OK:
-  - The corresponding child value specified by given index parameter value exists. In this case, the value in that slot my be replaced.
-  - The given index value equals to length of the array. In this case, the value will be append to the end of array.
+- If the array specified in the given parameters does not exist, the index value SHOULD be zero to make the operation successful.
+- If the array already exists, either of the two cases will be OK:
+  - The corresponding child value specified by the given index parameter value exists. In this case, the value in that slot may be replaced.
+  - The given index value equals the length of the array. In this case, the value will be appended to the end of the array.
 
-This feature is so complicated that we will not use in most cases. But there is one situation which is useful:
+This feature is so complicated that we will not use it in most cases. But there is one situation in which it is useful:
 
 ```go
     var words = []string{"apple", "banana", "cat", "dog"}
@@ -124,7 +123,7 @@ If you like placing keys ahead, you can use the `v.At(...).Set(...)` pattern:
 ```go
     // ...
         v.At("array", i, "word").Set(words[i])
-        v.At("array", i, "lesson").Set(lessons[i]).
+        v.At("array", i, "lesson").Set(lessons[i])
     // ...
 ```
 
@@ -134,13 +133,13 @@ Final output:
 {"array":[{"word":"apple","lesson":1},{"word":"banana","lesson":2},{"word":"cat","lesson":3},{"word":"dog","lesson":4}]}
 ```
 
-You can also passing a slice or array to identify the parameter chain, for example, following codes:
+You can also pass a slice or array to identify the parameter chain, for example, the following code:
 
 ```go
 v.MustSet("Hello, object!").At("obj", "message")
 ```
 
-are equivalent to these:
+is equivalent to this:
 
 ```go
 v.MustSet("Hello, object!").At([]any{"obj", "message"})
@@ -152,26 +151,26 @@ or:
 v.MustSet("Hello, object!").At([]string{"obj", "message"})
 ```
 
-This feature make it easy to pass parameter from outer sources or configurations.
+This feature makes it easy to pass parameters from outer sources or configurations.
 
 ---
 
 ## Append Values to JSON Array
 
-Method `Append` and `Insert` are designed for array type JSON. While `Append` should works with `InTheBeginning` and `InTheEnd`, while `Insert` method `After` and `Before`.
+Methods `Append` and `Insert` are designed for array type JSON. `Append` should work with `InTheBeginning` and `InTheEnd`, while `Insert` method works with `After` and `Before`.
 
-They work with semantics below:
+They work with the semantics below:
 
-- Append some value in the beginning of ...
+- Append some value at the beginning of ...
 - Append some value to the end of ...
 - Insert some value after ...
 - Insert some value before ...
 
 Please be advised of the parameter sequence.
 
-Like `Set` methods, there are also `MustAppend` and `MustInsert` methods by same reason.
+Like `Set` methods, there are also `MustAppend` and `MustInsert` methods for the same reason.
 
-Prototypes of these methods as below:
+Prototypes of these methods are as below:
 
 ```go
 func (v *V) Append(child any) Appender
@@ -199,7 +198,7 @@ type MustInserter interface {
 }
 ```
 
-Basic semantics are like `Set` methods. But there are a bit differences:
+Basic semantics are like `Set` methods. But there are a few differences:
 
-- Empty parameter is allowed in `InTheBeginning` and `InTheEnd`, which identifies that current JSON is already an array, and sub values will append to the beginning or end of it.
+- Empty parameters are allowed in `InTheBeginning` and `InTheEnd`, which identifies that the current JSON is already an array, and sub values will be appended to the beginning or end of it.
 - The last parameter SHOULD be a number for `After` and `Before`, identifying the index of the array. Negative index is allowed.

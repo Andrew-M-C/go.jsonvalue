@@ -10,7 +10,8 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?date=221104)](https://opensource.org/license/MIT)
 
 - [Wiki](./docs/en/README.md)
-- [中文版](./docs/zh-cn/README.md)
+- [中文](./docs/zh-cn/README.md)
+- [日本語](./docs/ja/README.md)
 
 Package **jsonvalue** is for handling unstructured JSON data or customizing JSON marshaling. It is far more faster and convenient than using `interface{}` with `encoding/json`.
 

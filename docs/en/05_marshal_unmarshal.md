@@ -1,4 +1,3 @@
-
 <font size=6>Marshal and Unmarshal</font>
 
 [Prev Page](./04_get.md) | [Contents](./README.md) | [Next Page](./06_import_export.md)
@@ -17,7 +16,7 @@
 
 ### Basic Unmarshal
 
-We use marshal / unmarshal to describe serialization and de-serialization process in jsonvalue.
+We use marshal / unmarshal to describe the serialization and de-serialization process in jsonvalue.
 
 Jsonvalue uses the following function to parse a raw JSON text:
 
@@ -25,30 +24,30 @@ Jsonvalue uses the following function to parse a raw JSON text:
 func Unmarshal(b []byte) (ret *V, err error)
 ```
 
-No matter whether error occurs, an un-nil `*jsonvalue.V` object will be returned. However, when the raw text is illegal, en error object will be returned, describing what error is. In this case, the `Type()` of the returned jsonvalue value will be `jsonvalue.NotExist`
+No matter whether an error occurs, a non-nil `*jsonvalue.V` object will be returned. However, when the raw text is illegal, an error object will be returned, describing what the error is. In this case, the `Type()` of the returned jsonvalue value will be `jsonvalue.NotExist`.
 
 ### 其他 Unmarshal 函数
 
-Practically, a raw JSON text will be given in format of `string` instead of `[]byte`. It will take a little time to do `string(b)` conversion. To save this copying time, you can use `string` version unmarshal function:
+Practically, a raw JSON text will be given in the format of `string` instead of `[]byte`. It will take a little time to do the `string(b)` conversion. To save this copying time, you can use the `string` version unmarshal function:
 
 ```go
 func UnmarshalString(s string) (ret *V, err error)
 ```
 
-Besides, if the correctness of given JSON text need no care about, or it is sure to be legal, we can simply ignore error and use functions below:
+Besides, if the correctness of the given JSON text needs no care about, or it is sure to be legal, we can simply ignore the error and use the functions below:
 
 ```go
 func MustUnmarshal(b []byte) *V
 func MustUnmarshalString(s string) *V
 ```
 
-As functions above, this two functions will definitely return a un-nil `jsonvalue.V`.
+As with the functions above, these two functions will definitely return a non-nil `jsonvalue.V`.
 
 ---
 
 ## Marshal Functions
 
-Serialization in jsonvalue is "marshal". Like unmarshal, four functions below are provided:
+Serialization in jsonvalue is called "marshal". Like unmarshal, the four functions below are provided:
 
 ```go
 func (v *V) Marshal          (opts ...Option) (b []byte, err error)
@@ -57,12 +56,12 @@ func (v *V) MustMarshal      (opts ...Option) []byte
 func (v *V) MustMarshalString(opts ...Option) string
 ```
 
-In current version of jsonvalue, error will occurred in situations below:
+In the current version of jsonvalue, errors will occur in the situations below:
 
-1. `*V` is `NotExist` type
-2. Illegal floating numbers included like `+Inf`, `-Inf` or `NaN`, while no special operation to these floating values a specified.
-   - Special options with these floating value will mentioned later in other sections.
-3. Illegal configurations included in additional options.
+1. `*V` is of `NotExist` type
+2. Illegal floating numbers are included like `+Inf`, `-Inf` or `NaN`, while no special operation for these floating values is specified.
+   - Special options for these floating values will be mentioned later in other sections.
+3. Illegal configurations are included in additional options.
 
 ---
 
@@ -71,8 +70,8 @@ In current version of jsonvalue, error will occurred in situations below:
 Type `*jsonvalue.V` also implements `json.Marshaler` and `json.Unmarshaler` interfaces. This enables marshaling and unmarshaling via `encoding/json`. For example:
 
 ```go
-var v &jsonvalue.V{}
-err := json.Unmarshal(data, v)
+var v *jsonvalue.V
+err := json.Unmarshal(data, &v)
 ```
 
 Or
