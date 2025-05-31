@@ -105,14 +105,14 @@ v.MustSet("Hello, array!").At("arr", 0)          // {"obj":{"message":"Hello, ob
 这个特性在使用 for-range 块时会非常有用，比如：
 
 ```go
-    const words = []string{"apple", "banana", "cat", "dog"}
-    const lessons = []int{1, 2, 3, 4}
+    var words = []string{"apple", "banana", "cat", "dog"}
+    var lessons = []int{1, 2, 3, 4}
     v := jsonvalue.NewObject()
     for i := range words {
         v.MustSet(words[i]).At("array", i, "word")
         v.MustSet(lessons[i]).At("array", i, "lesson")
     }
-    fmt.Println(c.MustMarshalString())
+    fmt.Println(v.MustMarshalString())
 ```
 
 如果你喜欢把 key 放在前面，那你可以使用 `v.At(...).Set(...)` 模式:

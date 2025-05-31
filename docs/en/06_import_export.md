@@ -53,7 +53,7 @@ v.Set(child).At("child")
 fmt.Println(v.MustMarshalString())
 ```
 
-Outputs: `{"data":{"message":"Hello, JSON!"}}`
+Outputs: `{"child":{"text":"Hello, jsonvalue!"}}`
 
 Or we can set an normal JSON value:
 
