@@ -9,7 +9,7 @@ on:
 
 env:
   CODECOV_TOKEN: '2fc0d617-8e9a-47d7-ab58-52fa92b23741'
-  MAIN_GO_VER: '1.16'
+  MAIN_GO_VER: '1.23'
   MAIN_HOST_OS: 'ubuntu-latest'
 
 jobs:
@@ -17,7 +17,7 @@ jobs:
     strategy:
       max-parallel: 6
       matrix:
-        GO_VER: ['1.16']
+        GO_VER: ['1.23']
         HOST_OS: ['ubuntu-latest']
 
     runs-on: ${{ matrix.HOST_OS }}
@@ -37,7 +37,7 @@ jobs:
       run: |
         echo GO_VER = ${{ matrix.GO_VER }}
         go get golang.org/x/tools/cmd/cover
-        go install github.com/mattn/goveralls || go get github.com/mattn/goveralls
+        go install github.com/mattn/goveralls@latest
         go get .
 
     - name: Show Environments
