@@ -148,3 +148,51 @@ func (v *V) ForRangeArr() []*V {
 	res := make([]*V, 0, len(v.children.arr))
 	return append(res, v.children.arr...)
 }
+
+// PathItem is used for
+type PathItem struct {
+	Idx int    // Index of the array, -1 means this element is NOT an array
+	Key string // Key of the object, "" means this element is NOT an object
+}
+
+func appendPathIndex(items []PathItem, i int) []PathItem {
+	return append(items, PathItem{Idx: i, Key: ""})
+}
+
+func appendPathKey(items []PathItem, key string) []PathItem {
+	return append(items, PathItem{Idx: -1, Key: key})
+}
+
+// WalkFunc is the function type for walking through all sub values of a JSON value.
+// Return true to continue walking, while false to break.
+//
+// WalkFunc 是一个回调函数类型，用于遍历一个 JSON 值的所有子成员。返回 true 表示继续迭代,
+// 返回 false 表示退出迭代
+type WalkFunc func(path []PathItem, v *V) bool
+
+// Walk walks through all sub values of a JSON value.
+//
+// Walk 遍历一个 JSON 值的所有子成员。
+func (v *V) Walk(fn WalkFunc) {
+	if fn == nil {
+		return
+	}
+	v.walk(nil, fn)
+}
+
+func (v *V) walk(parent []PathItem, fn WalkFunc) bool {
+	switch v.ValueType() {
+	case Object:
+		v.RangeObjects(func(k string, v *V) bool {
+			return v.walk(appendPathKey(parent, k), fn)
+		})
+		return true
+	case Array:
+		v.RangeArray(func(i int, v *V) bool {
+			return v.walk(appendPathIndex(parent, i), fn)
+		})
+		return true
+	default:
+		return fn(parent, v)
+	}
+}

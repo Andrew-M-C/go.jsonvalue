@@ -8,6 +8,7 @@
 - [Iterate array values](#iterate-array-values)
 - [Iterate object values](#iterate-object-values)
 - [Acquiring the Original Key Sequence of An Object](#acquiring-the-original-key-sequence-of-an-object)
+- [Walk through all child values](#walk-through-all-child-values)
 
 ---
 
@@ -91,4 +92,25 @@ fmt.Println(keys)
 ```
 
 The output is `[a, b, c]` and is always guaranteed.
+
+## Walk through all child values
+
+The `Walk` method provides a simple way to depth-first traverse all child values in a JSON structure. Unlike `RangeArray` and `RangeObjects` which only iterate over direct children, the `Walk` method recursively visits all leaf nodes in the JSON tree. This method follows a pattern similar to the `Walk` method in `path/filepath`.
+
+```go
+func (v *V) Walk(fn WalkFunc)
+
+type WalkFunc func(path []PathItem, v *V) bool
+
+type PathItem struct {
+    Idx int    // Array index, -1 indicates this element is not an array element
+    Key string // Object key name, "" indicates this element is not an object element
+}
+```
+
+The `Walk` method calls the provided `WalkFunc` callback function for each leaf value, providing:
+- `path`: A slice of `PathItem` showing the complete path from root to the current value
+- `v`: The current JSON value being visited
+
+The callback function should return `true` to continue traversal, or `false` to stop traversal early.
 

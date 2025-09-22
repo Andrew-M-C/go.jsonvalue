@@ -7,6 +7,7 @@
 - [概述](#概述)
 - [遍历 array 类型值](#遍历-array-类型值)
 - [遍历 object 类型值](#遍历-object-类型值)
+- [遍历所有子值](#遍历所有子值)
 - [获取 object 类型值的原始顺序](#获取-object-类型值的原始顺序)
 - [已弃用的函数](#已弃用的函数)
 
@@ -73,6 +74,27 @@ for key, v := range anObj.ForRangeObj() {
     // ...... handle with key and v
 }
 ```
+
+## 遍历所有子值
+
+`Walk` 方法提供了一种简单的方式来深度优先遍历 JSON 结构中的所有子值。与只遍历直接子元素的 `RangeArray` 和 `RangeObjects` 不同，`Walk` 方法会递归访问 JSON 树中的所有叶子节点。这个方法的模式类似于 `path/filepath` 的 `Walk` 方法。
+
+```go
+func (v *V) Walk(fn WalkFunc)
+
+type WalkFunc func(path []PathItem, v *V) bool
+
+type PathItem struct {
+    Idx int    // 数组索引，-1 表示此元素不是数组元素
+    Key string // 对象键名，"" 表示此元素不是对象元素
+}
+```
+
+`Walk` 方法会为每个叶子值调用提供的 `WalkFunc` 回调函数，并提供：
+- `path`：一个 `PathItem` 切片，显示从根节点到当前值的完整路径
+- `v`：当前被访问的 JSON 值
+
+回调函数应返回 `true` 以继续遍历，或返回 `false` 以提前停止遍历。
 
 ## 获取 object 类型值的原始顺序
 
