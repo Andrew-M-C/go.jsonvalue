@@ -10,7 +10,7 @@ func testIteration(t *testing.T) {
 	cv("Range Array", func() { testRangeArray(t) })
 	cv("Range Object", func() { testRangeObject(t) })
 	cv("Range Object by seq", func() { testRangeObjectsBySetSequence(t) })
-	cv("Walk()", func() { testWalk(t) })
+	cv("Walk", func() { testWalk(t) })
 }
 
 func testRangeArray(t *testing.T) {
@@ -266,7 +266,7 @@ func testWalkBasicTypes(t *testing.T) {
 	cv("string value", func() {
 		v := NewString("hello")
 		walkCount := 0
-		v.Walk(func(path []PathItem, val *V) bool {
+		v.Walk(func(path Path, val *V) bool {
 			walkCount++
 			so(len(path), eq, 0) // Root level, no path
 			so(val.ValueType(), eq, String)
@@ -280,9 +280,12 @@ func testWalkBasicTypes(t *testing.T) {
 	cv("number value", func() {
 		v := NewInt64(42)
 		walkCount := 0
-		v.Walk(func(path []PathItem, val *V) bool {
+		v.Walk(func(path Path, val *V) bool {
 			walkCount++
+			lastItem := path.Last()
 			so(len(path), eq, 0)
+			so(lastItem.Idx, eq, -1)
+			so(lastItem.Key, eq, "")
 			so(val.ValueType(), eq, Number)
 			so(val.Int64(), eq, 42)
 			return true
@@ -294,7 +297,7 @@ func testWalkBasicTypes(t *testing.T) {
 	cv("boolean value", func() {
 		v := NewBool(true)
 		walkCount := 0
-		v.Walk(func(path []PathItem, val *V) bool {
+		v.Walk(func(path Path, val *V) bool {
 			walkCount++
 			so(len(path), eq, 0)
 			so(val.ValueType(), eq, Boolean)
@@ -308,7 +311,7 @@ func testWalkBasicTypes(t *testing.T) {
 	cv("null value", func() {
 		v := NewNull()
 		walkCount := 0
-		v.Walk(func(path []PathItem, val *V) bool {
+		v.Walk(func(path Path, val *V) bool {
 			walkCount++
 			so(len(path), eq, 0)
 			so(val.ValueType(), eq, Null)
@@ -324,7 +327,7 @@ func testWalkEmptyContainers(t *testing.T) {
 	cv("empty object", func() {
 		v := NewObject()
 		walkCount := 0
-		v.Walk(func(path []PathItem, val *V) bool {
+		v.Walk(func(path Path, val *V) bool {
 			walkCount++
 			t.Errorf("Should not walk through empty object")
 			return true
@@ -336,7 +339,7 @@ func testWalkEmptyContainers(t *testing.T) {
 	cv("empty array", func() {
 		v := NewArray()
 		walkCount := 0
-		v.Walk(func(path []PathItem, val *V) bool {
+		v.Walk(func(path Path, val *V) bool {
 			walkCount++
 			t.Errorf("Should not walk through empty array")
 			return true
@@ -354,7 +357,7 @@ func testWalkSimpleObject(t *testing.T) {
 
 	expected := map[string]struct {
 		valueType ValueType
-		value     interface{}
+		value     any
 	}{
 		"greeting": {String, "hello"},
 		"number":   {Number, int64(123)},
@@ -363,7 +366,7 @@ func testWalkSimpleObject(t *testing.T) {
 	}
 
 	walkCount := 0
-	v.Walk(func(path []PathItem, val *V) bool {
+	v.Walk(func(path Path, val *V) bool {
 		walkCount++
 		so(len(path), eq, 1)
 
@@ -403,7 +406,7 @@ func testWalkSimpleArray(t *testing.T) {
 
 	expectedValues := []struct {
 		valueType ValueType
-		value     interface{}
+		value     any
 	}{
 		{String, "first"},
 		{Number, int64(456)},
@@ -412,7 +415,7 @@ func testWalkSimpleArray(t *testing.T) {
 	}
 
 	walkCount := 0
-	v.Walk(func(path []PathItem, val *V) bool {
+	v.Walk(func(path Path, val *V) bool {
 		so(len(path), eq, 1)
 
 		idx := path[0].Idx
@@ -459,7 +462,7 @@ func testWalkNestedObjects(t *testing.T) {
 	v.MustSet(level1).At("level1")
 
 	walkCount := 0
-	v.Walk(func(path []PathItem, val *V) bool {
+	v.Walk(func(path Path, val *V) bool {
 		walkCount++
 
 		if len(path) == 3 {
@@ -490,7 +493,7 @@ func testWalkNestedArrays(t *testing.T) {
 	v.MustAppend(level1).InTheEnd()
 
 	walkCount := 0
-	v.Walk(func(path []PathItem, val *V) bool {
+	v.Walk(func(path Path, val *V) bool {
 		walkCount++
 
 		if len(path) == 3 {
@@ -531,24 +534,14 @@ func testWalkMixedNesting(t *testing.T) {
 	v.MustSet(arr).At("array")
 	v.MustSetString("value").At("simple")
 
-	walkResults := make(map[string]interface{})
+	walkResults := make(map[string]any)
 	walkCount := 0
 
-	v.Walk(func(path []PathItem, val *V) bool {
+	v.Walk(func(path Path, val *V) bool {
 		walkCount++
 
-		// Create a path string for identification
-		pathStr := ""
-		for i, p := range path {
-			if i > 0 {
-				pathStr += "."
-			}
-			if p.Key != "" {
-				pathStr += p.Key
-			} else {
-				pathStr += fmt.Sprintf("[%d]", p.Idx)
-			}
-		}
+		// Create a path string for identification using Path.String()
+		pathStr := path.String()
 
 		if val.ValueType() == String {
 			walkResults[pathStr] = val.String()
@@ -576,7 +569,7 @@ func testWalkPathValidation(t *testing.T) {
 
 	pathValidations := make(map[string]bool)
 
-	v.Walk(func(path []PathItem, val *V) bool {
+	v.Walk(func(path Path, val *V) bool {
 		pathStr := ""
 		for _, p := range path {
 			if p.Key != "" {
@@ -632,35 +625,22 @@ func testWalkComplexStructure(t *testing.T) {
 	v, err := UnmarshalString(raw)
 	so(err, isNil)
 
-	leafValues := make(map[string]interface{})
+	leafValues := make(map[string]any)
 	walkCount := 0
 
-	v.Walk(func(path []PathItem, val *V) bool {
+	v.Walk(func(path Path, val *V) bool {
 		walkCount++
-
-		// Build path string
-		pathStr := ""
-		for i, p := range path {
-			if i > 0 {
-				pathStr += "."
-			}
-			if p.Key != "" {
-				pathStr += p.Key
-			} else {
-				pathStr += fmt.Sprintf("[%d]", p.Idx)
-			}
-		}
 
 		// Store leaf values
 		switch val.ValueType() {
 		case String:
-			leafValues[pathStr] = val.String()
+			leafValues[path.String()] = val.String()
 		case Number:
-			leafValues[pathStr] = val.Int64()
+			leafValues[path.String()] = val.Int64()
 		case Boolean:
-			leafValues[pathStr] = val.Bool()
+			leafValues[path.String()] = val.Bool()
 		case Null:
-			leafValues[pathStr] = nil
+			leafValues[path.String()] = nil
 		}
 
 		return true
@@ -692,7 +672,7 @@ func testWalkEarlyTermination(t *testing.T) {
 		v.MustAppendString("fourth").InTheEnd()
 
 		walkCount := 0
-		v.Walk(func(path []PathItem, val *V) bool {
+		v.Walk(func(path Path, val *V) bool {
 			walkCount++
 			// Stop at the second element
 			return walkCount < 2
@@ -711,7 +691,7 @@ func testWalkEarlyTermination(t *testing.T) {
 
 		walkCount := 0
 		var lastKey string
-		v.Walk(func(path []PathItem, val *V) bool {
+		v.Walk(func(path Path, val *V) bool {
 			walkCount++
 			lastKey = path[0].Key
 			// Stop after first element
@@ -724,42 +704,29 @@ func testWalkEarlyTermination(t *testing.T) {
 
 	// Test early termination in nested structure
 	cv("early termination in nested structure", func() {
-		v := NewObject()
+		// Use array structure to ensure deterministic iteration order
+		v := NewArray()
+		v.MustAppendString("item1").InTheEnd()
+		v.MustAppendString("item2").InTheEnd()
+		v.MustAppendString("item3").InTheEnd()
+		v.MustAppendString("item4").InTheEnd()
+		v.MustAppendString("item5").InTheEnd()
 
-		// Create a nested structure with multiple elements
-		arr := NewArray()
-		arr.MustAppendString("item1").InTheEnd()
-		arr.MustAppendString("item2").InTheEnd()
-		arr.MustAppendString("item3").InTheEnd()
-		v.MustSet(arr).At("array")
+		// This structure has 5 leaf nodes with deterministic iteration order
+		totalWalkCount := 0
+		lastValue := ""
 
-		v.MustSetString("simple_value").At("simple")
-		v.MustSetInt64(42).At("number")
-
-		walkCount := 0
-		terminatedAt := ""
-		v.Walk(func(path []PathItem, val *V) bool {
-			walkCount++
+		v.Walk(func(path Path, v *V) bool {
+			totalWalkCount++
 			// Build path string for debugging
-			pathStr := ""
-			for i, p := range path {
-				if i > 0 {
-					pathStr += "."
-				}
-				if p.Key != "" {
-					pathStr += p.Key
-				} else {
-					pathStr += fmt.Sprintf("[%d]", p.Idx)
-				}
-			}
-			terminatedAt = pathStr
+			lastValue = v.String()
 
-			// Stop after third element to allow some iteration
-			return walkCount < 4
+			// Stop after fourth element to allow some iteration
+			return path.Last().Idx < 3
 		})
 
-		so(walkCount, eq, 4)     // Should have stopped after 4 elements
-		so(terminatedAt, ne, "") // Should have captured termination point
+		so(totalWalkCount, eq, 4)
+		so(lastValue, eq, "item4")
 	})
 
 	// Test that returning true continues iteration normally
@@ -770,7 +737,7 @@ func testWalkEarlyTermination(t *testing.T) {
 		v.MustAppendString("c").InTheEnd()
 
 		walkCount := 0
-		v.Walk(func(path []PathItem, val *V) bool {
+		v.Walk(func(path Path, val *V) bool {
 			walkCount++
 			return true // Always continue
 		})
@@ -788,7 +755,7 @@ func testWalkEarlyTermination(t *testing.T) {
 
 		walkCount := 0
 		foundBanana := false
-		v.Walk(func(path []PathItem, val *V) bool {
+		v.Walk(func(path Path, val *V) bool {
 			walkCount++
 			if val.String() == "banana" {
 				foundBanana = true

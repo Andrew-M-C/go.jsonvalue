@@ -1,6 +1,10 @@
 package jsonvalue
 
-import "sort"
+import (
+	"bytes"
+	"fmt"
+	"sort"
+)
 
 // Deprecated: ObjectIter is a deprecated type.
 type ObjectIter struct {
@@ -155,6 +159,36 @@ type PathItem struct {
 	Key string // Key of the object, "" means this element is NOT an object
 }
 
+func (p PathItem) String() string {
+	if p.Idx < 0 {
+		return p.Key
+	}
+	return fmt.Sprintf("[%d]", p.Idx)
+}
+
+// Path is a list of PathItem
+type Path []PathItem
+
+// Last returns last element of path
+func (p Path) Last() PathItem {
+	le := len(p)
+	if le == 0 {
+		return PathItem{Idx: -1}
+	}
+	return p[le-1]
+}
+
+func (p Path) String() string {
+	bdr := bytes.Buffer{}
+	for i, item := range p {
+		if i > 0 {
+			bdr.WriteByte('.')
+		}
+		bdr.WriteString(item.String())
+	}
+	return bdr.String()
+}
+
 func appendPathIndex(items []PathItem, i int) []PathItem {
 	return append(items, PathItem{Idx: i, Key: ""})
 }
@@ -168,7 +202,7 @@ func appendPathKey(items []PathItem, key string) []PathItem {
 //
 // WalkFunc 是一个回调函数类型，用于遍历一个 JSON 值的所有子成员。返回 true 表示继续迭代,
 // 返回 false 表示退出迭代
-type WalkFunc func(path []PathItem, v *V) bool
+type WalkFunc func(path Path, v *V) bool
 
 // Walk walks through all sub values of a JSON value.
 //
@@ -180,19 +214,21 @@ func (v *V) Walk(fn WalkFunc) {
 	v.walk(nil, fn)
 }
 
-func (v *V) walk(parent []PathItem, fn WalkFunc) bool {
+func (v *V) walk(parent Path, fn WalkFunc) bool {
+	shouldContinue := true
 	switch v.ValueType() {
 	case Object:
-		v.RangeObjects(func(k string, v *V) bool {
-			return v.walk(appendPathKey(parent, k), fn)
+		v.RangeObjects(func(k string, sub *V) bool {
+			shouldContinue = sub.walk(appendPathKey(parent, k), fn)
+			return shouldContinue
 		})
-		return true
 	case Array:
-		v.RangeArray(func(i int, v *V) bool {
-			return v.walk(appendPathIndex(parent, i), fn)
+		v.RangeArray(func(i int, sub *V) bool {
+			shouldContinue = sub.walk(appendPathIndex(parent, i), fn)
+			return shouldContinue
 		})
-		return true
 	default:
-		return fn(parent, v)
+		shouldContinue = fn(parent, v)
 	}
+	return shouldContinue
 }

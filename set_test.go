@@ -195,14 +195,13 @@ func testSetMisc(t *testing.T) {
 }
 
 func testSetError(t *testing.T) {
-
-	{
+	cv("invalid JSON unmarshal", func() {
 		raw := `"`
 		_, err := UnmarshalString(raw)
 		so(err, isErr)
-	}
+	})
 
-	{
+	cv("invalid path parameters for object", func() {
 		v := NewObject()
 		_, err := v.SetString("hello").At(true)
 		so(err, isErr)
@@ -212,9 +211,9 @@ func testSetError(t *testing.T) {
 		so(err, isErr)
 		_, err = v.SetString("hello").At("message", "message", true)
 		so(err, isErr)
-	}
+	})
 
-	{
+	cv("set uninitialized value on object", func() {
 		v := NewObject()
 		c := &V{}
 		_, err := v.Set(c).At("uninitialized")
@@ -223,32 +222,32 @@ func testSetError(t *testing.T) {
 		_, err = v.SetNull().At("object", "message", "null")
 		so(err, isErr)
 		t.Logf("v: %s", v.MustMarshalString())
-	}
+	})
 
-	{
+	cv("set on uninitialized V instance", func() {
 		v := &V{}
 		c := NewObject()
 		_, err := v.Set(c).At("uninitialized")
 		so(err, isErr)
-	}
+	})
 
-	{
+	cv("set on string value with path", func() {
 		v := NewString("string")
 		_, err := v.SetString("hello").At("message")
 		so(err, isErr)
 		_, err = v.SetString("hello").At("object", "message")
 		so(err, isErr)
-	}
+	})
 
-	{
+	cv("set on array with string index", func() {
 		v := NewArray()
 		_, err := v.SetNull().At("0")
 		so(err, isErr)
 		_, err = v.SetNull().At(1)
 		so(err, isErr)
-	}
+	})
 
-	{
+	cv("invalid path parameters for array elements", func() {
 		v := NewArray()
 		v.MustAppendArray().InTheBeginning()
 		v.MustAppendArray().InTheBeginning(0)
@@ -259,9 +258,9 @@ func testSetError(t *testing.T) {
 		so(err, isErr)
 		_, err = v.SetNull().At(0, true, 0)
 		so(err, isErr)
-	}
+	})
 
-	{
+	cv("array index out of bounds", func() {
 		v := NewArray()
 		v.MustSetNull().At(0)
 		v.MustSetNull().At(1)
@@ -273,23 +272,23 @@ func testSetError(t *testing.T) {
 		so(err, isErr)
 		_, err = v.SetNull().At(-10)
 		so(err, isErr)
-	}
+	})
 
-	{
+	cv("invalid nested path on empty array", func() {
 		v := NewArray()
 		_, err := v.SetNull().At(0, 1)
 		so(err, isErr)
 		_, err = v.SetNull().At(0, true)
 		so(err, isErr)
-	}
+	})
 
-	{
+	cv("invalid nested path on empty object", func() {
 		v := NewObject()
 		_, err := v.SetNull().At("array", 1)
 		so(err, isErr)
 		_, err = v.SetNull().At("array", true)
 		so(err, isErr)
-	}
+	})
 }
 
 func testSet_Must(*testing.T) {
