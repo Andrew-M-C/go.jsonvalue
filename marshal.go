@@ -3,6 +3,7 @@ package jsonvalue
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
 	"strings"
 
@@ -36,7 +37,7 @@ func (v *V) MustMarshalString(opt ...Option) string {
 //
 // Marshal 返回序列化后的 JSON 字节序列。
 func (v *V) Marshal(opts ...Option) (b []byte, err error) {
-	if NotExist == v.valueType {
+	if v == nil || v.valueType == NotExist {
 		return nil, ErrValueUninitialized
 	}
 
@@ -63,7 +64,21 @@ func (v *V) MarshalString(opts ...Option) (s string, err error) {
 	return unsafe.BtoS(b), nil
 }
 
-func marshalToBuffer(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) (err error) {
+// MarshalWrite is the same as Marshal, but writes to a io.Writer.
+//
+// MarshalWrite 与 Marshal 相同，但是将序列化后的 JSON 写入到 io.Writer 中。
+func (v *V) MarshalWrite(w io.Writer, opts ...Option) error {
+	if v == nil || v.valueType == NotExist {
+		return ErrValueUninitialized
+	}
+	if w == nil {
+		return ErrNilParameter
+	}
+	opt := combineOptions(opts)
+	return marshalToBuffer(v, nil, w, opt)
+}
+
+func marshalToBuffer(v *V, parentInfo *ParentInfo, buf io.Writer, opt *Opt) (err error) {
 	switch v.valueType {
 	default:
 		// do nothing
@@ -83,17 +98,21 @@ func marshalToBuffer(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) 
 	return err
 }
 
-func marshalString(v *V, buf buffer.Buffer, opt *Opt) {
-	_ = buf.WriteByte('"')
+func marshalString(v *V, buf io.Writer, opt *Opt) {
+	_, _ = buf.Write([]byte{'"'})
 	escapeStringToBuff(v.valueStr, buf, opt)
-	_ = buf.WriteByte('"')
+	_, _ = buf.Write([]byte{'"'})
 }
 
-func marshalBoolean(v *V, buf buffer.Buffer) {
-	_, _ = buf.WriteString(formatBool(v.valueBool))
+func marshalBoolean(v *V, buf io.Writer) {
+	if v.valueBool {
+		_, _ = buf.Write([]byte{'t', 'r', 'u', 'e'})
+	} else {
+		_, _ = buf.Write([]byte{'f', 'a', 'l', 's', 'e'})
+	}
 }
 
-func marshalNumber(v *V, buf buffer.Buffer, opt *Opt) error {
+func marshalNumber(v *V, buf io.Writer, opt *Opt) error {
 	if b := v.srcByte; len(b) > 0 {
 		_, _ = buf.Write(b)
 		return nil
@@ -109,7 +128,7 @@ func marshalNumber(v *V, buf buffer.Buffer, opt *Opt) error {
 	return marshalNaN(buf, opt)
 }
 
-func marshalNaN(buf buffer.Buffer, opt *Opt) error {
+func marshalNaN(buf io.Writer, opt *Opt) error {
 	switch opt.FloatNaNHandleType {
 	default:
 		fallthrough
@@ -124,22 +143,22 @@ func marshalNaN(buf buffer.Buffer, opt *Opt) error {
 		_, _ = buf.Write(b)
 
 	case FloatNaNNull:
-		_, _ = buf.WriteString("null")
+		_, _ = buf.Write([]byte{'n', 'u', 'l', 'l'})
 
 	case FloatNaNConvertToString:
 		if s := opt.FloatNaNToString; s == "" {
-			_, _ = buf.WriteString(`"NaN"`)
+			_, _ = buf.Write([]byte{'"', 'N', 'a', 'N', '"'})
 		} else {
-			_ = buf.WriteByte('"')
+			_, _ = buf.Write([]byte{'"'})
 			escapeStringToBuff(s, buf, opt)
-			_ = buf.WriteByte('"')
+			_, _ = buf.Write([]byte{'"'})
 		}
 	}
 
 	return nil
 }
 
-func marshalInfP(buf buffer.Buffer, opt *Opt) error {
+func marshalInfP(buf io.Writer, opt *Opt) error {
 	switch opt.FloatInfHandleType {
 	default:
 		fallthrough
@@ -154,22 +173,22 @@ func marshalInfP(buf buffer.Buffer, opt *Opt) error {
 		_, _ = buf.Write(b)
 
 	case FloatInfNull:
-		_, _ = buf.WriteString("null")
+		_, _ = buf.Write([]byte{'n', 'u', 'l', 'l'})
 
 	case FloatInfConvertToString:
 		if s := opt.FloatInfPositiveToString; s == "" {
-			_, _ = buf.WriteString(`"+Inf"`)
+			_, _ = buf.Write([]byte{'"', '+', 'I', 'n', 'f', '"'})
 		} else {
-			_ = buf.WriteByte('"')
+			_, _ = buf.Write([]byte{'"'})
 			escapeStringToBuff(s, buf, opt)
-			_ = buf.WriteByte('"')
+			_, _ = buf.Write([]byte{'"'})
 		}
 	}
 
 	return nil
 }
 
-func marshalInfN(buf buffer.Buffer, opt *Opt) error {
+func marshalInfN(buf io.Writer, opt *Opt) error {
 	switch opt.FloatInfHandleType {
 	default:
 		fallthrough
@@ -184,19 +203,19 @@ func marshalInfN(buf buffer.Buffer, opt *Opt) error {
 		_, _ = buf.Write(b)
 
 	case FloatInfNull:
-		_, _ = buf.WriteString("null")
+		_, _ = buf.Write([]byte{'n', 'u', 'l', 'l'})
 
 	case FloatInfConvertToString:
-		_ = buf.WriteByte('"')
+		_, _ = buf.Write([]byte{'"'})
 		if s := opt.FloatInfNegativeToString; s != "" {
 			escapeStringToBuff(s, buf, opt)
 		} else if opt.FloatInfPositiveToString != "" {
 			s = "-" + strings.TrimLeft(opt.FloatInfPositiveToString, "+")
 			escapeStringToBuff(s, buf, opt)
 		} else {
-			_, _ = buf.WriteString(`-Inf`)
+			_, _ = buf.Write([]byte{'-', 'I', 'n', 'f'})
 		}
-		_ = buf.WriteByte('"')
+		_, _ = buf.Write([]byte{'"'})
 	}
 
 	return nil
@@ -212,18 +231,18 @@ func isValidFloat(f float64) bool {
 	return true
 }
 
-func marshalNull(buf buffer.Buffer) {
-	_, _ = buf.WriteString("null")
+func marshalNull(buf io.Writer) {
+	_, _ = buf.Write([]byte{'n', 'u', 'l', 'l'})
 }
 
-func marshalObject(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
+func marshalObject(v *V, parentInfo *ParentInfo, buf io.Writer, opt *Opt) {
 	if len(v.children.object) == 0 {
-		_, _ = buf.WriteString("{}")
+		_, _ = buf.Write([]byte{'{', '}'})
 		return
 	}
 
 	opt.indent.cnt++
-	_ = buf.WriteByte('{')
+	_, _ = buf.Write([]byte{'{'})
 
 	if opt.MarshalLessFunc != nil {
 		sov := newSortObjectV(v, parentInfo, opt)
@@ -243,13 +262,13 @@ func marshalObject(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 
 	opt.indent.cnt--
 	if opt.indent.enabled {
-		_ = buf.WriteByte('\n')
+		_, _ = buf.Write([]byte{'\n'})
 		writeIndent(buf, opt)
 	}
-	_ = buf.WriteByte('}')
+	_, _ = buf.Write([]byte{'}'})
 }
 
-func writeObjectKVInRandomizedSequence(v *V, buf buffer.Buffer, opt *Opt) {
+func writeObjectKVInRandomizedSequence(v *V, buf io.Writer, opt *Opt) {
 	firstWritten := false
 	for k, child := range v.children.object {
 		firstWritten = writeObjectChildren(nil, buf, !firstWritten, k, child.v, opt)
@@ -257,55 +276,55 @@ func writeObjectKVInRandomizedSequence(v *V, buf buffer.Buffer, opt *Opt) {
 }
 
 func writeObjectChildren(
-	parentInfo *ParentInfo, buf buffer.Buffer, isFirstOne bool, key string, child *V, opt *Opt,
+	parentInfo *ParentInfo, buf io.Writer, isFirstOne bool, key string, child *V, opt *Opt,
 ) (written bool) {
 	if child.IsNull() && opt.OmitNull {
 		return false
 	}
 	if !isFirstOne {
-		_ = buf.WriteByte(',')
+		_, _ = buf.Write([]byte{','})
 	}
 
 	if opt.indent.enabled {
-		_ = buf.WriteByte('\n')
+		_, _ = buf.Write([]byte{'\n'})
 		writeIndent(buf, opt)
 	}
 
-	_ = buf.WriteByte('"')
+	_, _ = buf.Write([]byte{'"'})
 	escapeStringToBuff(key, buf, opt)
 
 	if opt.indent.enabled {
-		_, _ = buf.WriteString("\": ")
+		_, _ = buf.Write([]byte{'"', ':', ' '})
 	} else {
-		_, _ = buf.WriteString("\":")
+		_, _ = buf.Write([]byte{'"', ':'})
 	}
 
 	_ = marshalToBuffer(child, parentInfo, buf, opt)
 	return true
 }
 
-func writeIndent(buf buffer.Buffer, opt *Opt) {
-	_, _ = buf.WriteString(opt.indent.prefix)
+func writeIndent(buf io.Writer, opt *Opt) {
+	_, _ = buf.Write(unsafe.StoB(opt.indent.prefix))
 	for i := 0; i < opt.indent.cnt; i++ {
-		_, _ = buf.WriteString(opt.indent.indent)
+		_, _ = buf.Write(unsafe.StoB(opt.indent.indent))
 	}
 }
 
-func marshalArray(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
+func marshalArray(v *V, parentInfo *ParentInfo, buf io.Writer, opt *Opt) {
 	if len(v.children.arr) == 0 {
-		_, _ = buf.WriteString("[]")
+		_, _ = buf.Write([]byte{'[', ']'})
 		return
 	}
 
 	opt.indent.cnt++
-	_ = buf.WriteByte('[')
+	_, _ = buf.Write([]byte{'['})
 
 	v.RangeArray(func(i int, child *V) bool {
 		if i > 0 {
-			_ = buf.WriteByte(',')
+			_, _ = buf.Write([]byte{','})
 		}
 		if opt.indent.enabled {
-			_ = buf.WriteByte('\n')
+			_, _ = buf.Write([]byte{'\n'})
 			writeIndent(buf, opt)
 		}
 		if opt.MarshalLessFunc == nil {
@@ -318,8 +337,8 @@ func marshalArray(v *V, parentInfo *ParentInfo, buf buffer.Buffer, opt *Opt) {
 
 	opt.indent.cnt--
 	if opt.indent.enabled {
-		_ = buf.WriteByte('\n')
+		_, _ = buf.Write([]byte{'\n'})
 		writeIndent(buf, opt)
 	}
-	_ = buf.WriteByte(']')
+	_, _ = buf.Write([]byte{']'})
 }

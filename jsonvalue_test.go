@@ -74,6 +74,7 @@ func TestJsonvalue(t *testing.T) {
 	test(t, "test iteration", testIteration)
 	test(t, "test iteration internally", testIter)
 	test(t, "test iterate float internally", testIterFloat)
+	test(t, "test internal variables", testInternal)
 	test(t, "test marshaling", testMarshal)
 	test(t, "test sort", testSort)
 	test(t, "test insert, append, delete", testInsertAppendDelete)

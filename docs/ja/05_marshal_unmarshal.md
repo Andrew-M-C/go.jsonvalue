@@ -50,10 +50,11 @@ func MustUnmarshalString(s string) *V
 jsonvalue におけるシリアライゼーションは「マーシャル」と呼ばれます。アンマーシャルと同様に、以下の4つの関数が提供されています：
 
 ```go
-func (v *V) Marshal          (opts ...Option) (b []byte, err error)
-func (v *V) MarshalString    (opts ...Option) (s string, err error)
-func (v *V) MustMarshal      (opts ...Option) []byte
-func (v *V) MustMarshalString(opts ...Option) string
+func (v *V) Marshal           (opts ...Option) (b []byte, err error)
+func (v *V) MarshalString     (opts ...Option) (s string, err error)
+func (v *V) MustMarshal       (opts ...Option) []byte
+func (v *V) MustMarshalString (opts ...Option) string
+func (v *V) MarshalWrite      (w io.Writer, opts ...Option) error
 ```
 
 現在のバージョンの jsonvalue では、以下の状況でエラーが発生します：

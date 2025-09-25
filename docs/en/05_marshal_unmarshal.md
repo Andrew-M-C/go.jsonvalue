@@ -50,10 +50,11 @@ As with the functions above, these two functions will definitely return a non-ni
 Serialization in jsonvalue is called "marshal". Like unmarshal, the four functions below are provided:
 
 ```go
-func (v *V) Marshal          (opts ...Option) (b []byte, err error)
-func (v *V) MarshalString    (opts ...Option) (s string, err error)
-func (v *V) MustMarshal      (opts ...Option) []byte
-func (v *V) MustMarshalString(opts ...Option) string
+func (v *V) Marshal           (opts ...Option) (b []byte, err error)
+func (v *V) MarshalString     (opts ...Option) (s string, err error)
+func (v *V) MustMarshal       (opts ...Option) []byte
+func (v *V) MustMarshalString (opts ...Option) string
+func (v *V) MarshalWrite      (w io.Writer, opts ...Option) error
 ```
 
 In the current version of jsonvalue, errors will occur in the situations below:

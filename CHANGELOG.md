@@ -22,6 +22,7 @@
 
 - Add `Walk` method for depth-first traversal of all child values in JSON structure.
 - Add `ExtractAll` function to recursively unmarshal embedded JSON strings.
+- Add `MArshalWrite` function to serialize JSON value to `io.Writer` object.
 
 ## v1.4.1
 

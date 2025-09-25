@@ -22,6 +22,7 @@
 
 - 新增 `Walk` 方法，用于深度优先遍历 JSON 结构中的所有子值
 - 新增 `ExtractAll` 函数，用于递归解析嵌套的 JSON 字符串
+- 新增 `MarshalWrite` 函数, 用于将 JSON 值序列化到字节流中
 
 ## v1.4.1
 

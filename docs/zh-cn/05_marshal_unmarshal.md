@@ -52,10 +52,11 @@ func MustUnmarshalString(s string) *V
 与 Unmarshal 对应，jsonvalue 的序列化函数也采用其相对的 marshal 语义。提供了以下四个方法：
 
 ```go
-func (v *V) Marshal          (opts ...Option) (b []byte, err error)
-func (v *V) MarshalString    (opts ...Option) (s string, err error)
-func (v *V) MustMarshal      (opts ...Option) []byte
-func (v *V) MustMarshalString(opts ...Option) string
+func (v *V) Marshal           (opts ...Option) (b []byte, err error)
+func (v *V) MarshalString     (opts ...Option) (s string, err error)
+func (v *V) MustMarshal       (opts ...Option) []byte
+func (v *V) MustMarshalString (opts ...Option) string
+func (v *V) MarshalWrite      (w io.Writer, opts ...Option) error
 ```
 
 在当前版本下，marshal 有以下几种情况会报错：

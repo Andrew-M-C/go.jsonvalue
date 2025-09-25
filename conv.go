@@ -2,9 +2,10 @@ package jsonvalue
 
 import (
 	"fmt"
+	"io"
 	"reflect"
 
-	"github.com/Andrew-M-C/go.jsonvalue/internal/buffer"
+	"github.com/Andrew-M-C/go.jsonvalue/internal/unsafe"
 )
 
 func formatBool(b bool) string {
@@ -18,9 +19,10 @@ func formatBool(b bool) string {
 // - [UTF-16](https://zh.wikipedia.org/zh-cn/UTF-16)
 // - [JavaScript has a Unicode problem](https://mathiasbynens.be/notes/javascript-unicode)
 // - [Meaning of escaped unicode characters in JSON](https://stackoverflow.com/questions/21995410/meaning-of-escaped-unicode-characters-in-json)
-func escapeGreaterUnicodeToBuffByUTF16(r rune, buf buffer.Buffer) {
+func escapeGreaterUnicodeToBuffByUTF16(r rune, buf io.Writer) {
 	if r <= '\uffff' {
-		_, _ = buf.WriteString(fmt.Sprintf("\\u%04X", r))
+		s := fmt.Sprintf("\\u%04X", r)
+		_, _ = buf.Write(unsafe.StoB(s))
 		return
 	}
 	// if r > 0x10FFFF {
@@ -32,11 +34,13 @@ func escapeGreaterUnicodeToBuffByUTF16(r rune, buf buffer.Buffer) {
 	r = r - 0x10000
 	lo := r & 0x003FF
 	hi := (r & 0xFFC00) >> 10
-	_, _ = buf.WriteString(fmt.Sprintf("\\u%04X", hi+0xD800))
-	_, _ = buf.WriteString(fmt.Sprintf("\\u%04X", lo+0xDC00))
+	s := fmt.Sprintf("\\u%04X", hi+0xD800)
+	_, _ = buf.Write(unsafe.StoB(s))
+	s = fmt.Sprintf("\\u%04X", lo+0xDC00)
+	_, _ = buf.Write(unsafe.StoB(s))
 }
 
-func escapeGreaterUnicodeToBuffByUTF8(r rune, buf buffer.Buffer) {
+func escapeGreaterUnicodeToBuffByUTF8(r rune, buf io.Writer) {
 	// Comments below are copied from encoding/json:
 	//
 	// U+2028 is LINE SEPARATOR.
@@ -49,23 +53,24 @@ func escapeGreaterUnicodeToBuffByUTF8(r rune, buf buffer.Buffer) {
 	if r == '\u2028' || r == '\u2029' {
 		escapeGreaterUnicodeToBuffByUTF16(r, buf)
 	} else {
-		_, _ = buf.WriteRune(r)
+		s := string(r) // convert to UTF-8
+		_, _ = buf.Write(unsafe.StoB(s))
 	}
 }
 
-func escapeNothing(b byte, buf buffer.Buffer) {
-	_ = buf.WriteByte(b)
+func escapeNothing(b byte, buf io.Writer) {
+	_, _ = buf.Write([]byte{b})
 }
 
-func escAsciiControlChar(b byte, buf buffer.Buffer) {
+func escAsciiControlChar(b byte, buf io.Writer) {
 	upper := b >> 4
 	lower := b & 0x0F
 
 	writeChar := func(c byte) {
 		if c < 0xA {
-			_ = buf.WriteByte('0' + c)
+			_, _ = buf.Write([]byte{'0' + c})
 		} else {
-			_ = buf.WriteByte('A' + (c - 0xA))
+			_, _ = buf.Write([]byte{'A' + (c - 0xA)})
 		}
 	}
 
@@ -74,55 +79,55 @@ func escAsciiControlChar(b byte, buf buffer.Buffer) {
 	writeChar(lower)
 }
 
-func escDoubleQuote(_ byte, buf buffer.Buffer) {
+func escDoubleQuote(_ byte, buf io.Writer) {
 	_, _ = buf.Write([]byte{'\\', '"'})
 }
 
-func escSlash(_ byte, buf buffer.Buffer) {
+func escSlash(_ byte, buf io.Writer) {
 	_, _ = buf.Write([]byte{'\\', '/'})
 }
 
-func escBackslash(_ byte, buf buffer.Buffer) {
+func escBackslash(_ byte, buf io.Writer) {
 	_, _ = buf.Write([]byte{'\\', '\\'})
 }
 
-func escBackspace(_ byte, buf buffer.Buffer) {
+func escBackspace(_ byte, buf io.Writer) {
 	_, _ = buf.Write([]byte{'\\', 'b'})
 }
 
-func escVertTab(_ byte, buf buffer.Buffer) {
+func escVertTab(_ byte, buf io.Writer) {
 	_, _ = buf.Write([]byte{'\\', 'f'})
 }
 
-func escTab(_ byte, buf buffer.Buffer) {
+func escTab(_ byte, buf io.Writer) {
 	_, _ = buf.Write([]byte{'\\', 't'})
 }
 
-func escNewLine(_ byte, buf buffer.Buffer) {
+func escNewLine(_ byte, buf io.Writer) {
 	_, _ = buf.Write([]byte{'\\', 'n'})
 }
 
-func escReturn(_ byte, buf buffer.Buffer) {
+func escReturn(_ byte, buf io.Writer) {
 	_, _ = buf.Write([]byte{'\\', 'r'})
 }
 
-func escLeftAngle(_ byte, buf buffer.Buffer) {
+func escLeftAngle(_ byte, buf io.Writer) {
 	_, _ = buf.Write([]byte{'\\', 'u', '0', '0', '3', 'C'})
 }
 
-func escRightAngle(_ byte, buf buffer.Buffer) {
+func escRightAngle(_ byte, buf io.Writer) {
 	_, _ = buf.Write([]byte{'\\', 'u', '0', '0', '3', 'E'})
 }
 
-func escAnd(_ byte, buf buffer.Buffer) {
+func escAnd(_ byte, buf io.Writer) {
 	_, _ = buf.Write([]byte{'\\', 'u', '0', '0', '2', '6'})
 }
 
-// func escPercent(_ byte, buf buffer.Buffer) {
+// func escPercent(_ byte, buf io.Writer) {
 // 	buf.Write([]byte{'\\', 'u', '0', '0', '2', '5'})
 // }
 
-func escapeStringToBuff(s string, buf buffer.Buffer, opt *Opt) {
+func escapeStringToBuff(s string, buf io.Writer, opt *Opt) {
 	for _, r := range s {
 		if r <= 0x7F {
 			b := byte(r)

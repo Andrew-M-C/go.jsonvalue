@@ -19,6 +19,7 @@ func testMarshal(t *testing.T) {
 	cv("ASCII control characters", func() { testMarshalControlCharacters(t) })
 	cv("test JSONP and control ASCII for UTF-8", func() { testMarshalJSONPAndControlAsciiForUTF8(t) })
 	cv("Issue #30", func() { testIssue30(t) })
+	cv("MarshalWrite", func() { testMarshalWrite(t) })
 }
 
 func testMarshalFloat64NaN(*testing.T) {
@@ -639,6 +640,240 @@ func testIssue30(t *testing.T) {
 		so(v.IsArray(), isTrue)
 
 		t.Log(v)
+	})
+}
+
+func testMarshalWrite(t *testing.T) {
+	cv("basic functionality", func() { testMarshalWriteBasic(t) })
+	cv("nil writer error", func() { testMarshalWriteNilWriter(t) })
+	cv("consistency with Marshal", func() { testMarshalWriteConsistency(t) })
+	cv("different data types", func() { testMarshalWriteDataTypes(t) })
+	cv("options compatibility", func() { testMarshalWriteOptions(t) })
+	cv("uninitialized value", func() { testMarshalWriteUninitialized(t) })
+}
+
+func testMarshalWriteBasic(*testing.T) {
+	cv("simple string", func() {
+		v := NewString("Hello, world!")
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf)
+		so(err, isNil)
+		so(buf.String(), eq, `"Hello, world!"`)
+	})
+
+	cv("simple number", func() {
+		v := NewFloat64(123.456)
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf)
+		so(err, isNil)
+		so(buf.String(), eq, "123.456")
+	})
+
+	cv("boolean true", func() {
+		v := NewBool(true)
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf)
+		so(err, isNil)
+		so(buf.String(), eq, "true")
+	})
+
+	cv("boolean false", func() {
+		v := NewBool(false)
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf)
+		so(err, isNil)
+		so(buf.String(), eq, "false")
+	})
+
+	cv("null value", func() {
+		v := NewNull()
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf)
+		so(err, isNil)
+		so(buf.String(), eq, "null")
+	})
+}
+
+func testMarshalWriteNilWriter(*testing.T) {
+	cv("nil writer should return error", func() {
+		v := NewString("test")
+		err := v.MarshalWrite(nil)
+		so(err, isErr)
+		so(err, eq, ErrNilParameter)
+	})
+}
+
+func testMarshalWriteConsistency(*testing.T) {
+	testData := []struct {
+		name string
+		v    *V
+	}{
+		{"string", NewString("test string with 中文 and special chars: <>&\"'")},
+		{"integer", NewInt64(42)},
+		{"float", NewFloat64(3.14159)},
+		{"boolean true", NewBool(true)},
+		{"boolean false", NewBool(false)},
+		{"null", NewNull()},
+		{"empty object", NewObject()},
+		{"empty array", NewArray()},
+	}
+
+	for _, td := range testData {
+		cv(td.name, func() {
+			// Test without options
+			marshalResult, err := td.v.Marshal()
+			so(err, isNil)
+
+			buf := &bytes.Buffer{}
+			err = td.v.MarshalWrite(buf)
+			so(err, isNil)
+			so(buf.String(), eq, string(marshalResult))
+
+			// Test with some options
+			marshalResult, err = td.v.Marshal(OptEscapeHTML(false), OptUTF8())
+			so(err, isNil)
+
+			buf.Reset()
+			err = td.v.MarshalWrite(buf, OptEscapeHTML(false), OptUTF8())
+			so(err, isNil)
+			so(buf.String(), eq, string(marshalResult))
+		})
+	}
+}
+
+func testMarshalWriteDataTypes(*testing.T) {
+	cv("complex object", func() {
+		v := NewObject()
+		v.MustSetString("John").At("name")
+		v.MustSetInt(30).At("age")
+		v.MustSetBool(true).At("active")
+		v.MustSetNull().At("data")
+
+		arr := NewArray()
+		arr.MustAppend("item1").InTheEnd()
+		arr.MustAppend(123).InTheEnd()
+		v.MustSet(arr).At("items")
+
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf)
+		so(err, isNil)
+
+		result := buf.String()
+		so(result, hasSubStr, `"name":"John"`)
+		so(result, hasSubStr, `"age":30`)
+		so(result, hasSubStr, `"active":true`)
+		so(result, hasSubStr, `"data":null`)
+		so(result, hasSubStr, `"items":["item1",123]`)
+	})
+
+	cv("nested array", func() {
+		v := NewArray()
+		v.MustAppend(1).InTheEnd()
+
+		subArr := NewArray()
+		subArr.MustAppend("nested").InTheEnd()
+		subArr.MustAppend(true).InTheEnd()
+		v.MustAppend(subArr).InTheEnd()
+
+		v.MustAppend(3.14).InTheEnd()
+
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf)
+		so(err, isNil)
+		so(buf.String(), eq, `[1,["nested",true],3.14]`)
+	})
+}
+
+func testMarshalWriteOptions(*testing.T) {
+	cv("indent option", func() {
+		v := NewObject()
+		v.MustSetString("value").At("key")
+		v.MustSetInt(42).At("number")
+
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf, OptIndent("", "  "))
+		so(err, isNil)
+
+		expected := "{\n  \"key\": \"value\",\n  \"number\": 42\n}"
+		so(buf.String(), eq, expected)
+	})
+
+	cv("escape HTML option", func() {
+		v := NewString("<script>alert('test')</script>")
+
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf, OptEscapeHTML(true))
+		so(err, isNil)
+		so(buf.String(), hasSubStr, "\\u003C")
+		so(buf.String(), hasSubStr, "\\u003E")
+
+		buf.Reset()
+		err = v.MarshalWrite(buf, OptEscapeHTML(false))
+		so(err, isNil)
+		so(buf.String(), eq, `"<script>alert('test')<\/script>"`)
+	})
+
+	cv("UTF-8 option", func() {
+		v := NewString("Hello 世界")
+
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf, OptUTF8())
+		so(err, isNil)
+		so(buf.String(), eq, `"Hello 世界"`)
+
+		buf.Reset()
+		err = v.MarshalWrite(buf)
+		so(err, isNil)
+		so(buf.String(), hasSubStr, "\\u")
+	})
+
+	cv("float NaN handling", func() {
+		v := NewFloat64(math.NaN())
+
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf, OptFloatNaNToNull())
+		so(err, isNil)
+		so(buf.String(), eq, "null")
+
+		buf.Reset()
+		err = v.MarshalWrite(buf, OptFloatNaNToString("not_a_number"))
+		so(err, isNil)
+		so(buf.String(), eq, `"not_a_number"`)
+
+		buf.Reset()
+		err = v.MarshalWrite(buf, OptFloatNaNToFloat(0.0))
+		so(err, isNil)
+		so(buf.String(), eq, "0")
+	})
+
+	cv("float Inf handling", func() {
+		v := NewFloat64(math.Inf(1))
+
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf, OptFloatInfToNull())
+		so(err, isNil)
+		so(buf.String(), eq, "null")
+
+		buf.Reset()
+		err = v.MarshalWrite(buf, OptFloatInfToString("infinity", "negative_infinity"))
+		so(err, isNil)
+		so(buf.String(), eq, `"infinity"`)
+
+		v = NewFloat64(math.Inf(-1))
+		buf.Reset()
+		err = v.MarshalWrite(buf, OptFloatInfToString("infinity", "negative_infinity"))
+		so(err, isNil)
+		so(buf.String(), eq, `"negative_infinity"`)
+	})
+}
+
+func testMarshalWriteUninitialized(*testing.T) {
+	cv("uninitialized value should return error", func() {
+		v := &V{} // Create an uninitialized V (valueType will be NotExist)
+		buf := &bytes.Buffer{}
+		err := v.MarshalWrite(buf)
+		so(err, isErr)
+		so(err, eq, ErrValueUninitialized)
 	})
 }
 

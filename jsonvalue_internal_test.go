@@ -4,6 +4,7 @@ import "testing"
 
 func testInternal(t *testing.T) {
 	cv("test predict numbers", func() { testInternalPredict(t) })
+	cv("test anyToInt function", func() { testAnyToInt(t) })
 }
 
 func testInternalPredict(t *testing.T) {
@@ -45,4 +46,36 @@ func testInternalPredict(t *testing.T) {
 	t.Logf("total: %d, count %d, calculated per size: %d", v>>32, v&maxUint32, size)
 	so(size, eq, (v>>32)/(v&maxUint32))
 	so(size, eq, p)
+}
+
+func testAnyToInt(t *testing.T) {
+	// Test normal cases (should work)
+	result, err := anyToInt(int(42))
+	so(err, isNil)
+	so(result, eq, 42)
+	
+	result, err = anyToInt(int8(5))
+	so(err, isNil)
+	so(result, eq, 5)
+	
+	result, err = anyToInt(uint16(100))
+	so(err, isNil)
+	so(result, eq, 100)
+	
+	// Test nil parameter (should error)
+	_, err = anyToInt(nil)
+	so(err, isErr)
+	
+	// Test non-number types (should error) - This is the uncovered branch
+	_, err = anyToInt("not a number")
+	so(err, isErr)
+	
+	_, err = anyToInt([]int{1, 2, 3})
+	so(err, isErr)
+	
+	_, err = anyToInt(map[string]int{"a": 1})
+	so(err, isErr)
+	
+	_, err = anyToInt(struct{ x int }{x: 1})
+	so(err, isErr)
 }

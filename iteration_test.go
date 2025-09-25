@@ -11,6 +11,7 @@ func testIteration(t *testing.T) {
 	cv("Range Object", func() { testRangeObject(t) })
 	cv("Range Object by seq", func() { testRangeObjectsBySetSequence(t) })
 	cv("Walk", func() { testWalk(t) })
+	cv("Path.Last", func() { testPathLast(t) })
 }
 
 func testRangeArray(t *testing.T) {
@@ -767,5 +768,40 @@ func testWalkEarlyTermination(t *testing.T) {
 		so(foundBanana, isTrue)    // Should have found banana
 		so(walkCount >= 1, isTrue) // Should have visited at least 1 element
 		so(walkCount <= 2, isTrue) // Should have stopped by element 2
+	})
+}
+
+func testPathLast(*testing.T) {
+	cv("empty path", func() {
+		// Test the uncovered branch: empty path
+		var p Path
+		last := p.Last()
+		so(last.Idx, eq, -1)
+		so(last.Key, eq, "")
+	})
+
+	cv("single element path", func() {
+		p := Path{PathItem{Key: "test", Idx: -1}}
+		last := p.Last()
+		so(last.Key, eq, "test")
+		so(last.Idx, eq, -1)
+	})
+
+	cv("multiple element path", func() {
+		p := Path{
+			PathItem{Key: "first", Idx: -1},
+			PathItem{Key: "", Idx: 0},
+			PathItem{Key: "last", Idx: -1},
+		}
+		last := p.Last()
+		so(last.Key, eq, "last")
+		so(last.Idx, eq, -1)
+	})
+
+	cv("array index path", func() {
+		p := Path{PathItem{Key: "", Idx: 42}}
+		last := p.Last()
+		so(last.Key, eq, "")
+		so(last.Idx, eq, 42)
 	})
 }

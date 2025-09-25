@@ -1,6 +1,8 @@
 package jsonvalue
 
-import "github.com/Andrew-M-C/go.jsonvalue/internal/buffer"
+import (
+	"io"
+)
 
 const (
 	initialArrayCapacity = 32
@@ -107,10 +109,10 @@ type Opt struct {
 	FloatInfToFloat float64
 
 	// unicodeEscapingFunc defines how to escaping a unicode greater than 0x7F to buffer.
-	unicodeEscapingFunc func(r rune, buf buffer.Buffer)
+	unicodeEscapingFunc func(r rune, buf io.Writer)
 
 	// asciiCharEscapingFunc defines how to marshal bytes lower than 0x80.
-	asciiCharEscapingFunc [asciiSize]func(b byte, buf buffer.Buffer)
+	asciiCharEscapingFunc [asciiSize]func(b byte, buf io.Writer)
 
 	// escProperties
 	escProperties escapingProperties
@@ -570,7 +572,7 @@ func (o *Opt) parseEscapingFuncs() {
 		o.asciiCharEscapingFunc[i] = escapeNothing
 	}
 
-	iterate := func(from, to int, fu func(b byte, buf buffer.Buffer)) {
+	iterate := func(from, to int, fu func(b byte, buf io.Writer)) {
 		for i := from; i <= to; i++ {
 			o.asciiCharEscapingFunc[i] = fu
 		}
