@@ -791,7 +791,7 @@ func testMarshalWriteOptions(*testing.T) {
 		v.MustSetInt(42).At("number")
 
 		buf := &bytes.Buffer{}
-		err := v.MarshalWrite(buf, OptIndent("", "  "))
+		err := v.MarshalWrite(buf, OptIndent("", "  "), OptSetSequence())
 		so(err, isNil)
 
 		expected := "{\n  \"key\": \"value\",\n  \"number\": 42\n}"
