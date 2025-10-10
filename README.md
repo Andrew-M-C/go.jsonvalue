@@ -2,11 +2,14 @@
 
 [![Workflow](https://github.com/Andrew-M-C/go.jsonvalue/actions/workflows/go_test_general.yml/badge.svg)](https://github.com/Andrew-M-C/go.jsonvalue/actions/workflows/go_test_general.yml)
 [![codecov](https://codecov.io/gh/Andrew-M-C/go.jsonvalue/branch/dev/github_workflow/graph/badge.svg?token=REDI4YDLPR&date=221104)](https://codecov.io/gh/Andrew-M-C/go.jsonvalue)
-[![Go report](https://goreportcard.com/badge/github.com/Andrew-M-C/go.jsonvalue?date=221104)](https://goreportcard.com/report/github.com/Andrew-M-C/go.jsonvalue) ![GitHub Repo stars](https://img.shields.io/github/stars/Andrew-M-C/go.jsonvalue)
+[![Go report](https://goreportcard.com/badge/github.com/Andrew-M-C/go.jsonvalue?date=221104)](https://goreportcard.com/report/github.com/Andrew-M-C/go.jsonvalue)
 
 [![GoDoc](https://godoc.org/github.com/Andrew-M-C/go.jsonvalue?status.svg&date=221104)](https://pkg.go.dev/github.com/Andrew-M-C/go.jsonvalue@v1.4.2)
 [![Latest](https://img.shields.io/badge/latest-v1.4.2-blue.svg?date=221104)](https://github.com/Andrew-M-C/go.jsonvalue/tree/v1.4.2)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?date=221104)](https://opensource.org/license/MIT)
+
+[![Author](https://img.shields.io/badge/Author-Andrew.M.C-blue.svg?date=221104)](https://andrewmc.io/post/)
+![GitHub personal stars](https://img.shields.io/github/stars/Andrew-M-C)
 
 - [Wiki](./docs/en/README.md)
 - [中文](./docs/zh-cn/README.md)
