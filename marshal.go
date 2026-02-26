@@ -17,7 +17,7 @@ import (
 func (v *V) MustMarshal(opts ...Option) []byte {
 	ret, err := v.Marshal(opts...)
 	if err != nil {
-		return []byte{}
+		return nil
 	}
 	return ret
 }

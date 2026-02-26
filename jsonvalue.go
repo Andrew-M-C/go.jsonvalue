@@ -95,6 +95,9 @@ func (t ValueType) String() string {
 
 // ValueType returns the type of this JSON value.
 func (v *V) ValueType() ValueType {
+	if v == nil {
+		return NotExist
+	}
 	return v.valueType
 }
 
@@ -287,6 +290,9 @@ func UnmarshalNoCopy(b []byte) (ret *V, err error) {
 //
 // IsObject 判断当前值是不是一个对象类型
 func (v *V) IsObject() bool {
+	if v == nil {
+		return false
+	}
 	return v.valueType == Object
 }
 
@@ -294,6 +300,9 @@ func (v *V) IsObject() bool {
 //
 // IsArray 判断当前值是不是一个数组类型
 func (v *V) IsArray() bool {
+	if v == nil {
+		return false
+	}
 	return v.valueType == Array
 }
 
@@ -301,6 +310,9 @@ func (v *V) IsArray() bool {
 //
 // IsString 判断当前值是不是一个字符串类型
 func (v *V) IsString() bool {
+	if v == nil {
+		return false
+	}
 	return v.valueType == String
 }
 
@@ -308,6 +320,9 @@ func (v *V) IsString() bool {
 //
 // IsNumber 判断当前值是不是一个数字类型
 func (v *V) IsNumber() bool {
+	if v == nil {
+		return false
+	}
 	return v.valueType == Number
 }
 
@@ -316,6 +331,9 @@ func (v *V) IsNumber() bool {
 //
 // IsFloat 判断当前值是不是一个浮点数类型。如果给定的数不包含小数点，那么即便是数字类型，该函数也会返回 false.
 func (v *V) IsFloat() bool {
+	if v == nil {
+		return false
+	}
 	if v.valueType != Number {
 		return false
 	}
@@ -326,6 +344,9 @@ func (v *V) IsFloat() bool {
 //
 // IsNumber 判断当前值是不是一个定点数整型
 func (v *V) IsInteger() bool {
+	if v == nil {
+		return false
+	}
 	if v.valueType != Number {
 		return false
 	}
@@ -336,6 +357,9 @@ func (v *V) IsInteger() bool {
 //
 // IsNegative 判断当前值是不是一个负数
 func (v *V) IsNegative() bool {
+	if v == nil {
+		return false
+	}
 	if v.valueType != Number {
 		return false
 	}
@@ -346,6 +370,9 @@ func (v *V) IsNegative() bool {
 //
 // IsPositive 判断当前值是不是一个正数
 func (v *V) IsPositive() bool {
+	if v == nil {
+		return false
+	}
 	if v.valueType != Number {
 		return false
 	}
@@ -363,6 +390,9 @@ func (v *V) IsPositive() bool {
 //  2. 是一个正整型数字.
 //  3. 该正整数的值大于 0x7fffffffffffffff.
 func (v *V) GreaterThanInt64Max() bool {
+	if v == nil {
+		return false
+	}
 	if v.valueType != Number {
 		return false
 	}
@@ -376,6 +406,9 @@ func (v *V) GreaterThanInt64Max() bool {
 //
 // IsBoolean 判断当前值是不是一个布尔类型
 func (v *V) IsBoolean() bool {
+	if v == nil {
+		return false
+	}
 	return v.valueType == Boolean
 }
 
@@ -383,6 +416,9 @@ func (v *V) IsBoolean() bool {
 //
 // IsBoolean 判断当前值是不是一个空类型
 func (v *V) IsNull() bool {
+	if v == nil {
+		return true
+	}
 	return v.valueType == Null
 }
 
@@ -391,6 +427,9 @@ func (v *V) IsNull() bool {
 // Bool 返回布尔类型值。如果当前值不是布尔类型，则判断是否为 string，不是 string 返回 false;
 // 是 string 的话则返回字面值是否等于 true
 func (v *V) Bool() bool {
+	if v == nil {
+		return false
+	}
 	if v.valueType == Boolean {
 		return v.valueBool
 	}
@@ -402,6 +441,9 @@ func (v *V) Bool() bool {
 //
 // Int 返回 int 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int() int {
+	if v == nil {
+		return 0
+	}
 	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Int()
 	}
@@ -412,6 +454,9 @@ func (v *V) Int() int {
 //
 // Uint 返回 uint 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint() uint {
+	if v == nil {
+		return 0
+	}
 	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Uint()
 	}
@@ -422,6 +467,9 @@ func (v *V) Uint() uint {
 //
 // Int64 返回 int64 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int64() int64 {
+	if v == nil {
+		return 0
+	}
 	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Int64()
 	}
@@ -432,6 +480,9 @@ func (v *V) Int64() int64 {
 //
 // Uint64 返回 uint64 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint64() uint64 {
+	if v == nil {
+		return 0
+	}
 	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Uint64()
 	}
@@ -442,6 +493,9 @@ func (v *V) Uint64() uint64 {
 //
 // Int32 返回 int32 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Int32() int32 {
+	if v == nil {
+		return 0
+	}
 	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Int32()
 	}
@@ -452,6 +506,9 @@ func (v *V) Int32() int32 {
 //
 // Uint32 返回 uint32 类型值。如果当前值不是数字类型，则返回 0。
 func (v *V) Uint32() uint32 {
+	if v == nil {
+		return 0
+	}
 	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Uint32()
 	}
@@ -462,6 +519,9 @@ func (v *V) Uint32() uint32 {
 //
 // Float64 返回 float64 类型值。如果当前值不是数字类型，则返回 0.0。
 func (v *V) Float64() float64 {
+	if v == nil {
+		return 0
+	}
 	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Float64()
 	}
@@ -472,6 +532,9 @@ func (v *V) Float64() float64 {
 //
 // Float32 返回 float32 类型值。如果当前值不是数字类型，则返回 0.0。
 func (v *V) Float32() float32 {
+	if v == nil {
+		return 0
+	}
 	if v.valueType != Number {
 		return getNumberFromNotNumberValue(v).Float32()
 	}
@@ -485,12 +548,15 @@ func (v *V) Float32() float32 {
 // Bytes 返回以 Base64 编码在 string 类型中的二进制数据。如果当前值不是字符串类型，或者是 base64
 // 编码失败，则返回 []byte{}。
 func (v *V) Bytes() []byte {
+	if v == nil {
+		return nil
+	}
 	if v.valueType != String {
-		return []byte{}
+		return nil
 	}
 	b, err := internal.b64.DecodeString(v.valueStr)
 	if err != nil {
-		return []byte{}
+		return nil
 	}
 	return b
 }

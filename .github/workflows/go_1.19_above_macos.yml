@@ -1,4 +1,4 @@
-name: Go 1.16+
+name: Go 1.19+ for macOS
 
 on:
   push:
@@ -9,16 +9,16 @@ on:
 
 env:
   CODECOV_TOKEN: '2fc0d617-8e9a-47d7-ab58-52fa92b23741'
-  MAIN_GO_VER: '1.16'
-  MAIN_HOST_OS: 'ubuntu-latest'
+  MAIN_GO_VER: '1.25'
+  MAIN_HOST_OS: 'macos-latest'
 
 jobs:
   go_test_and_coverage:
     strategy:
       max-parallel: 6
       matrix:
-        GO_VER: ['1.16', '1.17', '1.18', '1.19', '1.20', '1.21', '1.22', '1.23', '1.24', '1.25', '1.26']
-        HOST_OS: ['ubuntu-latest']
+        GO_VER: ['1.19', '1.20', '1.21', '1.22', '1.23', '1.24', '1.25', '1.26']
+        HOST_OS: ['macos-latest']
 
     runs-on: ${{ matrix.HOST_OS }}
 

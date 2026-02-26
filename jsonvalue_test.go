@@ -70,6 +70,7 @@ func TestJsonvalue(t *testing.T) {
 	test(t, "misc number typed parameter", testMiscInt)
 	test(t, "test an internal struct", testUnmarshalWithIter)
 	test(t, "deepCopy()", testDeepCopy)
+	test(t, "test nil V", testNilV)
 
 	test(t, "test iteration", testIteration)
 	test(t, "test iteration internally", testIter)
@@ -552,4 +553,38 @@ func testDeepCopy(*testing.T) {
 		so(v.MustMarshalString(), eq, "null")
 		so(res.MustMarshalString(), eq, "null")
 	})
+}
+
+func testNilV(*testing.T) {
+	var v *V
+	so(v, isNil)
+
+	so(v.ValueType(), eq, NotExist)
+
+	so(v.IsString(), isFalse)
+	so(v.IsNumber(), isFalse)
+	so(v.IsObject(), isFalse)
+	so(v.IsArray(), isFalse)
+	so(v.IsBoolean(), isFalse)
+	so(v.IsNull(), isTrue)
+	so(v.IsFloat(), isFalse)
+	so(v.IsInteger(), isFalse)
+	so(v.IsNegative(), isFalse)
+	so(v.IsPositive(), isFalse)
+	so(v.GreaterThanInt64Max(), isFalse)
+
+	so(v.String(), eq, "nil")
+	so(v.Bool(), isFalse)
+	so(v.Int(), isZero)
+	so(v.Uint(), isZero)
+	so(v.Int64(), isZero)
+	so(v.Uint64(), isZero)
+	so(v.Int32(), isZero)
+	so(v.Uint32(), isZero)
+	so(v.Float64(), isZero)
+	so(v.Float32(), isZero)
+	so(v.Bytes(), isNil)
+
+	so(v.MustMarshal(), isNil)
+	so(v.MustMarshalString(), eq, "")
 }
