@@ -149,6 +149,12 @@ func anyToInt(v any) (u int, err error) {
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		return int(value.Uint()), nil
 	default:
+		if v, ok := v.(PathItem); ok {
+			if v.Idx >= 0 {
+				return v.Idx, nil
+			}
+			return 0, fmt.Errorf("%w: %v (%v) is not a number", ErrParameterError, reflect.TypeOf(v), v)
+		}
 		return 0, fmt.Errorf("%v is not a number", reflect.TypeOf(v))
 	}
 }
@@ -161,8 +167,14 @@ func anyToString(v any) (s string, err error) {
 	if rv.Type().Kind() == reflect.String {
 		return rv.String(), nil
 	}
+	if v, ok := v.(PathItem); ok {
+		if v.Key != "" {
+			return v.Key, nil
+		}
+		return "", fmt.Errorf("%w: %v (%v) is not a string", ErrParameterError, reflect.TypeOf(v), v)
+	}
 
-	return "", fmt.Errorf("%w: %s is not a string", ErrParameterError, reflect.TypeOf(v).String())
+	return "", fmt.Errorf("%w: %v is not a string", ErrParameterError, reflect.TypeOf(v))
 }
 
 func isSliceAndExtractDividedParams(p any) (ok bool, firstParam any, otherParams []any) {

@@ -246,6 +246,7 @@ func testWalk(t *testing.T) {
 	cv("path validation", func() { testWalkPathValidation(t) })
 	cv("complex nested structure", func() { testWalkComplexStructure(t) })
 	cv("early termination", func() { testWalkEarlyTermination(t) })
+	cv("use PathItem from Walk as Get param", func() { testWalkPathItemAsGetParam(t) })
 }
 
 func testWalkNilCallback(t *testing.T) {
@@ -663,7 +664,7 @@ func testWalkComplexStructure(t *testing.T) {
 	so(walkCount, eq, 10) // All leaf values
 }
 
-func testWalkEarlyTermination(t *testing.T) {
+func testWalkEarlyTermination(*testing.T) {
 	// Test early termination in simple array
 	cv("early termination in array", func() {
 		v := NewArray()
@@ -768,6 +769,103 @@ func testWalkEarlyTermination(t *testing.T) {
 		so(foundBanana, isTrue)    // Should have found banana
 		so(walkCount >= 1, isTrue) // Should have visited at least 1 element
 		so(walkCount <= 2, isTrue) // Should have stopped by element 2
+	})
+}
+
+func testWalkPathItemAsGetParam(*testing.T) {
+	// Verify that PathItem elements collected from Walk can be passed directly
+	// to Get as parameters — exercising the PathItem branch in anyToInt / anyToString.
+
+	cv("PathItem from object Walk used in Get", func() {
+		// {"name":"Alice","age":30}
+		v := NewObject()
+		v.MustSetString("Alice").At("name")
+		v.MustSetInt64(30).At("age")
+
+		v.Walk(func(path Path, val *V) bool {
+			so(len(path), eq, 1)
+			item := path[0]
+
+			// item is an object PathItem (Key != "", Idx == -1);
+			// pass it directly to Get and verify we retrieve the same value.
+			got, err := v.Get(item)
+			so(err, isNil)
+			so(got, eq, val)
+			return true
+		})
+	})
+
+	cv("PathItem from array Walk used in Get", func() {
+		// ["x","y","z"]
+		v := NewArray()
+		v.MustAppendString("x").InTheEnd()
+		v.MustAppendString("y").InTheEnd()
+		v.MustAppendString("z").InTheEnd()
+
+		v.Walk(func(path Path, val *V) bool {
+			so(len(path), eq, 1)
+			item := path[0]
+
+			// item is an array PathItem (Idx >= 0, Key == "");
+			// pass it directly to Get and verify we retrieve the same value.
+			got, err := v.Get(item)
+			so(err, isNil)
+			so(got, eq, val)
+			return true
+		})
+	})
+
+	cv("PathItem chain from nested structure used in Get", func() {
+		// {"users":[{"score":99},{"score":42}]}
+		raw := `{"users":[{"score":99},{"score":42}]}`
+		v, err := UnmarshalString(raw)
+		so(err, isNil)
+
+		type record struct {
+			path  Path
+			value int64
+		}
+		var records []record
+
+		v.Walk(func(path Path, val *V) bool {
+			records = append(records, record{
+				path:  append(Path(nil), path...),
+				value: val.Int64(),
+			})
+			return true
+		})
+
+		so(len(records), eq, 2)
+
+		for _, rec := range records {
+			// path is e.g. [PathItem{Key:"users"}, PathItem{Idx:0}, PathItem{Key:"score"}]
+			// Use each PathItem directly as variadic Get params.
+			params := make([]any, len(rec.path))
+			for i, item := range rec.path {
+				params[i] = item
+			}
+			got, err := v.Get(params[0], params[1:]...)
+			so(err, isNil)
+			so(got.Int64(), eq, rec.value)
+		}
+	})
+
+	cv("invalid PathItem passed to Get returns error", func() {
+		// Passing a key-only PathItem to an array Get should fail.
+		arr := NewArray()
+		arr.MustAppendString("item").InTheEnd()
+
+		keyOnlyItem := PathItem{Key: "notAnIndex", Idx: -1}
+		_, err := arr.Get(keyOnlyItem)
+		so(err, isErr)
+
+		// Passing an index-only PathItem to an object Get should fail.
+		obj := NewObject()
+		obj.MustSetString("val").At("k")
+
+		idxOnlyItem := PathItem{Key: "", Idx: 0}
+		_, err = obj.Get(idxOnlyItem)
+		so(err, isErr)
 	})
 }
 
