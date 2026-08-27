@@ -1,9 +1,10 @@
-package beta
+package beta_test
 
 import (
 	"testing"
 
 	jsonvalue "github.com/Andrew-M-C/go.jsonvalue"
+	"github.com/Andrew-M-C/go.jsonvalue/beta"
 )
 
 func testContains(_ *testing.T) {
@@ -12,8 +13,8 @@ func testContains(_ *testing.T) {
 		sub := jsonvalue.MustUnmarshalString(`[2,3]`)
 		notSub := jsonvalue.MustUnmarshalString(`[1,3]`)
 
-		so(Contains(v, sub), isTrue)
-		so(Contains(v, notSub), isFalse)
+		so(beta.Contains(v, sub), isTrue)
+		so(beta.Contains(v, notSub), isFalse)
 	})
 
 	cv("general object", func() {
@@ -21,8 +22,8 @@ func testContains(_ *testing.T) {
 		sub := jsonvalue.MustUnmarshalString(`{"num":1234.00}`)
 		notSub := jsonvalue.MustUnmarshalString(`{"num":1234,"str":"hello"}`)
 
-		so(Contains(v, sub), isTrue)
-		so(Contains(v, notSub), isFalse)
+		so(beta.Contains(v, sub), isTrue)
+		so(beta.Contains(v, notSub), isFalse)
 	})
 
 	cv("test case by author's colleague", func() {
@@ -33,7 +34,7 @@ func testContains(_ *testing.T) {
 
 			v := jsonvalue.MustUnmarshalString(vStr)
 			sub := jsonvalue.MustUnmarshalString(subStr)
-			b := Contains(v, sub, path...)
+			b := beta.Contains(v, sub, path...)
 			so(b, eq, res)
 		}
 
