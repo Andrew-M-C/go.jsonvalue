@@ -245,6 +245,153 @@ func testMerge(_ *testing.T) {
 		soJSON(to, `{"a":{"x":1},"b":[1,2]}`)
 		so(len(cs), eq, 0)
 	})
+
+	cv("override when conflict", func() {
+		override := beta.WithMergeOverrideWhenConflict()
+
+		cv("basic types at root", func() {
+			cv("string", func() {
+				to := jsonvalue.NewString("hello")
+				cs := beta.Merge(&to, jsonvalue.NewString("world"), override)
+				so(to.String(), eq, "world")
+				so(pathStrings(cs), resemble, []string{""})
+			})
+			cv("number", func() {
+				to := jsonvalue.NewInt(1)
+				cs := beta.Merge(&to, jsonvalue.NewInt(2), override)
+				so(to.Int(), eq, 2)
+				so(pathStrings(cs), resemble, []string{""})
+			})
+			cv("boolean", func() {
+				to := jsonvalue.NewBool(true)
+				cs := beta.Merge(&to, jsonvalue.NewBool(false), override)
+				so(to.Bool(), isFalse)
+				so(pathStrings(cs), resemble, []string{""})
+			})
+		})
+
+		cv("basic types nested", func() {
+			cv("number", func() {
+				to, cs := mergeJSON(`{"a":1}`, `{"a":2}`, override)
+				soJSON(to, `{"a":2}`)
+				so(pathStrings(cs), resemble, []string{"a"})
+			})
+			cv("boolean", func() {
+				to, cs := mergeJSON(`{"a":true}`, `{"a":false}`, override)
+				soJSON(to, `{"a":false}`)
+				so(pathStrings(cs), resemble, []string{"a"})
+			})
+			cv("string", func() {
+				to, cs := mergeJSON(`{"a":"x"}`, `{"a":"y"}`, override)
+				soJSON(to, `{"a":"y"}`)
+				so(pathStrings(cs), resemble, []string{"a"})
+			})
+			cv("type mismatch between basic types", func() {
+				to, cs := mergeJSON(`{"a":1}`, `{"a":"y"}`, override)
+				soJSON(to, `{"a":"y"}`)
+				so(pathStrings(cs), resemble, []string{"a"})
+			})
+			cv("mixed conflicts report every path", func() {
+				to, cs := mergeJSON(
+					`{"a":1,"b":{"x":1,"y":2}}`, `{"a":2,"b":{"x":1,"y":3,"z":4}}`, override)
+				soJSON(to, `{"a":2,"b":{"x":1,"y":3,"z":4}}`)
+				so(pathStrings(cs), resemble, []string{"a", "b.y"})
+			})
+		})
+
+		cv("equal values are still not conflicts", func() {
+			to, cs := mergeJSON(`{"a":1,"b":"x","c":true}`, `{"a":1,"b":"x","c":true}`, override)
+			soJSON(to, `{"a":1,"b":"x","c":true}`)
+			so(len(cs), eq, 0)
+		})
+
+		cv("null", func() {
+			cv("from null overrides a basic type", func() {
+				to, cs := mergeJSON(`{"a":1}`, `{"a":null}`, override)
+				soJSON(to, `{"a":null}`)
+				so(pathStrings(cs), resemble, []string{"a"})
+			})
+			cv("from null overrides an object", func() {
+				to, cs := mergeJSON(`{"a":{"b":1}}`, `{"a":null}`, override)
+				soJSON(to, `{"a":null}`)
+				so(pathStrings(cs), resemble, []string{"a"})
+			})
+			cv("to null is still filled without conflict", func() {
+				to, cs := mergeJSON(`{"n":null}`, `{"n":1}`, override)
+				soJSON(to, `{"n":1}`)
+				so(len(cs), eq, 0)
+			})
+		})
+
+		cv("object and array in from are never overridden", func() {
+			cv("object over basic type", func() {
+				to, cs := mergeJSON(`{"a":1}`, `{"a":{"b":2}}`, override)
+				soJSON(to, `{"a":1}`)
+				so(pathStrings(cs), resemble, []string{"a"})
+			})
+			cv("array over basic type", func() {
+				to, cs := mergeJSON(`{"a":1}`, `{"a":[2]}`, override)
+				soJSON(to, `{"a":1}`)
+				so(pathStrings(cs), resemble, []string{"a"})
+			})
+			cv("whole array conflict at root", func() {
+				to, cs := mergeJSON(`[1,2]`, `[3]`, override)
+				soJSON(to, `[1,2]`)
+				so(pathStrings(cs), resemble, []string{""})
+			})
+			cv("whole array conflict nested", func() {
+				to, cs := mergeJSON(`{"a":[1,2]}`, `{"a":[3]}`, override)
+				soJSON(to, `{"a":[1,2]}`)
+				so(pathStrings(cs), resemble, []string{"a"})
+			})
+		})
+
+		cv("combined with array options", func() {
+			cv("by index overrides scalar elements", func() {
+				to, cs := mergeJSON(`[1,2]`, `[3,4,5]`, override, beta.WithMergeArraysByIndex())
+				soJSON(to, `[3,4,5]`)
+				so(pathStrings(cs), resemble, []string{"[0]", "[1]"})
+			})
+			cv("by index keeps extra elements of to", func() {
+				to, cs := mergeJSON(`[1,2,3]`, `[4]`, override, beta.WithMergeArraysByIndex())
+				soJSON(to, `[4,2,3]`)
+				so(pathStrings(cs), resemble, []string{"[0]"})
+			})
+			cv("concat arrays wins over override", func() {
+				to, cs := mergeJSON(`[1]`, `[2]`, override, beta.WithMergeConcatArrays())
+				soJSON(to, `[1,2]`)
+				so(len(cs), eq, 0)
+			})
+			cv("ignore arrays wins over override", func() {
+				to, cs := mergeJSON(`{"a":[1],"b":1}`, `{"a":[9],"b":2}`,
+					override, beta.WithMergeIgnoreArrays())
+				soJSON(to, `{"a":[1],"b":2}`)
+				so(pathStrings(cs), resemble, []string{"b"})
+			})
+		})
+
+		cv("concat strings wins over override", func() {
+			to, cs := mergeJSON(`{"s":"a"}`, `{"s":"b"}`, override, beta.WithMergeConcatStrings())
+			soJSON(to, `{"s":"ab"}`)
+			so(len(cs), eq, 0)
+		})
+
+		cv("overridden value is deep copied", func() {
+			to := jsonvalue.MustUnmarshalString(`{"a":1}`)
+			from := jsonvalue.MustUnmarshalString(`{"a":2}`)
+			cs := beta.Merge(&to, from, override)
+			so(pathStrings(cs), resemble, []string{"a"})
+			from.MustSetInt(99).At("a")
+			so(from.MustGet("a").Int(), eq, 99)
+			so(to.MustGet("a").Int(), eq, 2)
+		})
+
+		cv("not specified means to always wins", func() {
+			to, cs := mergeJSON(`{"a":1,"b":true,"c":"x"}`, `{"a":2,"b":false,"c":"y"}`)
+			soJSON(to, `{"a":1,"b":true,"c":"x"}`)
+			so(pathStrings(cs), resemble, []string{"a", "b", "c"})
+		})
+	})
 }
 
 func mergeJSON(toStr, fromStr string, opts ...beta.MergeOption) (*jsonvalue.V, []jsonvalue.Path) {
