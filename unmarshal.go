@@ -82,6 +82,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 	arr := newArray(p)
 
 	reachEnd := false
+	expectingValue := true
 
 	for offset < right {
 		// search for ending ']'
@@ -92,12 +93,20 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 		}
 
 		chr := it[offset]
+		if !expectingValue && chr != ',' && chr != ']' {
+			return nil, -1, fmt.Errorf("%w, expected ',' or ']' at Position %d", ErrNotArrayValue, offset)
+		}
 		switch chr {
 		case ']':
 			return arr, offset + 1, nil
 
 		case ',':
+			if expectingValue {
+				return nil, -1, fmt.Errorf("%w, unexpected ',' at Position %d", ErrNotArrayValue, offset)
+			}
+			expectingValue = true
 			offset++
+			continue
 
 		case '{':
 			v, sectEnd, err := unmarshalObjectWithIterUnknownEnd(p, it, offset, right)
@@ -105,6 +114,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 				return nil, -1, err
 			}
 			appendToArr(arr, v)
+			expectingValue = false
 			offset = sectEnd
 
 		case '[':
@@ -113,6 +123,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 				return nil, -1, err
 			}
 			appendToArr(arr, v)
+			expectingValue = false
 			offset = sectEnd
 
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '-':
@@ -122,6 +133,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 				return nil, -1, err
 			}
 			appendToArr(arr, v)
+			expectingValue = false
 			offset = sectEnd
 
 		case '"':
@@ -131,6 +143,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 			}
 			v := NewString(unsafe.BtoS(it[offset+1 : offset+1+sectLenWithoutQuote]))
 			appendToArr(arr, v)
+			expectingValue = false
 			offset = sectEnd
 
 		case 't':
@@ -139,6 +152,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 				return nil, -1, err
 			}
 			appendToArr(arr, NewBool(true))
+			expectingValue = false
 			offset = sectEnd
 
 		case 'f':
@@ -147,6 +161,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 				return nil, -1, err
 			}
 			appendToArr(arr, NewBool(false))
+			expectingValue = false
 			offset = sectEnd
 
 		case 'n':
@@ -155,6 +170,7 @@ func unmarshalArrayWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V,
 				return nil, -1, err
 			}
 			appendToArr(arr, NewNull())
+			expectingValue = false
 			offset = sectEnd
 
 		default:
@@ -179,6 +195,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 
 	keyStart, keyEnd := 0, 0
 	colonFound := false
+	needComma := false
 
 	reachEnd := false
 
@@ -214,6 +231,17 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 		}
 
 		chr := it[offset]
+		if needComma {
+			switch chr {
+			case '}':
+			case ',':
+				needComma = false
+				offset++
+				continue
+			default:
+				return nil, -1, fmt.Errorf("%w, expected ',' or '}' at Position %d", ErrNotObjectValue, offset)
+			}
+		}
 		switch chr {
 		case '}':
 			if err = valNotFoundErr(); err != nil {
@@ -222,11 +250,7 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			return obj, offset + 1, nil
 
 		case ',':
-			if err = valNotFoundErr(); err != nil {
-				return nil, -1, err
-			}
-			offset++
-			// continue
+			return nil, -1, fmt.Errorf("%w, unexpected ',' at Position %d", ErrNotObjectValue, offset)
 
 		case ':':
 			if colonFound {
@@ -343,6 +367,9 @@ func unmarshalObjectWithIterUnknownEnd(p pool, it iter, offset, right int) (_ *V
 			return nil, -1, fmt.Errorf("%w, invalid character \\u%04X at Position %d", ErrRawBytesUnrecognized, chr, offset)
 		}
 
+		if keyEnd == 0 && !colonFound && len(obj.children.object) > 0 {
+			needComma = true
+		}
 	}
 
 	return nil, -1, fmt.Errorf("%w, cannot find '}'", ErrNotObjectValue)
